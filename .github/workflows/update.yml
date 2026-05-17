@@ -4,22 +4,10 @@ on:
   schedule:
     - cron: '0 */12 * * *'
   workflow_dispatch:
-    inputs:
-      max_nodes:
-        description: '最大节点数'
-        required: false
-        default: '200'
-      no_tcp_test:
-        description: '跳过TCP测试'
-        type: boolean
-        default: false
   push:
     paths:
-      - 'config/sources.list'
-      - 'config/config.yaml'
-
-env:
-  TZ: Asia/Shanghai
+      - 'sources.list'
+      - 'config.yml'
 
 jobs:
   update:
@@ -27,36 +15,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
 
-      - name: Fetch and filter nodes
+      - name: Fetch nodes
         run: |
-          python main.py \
-            --max-nodes ${{ inputs.max_nodes || 200 }} \
-            ${{ inputs.no_tcp_test && '--no-tcp-test' || '' }}
+          python3 fetch.py
+
+      - name: Filter nodes (TCP test)
+        run: |
+          python3 filter.py
 
       - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Actions"
           git add -A
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update nodes $(date '+%Y-%m-%d %H:%M')"
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update nodes $(date +'%Y-%m-%d %H:%M')"
+          git push
 
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-
-      - name: Purge JsDelivr CDN
+      - name: Purge jsDelivr cache
         run: |
           REPO="${{ github.repository }}"
           BRANCH="main"
