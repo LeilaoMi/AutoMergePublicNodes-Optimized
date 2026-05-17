@@ -1,0 +1,85 @@
+name: Update Nodes
+
+on:
+  schedule:
+    # 每12小时运行一次
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+    inputs:
+      max_nodes:
+        description: '最大节点数'
+        required: false
+        default: '200'
+      no_tcp_test:
+        description: '跳过TCP测试'
+        type: boolean
+        default: false
+  push:
+    paths:
+      - 'config/sources.list'
+      - 'config/config.yaml'
+      - 'snippets/_config.yml'
+      - '.github/workflows/update.yml'
+      - 'src/**'
+      - 'main.py'
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          
+      - name: Run update
+        run: |
+          python main.py \
+            --max-nodes ${{ github.event.inputs.max_nodes || '200' }} \
+            ${{ github.event.inputs.no_tcp_test == 'true' && '--no-tcp-test' || '' }}
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          
+      - name: Generate timestamp
+        id: timestamp
+        run: |
+          echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+          echo "count=$(grep -c 'type:' output/list.yml 2>/dev/null || echo '0')" >> $GITHUB_OUTPUT
+          
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f output/
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update: ${{ steps.timestamp.outputs.time }} - ${{ steps.timestamp.outputs.count }} nodes"
+          git push
+          
+      - name: Purge JsDelivr Cache
+        run: |
+          baseUrl="https://cdn.jsdelivr.net/gh/${{ github.repository }}@master"
+          urls=""
+          for f in $(find output -name "*.yml" -o -name "*.txt" -type f); do
+            urls+="${baseUrl}/${f},"
+          done
+          if [ -n "$urls" ]; then
+            curl -s "${urls%,*}" > /dev/null || true
+          fi
+        continue-on-error: true
+        
+      - name: Delete old workflows
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          retain_days: 7
+          keep_minimum_runs: 3
