@@ -46,9 +46,21 @@ jobs:
       - name: Download Clash Meta
         if: ${{ github.event.inputs.skip_real_test != 'true' }}
         run: |
-          curl -L -o clash-meta.gz https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64.gz
-          gunzip clash-meta.gz
+          # 获取最新版本号
+          VERSION=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | jq -r '.tag_name')
+          echo "Clash Meta 版本: $VERSION"
+          
+          # 下载正确的文件
+          curl -L -o clash-meta.gz "https://github.com/MetaCubeX/mihomo/releases/download/${VERSION}/mihomo-linux-amd64-${VERSION}.gz"
+          
+          # 检查文件
+          file clash-meta.gz
+          
+          # 解压
+          gunzip clash-meta.gz || (echo "解压失败，尝试直接下载二进制" && curl -L -o clash-meta "https://github.com/MetaCubeX/mihomo/releases/download/${VERSION}/mihomo-linux-amd64-${VERSION}")
+          
           chmod +x clash-meta
+          ./clash-meta -v
           echo "Clash Meta 下载完成"
 
       - name: Real proxy test
