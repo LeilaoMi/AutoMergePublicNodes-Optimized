@@ -219,6 +219,8 @@ class Node:
             self.type = ''.join([_ for _ in self.type if _.isascii()])
             url = self.type+'://'+url.split("://")[1]
         if self.type == 'hy2': self.type = 'hysteria2'
+        if self.type == 'hy': self.type = 'hysteria'
+        if self.type == 'socks': self.type = 'socks5'
         # === Fix end ===
         if self.type == 'vmess':
             v = VMESS_EXAMPLE.copy()

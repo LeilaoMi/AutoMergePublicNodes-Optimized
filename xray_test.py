@@ -2,20 +2,28 @@
 """
 Xray 真实代理测试
 将 Clash YAML 格式节点转换为 Xray 配置，并逐个测试连通性
+支持协议: vmess, vless, trojan, ss, socks5, hysteria2, wireguard
 """
 import yaml
 import json
 import subprocess
-import time
-import requests
-import base64
-import os
 import tempfile
+import time
+import os
+import signal
+import threading
+from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
+import requests
 
-# 测试配置
+# Xray 支持的协议
+XRAY_SUPPORTED_PROTOCOLS = ['vmess', 'vless', 'trojan', 'ss', 'socks5', 'hysteria2', 'wireguard', 'http']
+
+# Clash Meta 支持的协议（用于统计）
+CLASH_META_SUPPORTED = ['vmess', 'vless', 'trojan', 'ss', 'ssr', 'hysteria2', 'hysteria', 'socks5', 'tuic', 'wireguard', 'http']
+
+# 测试 URL
 TEST_URL = "https://www.gstatic.com/generate_204"
 TEST_TIMEOUT = 10
 MAX_CONCURRENT = 20
