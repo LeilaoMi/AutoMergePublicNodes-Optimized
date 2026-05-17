@@ -66,8 +66,14 @@ jobs:
       - name: Real proxy test
         if: ${{ github.event.inputs.skip_real_test != 'true' }}
         run: |
-          # 创建临时 Clash 配置
-          cat > clash_config.yaml << 'EOF'
+          # 创建 Clash 配置目录
+          mkdir -p ~/.config/mihomo
+          
+          # 复制节点文件到 Clash 配置目录
+          cp list.yml ~/.config/mihomo/
+          
+          # 创建 Clash 配置（使用绝对路径）
+          cat > ~/.config/mihomo/config.yaml << 'EOF'
           mixed-port: 7890
           external-controller: 127.0.0.1:9090
           mode: rule
@@ -92,9 +98,9 @@ jobs:
           EOF
           
           # 启动 Clash Meta
-          ./clash-meta -f clash_config.yaml &
+          ./clash-meta -d ~/.config/mihomo &
           CLASH_PID=$!
-          sleep 5
+          sleep 3
           
           # 等待 Clash 启动
           for i in {1..10}; do
@@ -106,15 +112,17 @@ jobs:
           done
           
           # 获取所有代理名称
-          PROXIES=$(curl -s http://127.0.0.1:9090/proxies | jq -r '.proxies | keys[]' | grep -v PROXY | grep -v DIRECT | grep -v REJECT || true)
+          PROXIES=$(curl -s http://127.0.0.1:9090/proxies | jq -r '.proxies | keys[]' | grep -v PROXY | grep -v DIRECT | grep -v REJECT | grep -v GLOBAL | grep -v COMPATIBLE || true)
           
+          echo "发现 $(echo "$PROXIES" | wc -l) 个代理节点"
           echo "开始真实代理测试..."
           VALID_COUNT=0
           > valid_nodes.txt
           
           for proxy in $PROXIES; do
             # 测试延迟
-            RESULT=$(curl -s "http://127.0.0.1:9090/proxies/$(python3 -c "import urllib.parse; print(urllib.parse.quote('$proxy'))")/delay?timeout=${{ github.event.inputs.tcp_timeout || 10 }}000&url=https://www.gstatic.com/generate_204" 2>/dev/null || echo '{"delay":0}')
+            ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$proxy'))")
+            RESULT=$(curl -s "http://127.0.0.1:9090/proxies/${ENCODED}/delay?timeout=10000&url=https://www.gstatic.com/generate_204" 2>/dev/null || echo '{"delay":0}')
             DELAY=$(echo "$RESULT" | jq -r '.delay // 0')
             
             if [ "$DELAY" -gt 0 ]; then
