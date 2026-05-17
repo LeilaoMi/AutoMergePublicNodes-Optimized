@@ -10,9 +10,9 @@ on:
         type: boolean
         default: false
       max_nodes:
-        description: '最大节点数'
+        description: 'TCP测试后最大节点数'
         required: false
-        default: '500'
+        default: '300'
       tcp_timeout:
         description: 'TCP超时(秒)'
         required: false
@@ -32,151 +32,189 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install pysocks
 
       - name: Fetch nodes
         run: |
           python3 fetch.py
-          echo "节点数量: $(grep -c 'type:' list.yml || echo 0)"
+          NODE_COUNT=$(grep -c 'type:' list.yml || echo 0)
+          echo "nodes_count=$NODE_COUNT" >> $GITHUB_OUTPUT
+          echo "获取节点: $NODE_COUNT"
+        id: fetch
 
       - name: TCP connectivity test
         run: |
           python3 filter.py
-          echo "TCP测试后节点: $(grep -c 'type:' list.yml || echo 0)"
+          TCP_COUNT=$(grep -c 'type:' list.yml || echo 0)
+          echo "tcp_count=$TCP_COUNT" >> $GITHUB_OUTPUT
+          echo "TCP可达节点: $TCP_COUNT"
 
-      - name: Download Clash Meta
+      - name: Download Xray
         if: ${{ github.event.inputs.skip_real_test != 'true' }}
         run: |
-          # 获取最新版本号
-          VERSION=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | jq -r '.tag_name')
-          echo "Clash Meta 版本: $VERSION"
+          # 获取最新版本
+          VERSION=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r '.tag_name')
+          echo "Xray 版本: $VERSION"
           
-          # 下载正确的文件
-          curl -L -o clash-meta.gz "https://github.com/MetaCubeX/mihomo/releases/download/${VERSION}/mihomo-linux-amd64-${VERSION}.gz"
-          
-          # 检查文件
-          file clash-meta.gz
+          # 下载
+          curl -L -o Xray-linux-64.zip "https://github.com/XTLS/Xray-core/releases/download/${VERSION}/Xray-linux-64.zip"
           
           # 解压
-          gunzip clash-meta.gz || (echo "解压失败，尝试直接下载二进制" && curl -L -o clash-meta "https://github.com/MetaCubeX/mihomo/releases/download/${VERSION}/mihomo-linux-amd64-${VERSION}")
-          
-          chmod +x clash-meta
-          ./clash-meta -v
-          echo "Clash Meta 下载完成"
+          unzip -o Xray-linux-64.zip
+          chmod +x xray
+          ./xray version
+          echo "Xray 下载完成"
 
       - name: Real proxy test
         if: ${{ github.event.inputs.skip_real_test != 'true' }}
         run: |
-          # 创建 Clash 配置目录
-          mkdir -p ~/.config/mihomo
+          echo "开始真实代理测试（使用 Xray 核心）..."
+          python3 xray_test.py --input list.yml --output valid_nodes.txt --max-workers 10
           
-          # 复制节点文件到 Clash 配置目录
-          cp list.yml ~/.config/mihomo/
-          
-          # 创建 Clash 配置（使用绝对路径）
-          cat > ~/.config/mihomo/config.yaml << 'EOF'
-          mixed-port: 7890
-          external-controller: 127.0.0.1:9090
-          mode: rule
-          log-level: error
-          proxies:
-          proxy-groups:
-            - name: "PROXY"
-              type: select
-              use:
-                - nodes
-          proxy-providers:
-            nodes:
-              type: file
-              path: ./list.yml
-              interval: 0
-              health-check:
-                enable: true
-                url: https://www.gstatic.com/generate_204
-                interval: 0
-          rules:
-            - MATCH,PROXY
-          EOF
-          
-          # 启动 Clash Meta
-          ./clash-meta -d ~/.config/mihomo &
-          CLASH_PID=$!
-          sleep 3
-          
-          # 等待 Clash 启动
-          for i in {1..10}; do
-            if curl -s http://127.0.0.1:9090 > /dev/null 2>&1; then
-              echo "Clash Meta 启动成功"
-              break
-            fi
-            sleep 1
-          done
-          
-          # 获取所有代理名称
-          PROXIES=$(curl -s http://127.0.0.1:9090/proxies | jq -r '.proxies | keys[]' | grep -v PROXY | grep -v DIRECT | grep -v REJECT | grep -v GLOBAL | grep -v COMPATIBLE || true)
-          
-          echo "发现 $(echo "$PROXIES" | wc -l) 个代理节点"
-          echo "开始真实代理测试..."
-          VALID_COUNT=0
-          > valid_nodes.txt
-          
-          for proxy in $PROXIES; do
-            # 测试延迟
-            ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$proxy'))")
-            RESULT=$(curl -s "http://127.0.0.1:9090/proxies/${ENCODED}/delay?timeout=10000&url=https://www.gstatic.com/generate_204" 2>/dev/null || echo '{"delay":0}')
-            DELAY=$(echo "$RESULT" | jq -r '.delay // 0')
-            
-            if [ "$DELAY" -gt 0 ]; then
-              echo "✓ $proxy: ${DELAY}ms"
-              echo "$proxy" >> valid_nodes.txt
-              VALID_COUNT=$((VALID_COUNT + 1))
-            fi
-          done
-          
-          echo ""
-          echo "真实可用节点: $VALID_COUNT"
-          
-          # 如果有有效节点，过滤 YAML
+          # 检查是否有有效节点
           if [ -s valid_nodes.txt ]; then
+            VALID_COUNT=$(wc -l < valid_nodes.txt)
+            echo "valid_count=$VALID_COUNT" >> $GITHUB_OUTPUT
+            echo "真实可用节点: $VALID_COUNT"
+            
+            # 过滤 YAML，只保留有效节点
             python3 << 'PYEOF'
           import yaml
           
           with open("list.yml", "r") as f:
-              data = yaml.safe_load(f)
+              data = yaml.safe_load(f) or {}
           
           with open("valid_nodes.txt", "r") as f:
-              valid_names = set(line.strip() for line in f)
+              valid_names = set(line.strip() for line in f if line.strip())
           
           # 过滤代理
+          original_count = len(data.get("proxies", []))
           data["proxies"] = [p for p in data.get("proxies", []) if p.get("name") in valid_names]
           
           with open("list.yml", "w") as f:
-              yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+              yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
           
-          print(f"已过滤到 {len(data['proxies'])} 个真实可用节点")
+          print(f"过滤完成: {original_count} -> {len(data['proxies'])}")
           PYEOF
+          else
+            echo "没有找到有效节点，保留所有 TCP 可达节点"
           fi
-          
-          # 停止 Clash
-          kill $CLASH_PID 2>/dev/null || true
 
       - name: Generate output files
         run: |
+          # 统计最终节点数
+          FINAL_COUNT=$(grep -c 'type:' list.yml || echo 0)
+          echo "最终节点数: $FINAL_COUNT"
+          
           # 生成 Base64 订阅
           python3 << 'PYEOF'
           import yaml
           import base64
+          import json
+          from urllib.parse import quote
+          
+          def generate_url(p):
+              """生成节点 URL"""
+              ptype = p.get("type", "")
+              name = quote(p.get("name", ""))
+              
+              if ptype == "vmess":
+                  vmess = {
+                      "v": "2",
+                      "ps": p.get("name", ""),
+                      "add": p.get("server", ""),
+                      "port": str(p.get("port", "")),
+                      "id": p.get("uuid", ""),
+                      "aid": str(p.get("alterId", 0)),
+                      "scy": p.get("cipher", "auto"),
+                      "net": p.get("network", "tcp"),
+                      "type": "none",
+                      "tls": "tls" if p.get("tls") else "",
+                  }
+                  if p.get("network") == "ws":
+                      vmess["path"] = p.get("ws-opts", {}).get("path", "/")
+                      vmess["host"] = p.get("ws-opts", {}).get("headers", {}).get("Host", "")
+                  return "vmess://" + base64.b64encode(json.dumps(vmess).encode()).decode()
+              
+              elif ptype == "ss":
+                  cipher = p.get("cipher", "")
+                  password = p.get("password", "")
+                  server = p.get("server", "")
+                  port = p.get("port", "")
+                  user = f"{cipher}:{password}"
+                  user_b64 = base64.urlsafe_b64encode(user.encode()).decode().rstrip('=')
+                  return f"ss://{user_b64}@{server}:{port}#{name}"
+              
+              elif ptype == "ssr":
+                  server = p.get("server", "")
+                  port = p.get("port", "")
+                  protocol = p.get("protocol", "origin")
+                  cipher = p.get("cipher", "")
+                  obfs = p.get("obfs", "plain")
+                  password = p.get("password", "")
+                  obfs_param = p.get("obfs-param", "")
+                  protocol_param = p.get("protocol-param", "")
+                  
+                  user = f"{protocol}:{cipher}:{password}"
+                  user_b64 = base64.urlsafe_b64encode(user.encode()).decode().rstrip('=')
+                  params = f"obfsparam={quote(obfs_param)}&protoparam={quote(protocol_param)}"
+                  return f"ssr://{base64.urlsafe_b64encode(f'{server}:{port}:{protocol}:{cipher}:{obfs}:{user_b64}/?{params}#{name}'.encode()).decode().rstrip('=')}"
+              
+              elif ptype == "trojan":
+                  password = p.get("password", "")
+                  server = p.get("server", "")
+                  port = p.get("port", 443)
+                  sni = p.get("sni", server)
+                  network = p.get("network", "tcp")
+                  
+                  url = f"trojan://{password}@{server}:{port}?sni={sni}&type={network}"
+                  if p.get("skip-cert-verify"):
+                      url += "&allowInsecure=1"
+                  return f"{url}#{name}"
+              
+              elif ptype == "vless":
+                  uuid = p.get("uuid", "")
+                  server = p.get("server", "")
+                  port = p.get("port", 443)
+                  flow = p.get("flow", "")
+                  network = p.get("network", "tcp")
+                  tls = "tls" if p.get("tls") else "none"
+                  
+                  url = f"vless://{uuid}@{server}:{port}?type={network}&security={tls}"
+                  if flow:
+                      url += f"&flow={flow}"
+                  if p.get("sni"):
+                      url += f"&sni={p.get('sni')}"
+                  if p.get("reality-opts"):
+                      reality = p.get("reality-opts", {})
+                      url += f"&pbk={quote(reality.get('public-key', ''))}&sid={quote(reality.get('short-id', ''))}"
+                  return f"{url}#{name}"
+              
+              elif ptype == "hysteria2":
+                  password = p.get("password", "")
+                  server = p.get("server", "")
+                  port = p.get("port", 443)
+                  sni = p.get("sni", server)
+                  return f"hysteria2://{password}@{server}:{port}?sni={sni}#{name}"
+              
+              return None
           
           with open("list.yml", "r") as f:
-              data = yaml.safe_load(f)
+              data = yaml.safe_load(f) or {}
           
           proxies = data.get("proxies", [])
-          
-          # 生成 URL 列表
           urls = []
+          stats = {"vmess": 0, "vless": 0, "trojan": 0, "ss": 0, "ssr": 0, "hysteria2": 0, "other": 0}
+          
           for p in proxies:
               url = generate_url(p)
               if url:
                   urls.append(url)
+                  ptype = p.get("type", "other")
+                  if ptype in stats:
+                      stats[ptype] += 1
+                  else:
+                      stats["other"] += 1
           
           content = "\n".join(urls)
           b64 = base64.b64encode(content.encode()).decode()
@@ -185,50 +223,20 @@ jobs:
               f.write(b64)
           
           print(f"生成 {len(urls)} 个节点 URL")
-          
-          def generate_url(p):
-              import json
-              ptype = p.get("type", "")
-              
-              if ptype == "vmess":
-                  vmess = {
-                      "v": "2",
-                      "ps": p.get("name", ""),
-                      "add": p.get("server", ""),
-                      "port": p.get("port", ""),
-                      "id": p.get("uuid", ""),
-                      "aid": p.get("alterId", 0),
-                      "scy": p.get("cipher", "auto"),
-                      "net": p.get("network", "tcp"),
-                      "type": "none",
-                      "tls": "tls" if p.get("tls") else "",
-                  }
-                  if p.get("network") == "ws":
-                      vmess["path"] = p.get("ws-opts", {}).get("path", "/")
-                  return "vmess://" + base64.b64encode(json.dumps(vmess).encode()).decode()
-              
-              elif ptype == "ss":
-                  user = f"{p.get('cipher', '')}:{p.get('password', '')}"
-                  return f"ss://{base64.b64encode(user.encode()).decode()}@{p.get('server')}:{p.get('port')}#{p.get('name', '')}"
-              
-              elif ptype == "trojan":
-                  return f"trojan://{p.get('password', '')}@{p.get('server')}:{p.get('port')}?sni={p.get('sni', p.get('server'))}#{p.get('name', '')}"
-              
-              elif ptype == "vless":
-                  return f"vless://{p.get('uuid', '')}@{p.get('server')}:{p.get('port')}?type={p.get('network', 'tcp')}&security={'tls' if p.get('tls') else 'none'}#{p.get('name', '')}"
-              
-              return None
+          print(f"协议统计: {stats}")
           PYEOF
           
           # 生成 Meta 格式
           cp list.yml list.meta.yml
+          
+          echo "输出文件生成完成"
 
       - name: Commit changes
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           git add -A
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update nodes: $(date '+%Y-%m-%d %H:%M')"
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update nodes: $(date '+%Y-%m-%d %H:%M') | ${{ steps.fetch.outputs.nodes_count }} fetched -> TCP tested -> real tested"
           git push
 
       - name: Purge CDN cache
