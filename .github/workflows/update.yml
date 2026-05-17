@@ -1,0 +1,68 @@
+name: Update Nodes
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+    inputs:
+      max_nodes:
+        description: '最大节点数'
+        required: false
+        default: '200'
+      no_tcp_test:
+        description: '跳过TCP测试'
+        type: boolean
+        default: false
+  push:
+    paths:
+      - 'config/sources.list'
+      - 'config/config.yaml'
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Fetch and filter nodes
+        run: |
+          python main.py \
+            --max-nodes ${{ inputs.max_nodes || 200 }} \
+            ${{ inputs.no_tcp_test && '--no-tcp-test' || '' }}
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Actions"
+          git add -A
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update nodes $(date '+%Y-%m-%d %H:%M')"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
+      - name: Purge JsDelivr CDN
+        run: |
+          REPO="${{ github.repository }}"
+          BRANCH="main"
+          FILES="list.txt list.yml list.meta.yml"
+          URLS=""
+          for f in $FILES; do
+            URLS="${URLS}https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/${f},"
+          done
+          curl -s "https://purge.jsdelivr.net/${URLS%,}" || true
