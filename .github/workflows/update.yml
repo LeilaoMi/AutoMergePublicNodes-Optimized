@@ -9,10 +9,6 @@ on:
         description: '跳过真实代理测试'
         type: boolean
         default: false
-      max_nodes:
-        description: '最大输出节点数'
-        required: false
-        default: '200'
 
 jobs:
   update:
@@ -32,214 +28,68 @@ jobs:
 
       - name: Fetch nodes
         run: |
-          echo "开始抓取节点..."
           python fetch.py
-          
-          # 统计节点
           if [ -f list.yml ]; then
             TOTAL=$(grep -c "type:" list.yml || echo "0")
-            echo "抓取完成，共 $TOTAL 个节点"
+            echo "抓取节点: $TOTAL"
           fi
         continue-on-error: true
 
       - name: TCP connectivity test
         run: |
           if [ -f list.yml ]; then
-            echo "开始 TCP 连通性测试..."
             python filter.py
-            
-            if [ -f list.yml ]; then
-              TCP_COUNT=$(grep -c "type:" list.yml || echo "0")
-              echo "TCP测试后节点: $TCP_COUNT"
+            if [ -f list.txt ]; then
+              VALID=$(wc -l < list.txt)
+              echo "TCP可达节点: $VALID"
             fi
+          fi
+
+      - name: Download Xray
+        if: ${{ github.event.inputs.skip_real_test != 'true' }}
+        run: |
+          VERSION=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r '.tag_name')
+          curl -L -o xray.zip "https://github.com/XTLS/Xray-core/releases/download/${VERSION}/Xray-linux-64.zip"
+          unzip -o xray.zip
+          chmod +x xray
+          echo "Xray ${VERSION} 下载完成"
+
+      - name: Real proxy test
+        if: ${{ github.event.inputs.skip_real_test != 'true' && hashFiles('list.yml') != '' }}
+        run: |
+          python xray_test.py list.yml --output valid_nodes.txt --timeout 10 --concurrent 50
+          if [ -s valid_nodes.txt ]; then
+            VALID=$(wc -l < valid_nodes.txt)
+            echo "真实可用节点: $VALID"
+          fi
+
+      - name: Filter valid nodes
+        if: ${{ hashFiles('valid_nodes.txt') != '' && hashFiles('list.yml') != '' }}
+        run: python filter_valid.py
+
+      - name: Generate output
+        run: |
+          mkdir -p output
+          if [ -f list.yml ]; then
+            python generate_output.py
+            TOTAL=$(grep -c "type:" list.yml || echo "0")
+            echo "最终节点: $TOTAL"
           fi
         continue-on-error: true
 
-      - name: Download Xray
+      - name: Commit and push
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r '.tag_name')
-          echo "下载 Xray $VERSION"
-          curl -L -o xray-linux-64.zip "https://github.com/XTLS/Xray-core/releases/download/${VERSION}/Xray-linux-64.zip"
-          unzip -o xray-linux-64.zip
-          chmod +x xray
-          echo "Xray 下载完成"
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add output/ list.yml list.txt 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Update: $(date '+%Y-%m-%d %H:%M')"
+          git push
 
-      - name: Real proxy test with Xray
-        if: ${{ github.event.inputs.skip_real_test != 'true' }}
-        run: |
-          if [ -f list.yml ]; then
-            echo "开始真实代理测试（Xray）..."
-            
-            # 使用 Python 测试脚本
-            python xray_test.py --input list.yml --output valid_nodes.txt --xray ./xray --max-workers 10
-            
-            if [ -s valid_nodes.txt ]; then
-              VALID_COUNT=$(wc -l < valid_nodes.txt)
-              echo "Xray 测试有效节点: $VALID_COUNT"
-              
-              # 过滤 YAML，只保留有效节点
-              python -c "
-import yaml
-with open('valid_nodes.txt') as f:
-    valid_names = set(line.strip() for line in f if line.strip())
-with open('list.yml') as f:
-    data = yaml.safe_load(f)
-if data and 'proxies' in data:
-    data['proxies'] = [p for p in data['proxies'] if p.get('name', '') in valid_names]
-    with open('list.yml', 'w') as f:
-        f.write(yaml.dump(data, allow_unicode=True))
-    print(f'过滤后节点: {len(data[\"proxies\"])}')
-"
-            else
-              echo "无有效节点"
-            fi
-          fi
-
-      - name: Limit nodes
-        run: |
-          MAX=${{ github.event.inputs.max_nodes || '200' }}
-          
-          if [ -f list.yml ]; then
-            # 统计各协议节点数
-            echo "协议统计:"
-            grep "type:" list.yml | sed 's/.*type: //' | sort | uniq -c
-            
-            # 限制节点数
-            python -c "
-import yaml
-import random
-
-MAX = int('$MAX')
-
-with open('list.yml') as f:
-    data = yaml.safe_load(f)
-
-if data and 'proxies' in data:
-    proxies = data['proxies']
-    if len(proxies) > MAX:
-        # 按协议分组
-        by_proto = {}
-        for p in proxies:
-            proto = p.get('type', 'unknown')
-            if proto not in by_proto:
-                by_proto[proto] = []
-            by_proto[proto].append(p)
-        
-        # 按比例分配
-        total = len(proxies)
-        selected = []
-        for proto, nodes in by_proto.items():
-            quota = max(1, int(MAX * len(nodes) / total))
-            selected.extend(random.sample(nodes, min(quota, len(nodes))))
-        
-        # 如果还不够，随机补充
-        if len(selected) < MAX:
-            remaining = [p for p in proxies if p not in selected]
-            selected.extend(random.sample(remaining, min(MAX - len(selected), len(remaining))))
-        
-        # 如果超了，随机删减
-        if len(selected) > MAX:
-            selected = random.sample(selected, MAX)
-        
-        data['proxies'] = selected
-        with open('list.yml', 'w') as f:
-            yaml.dump(data, f, allow_unicode=True)
-        
-        print(f'限制节点数: {len(selected)}')
-"
-          fi
-
-      - name: Generate output files
-        run: |
-          if [ -f list.yml ]; then
-            # 生成 V2Ray 订阅
-            python -c "
-import yaml
-import base64
-
-with open('list.yml') as f:
-    data = yaml.safe_load(f)
-
-urls = []
-for p in data.get('proxies', []):
-    ptype = p.get('type', '')
-    
-    # 生成 URL
-    url = None
-    if ptype == 'vmess':
-        import json
-        vmess = {
-            'v': '2',
-            'ps': p.get('name', ''),
-            'add': p.get('server', ''),
-            'port': str(p.get('port', 443)),
-            'id': p.get('uuid', ''),
-            'aid': str(p.get('alterId', 0)),
-            'scy': p.get('cipher', 'auto'),
-            'net': p.get('network', 'tcp'),
-            'tls': 'tls' if p.get('tls') else '',
-        }
-        url = 'vmess://' + base64.b64encode(json.dumps(vmess).encode()).decode()
-    elif ptype == 'vless':
-        url = f\"vless://{p.get('uuid', '')}@{p.get('server', '')}:{p.get('port', 443)}?type={p.get('network', 'tcp')}&security=tls#{p.get('name', '')}\"
-    elif ptype == 'trojan':
-        url = f\"trojan://{p.get('password', '')}@{p.get('server', '')}:{p.get('port', 443)}?sni={p.get('sni', p.get('server', ''))}#{p.get('name', '')}\"
-    elif ptype == 'ss':
-        url = f\"ss://{base64.b64encode(f\\\"{p.get('cipher', '')}:{p.get('password', '')}\\\".encode()).decode()}@{p.get('server', '')}:{p.get('port', 8388)}#{p.get('name', '')}\"
-    elif ptype == 'ssr':
-        url = f\"ssr://{base64.b64encode(f\\\"{p.get('server', '')}:{p.get('port', 8388)}:{p.get('protocol', 'origin')}:{p.get('cipher', '')}:{p.get('obfs', 'plain')}:{base64.b64encode(p.get('password', '').encode()).decode()}/?remarks={base64.b64encode(p.get('name', '').encode()).decode()}\\\".encode()).decode()}\"
-    elif ptype == 'hysteria2':
-        url = f\"hysteria2://{p.get('password', '')}@{p.get('server', '')}:{p.get('port', 443)}?sni={p.get('sni', p.get('server', ''))}#{p.get('name', '')}\"
-    
-    if url:
-        urls.append(url)
-
-# 保存 V2Ray 订阅
-with open('list.txt', 'w') as f:
-    f.write(base64.b64encode('\\n'.join(urls).encode()).decode())
-
-# 保存原始 URL 列表
-with open('list_raw.txt', 'w') as f:
-    f.write('\\n'.join(urls))
-
-print(f'生成 {len(urls)} 个节点 URL')
-"
-
-            # 复制 Meta 配置
-            if [ -f list.meta.yml ]; then
-              cp list.meta.yml list.yml.bak
-            fi
-          fi
-
-      - name: Commit changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Actions"
-          
-          # 统计
-          TOTAL=0
-          if [ -f list.yml ]; then
-            TOTAL=$(grep -c "type:" list.yml || echo "0")
-          fi
-          
-          git add -A
-          git diff --quiet && git diff --staged --quiet || \
-            git commit -m "Update nodes: $TOTAL nodes - $(date '+%Y-%m-%d %H:%M')"
-
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-
-      - name: Purge CDN cache
+      - name: Purge CDN
+        if: success()
         run: |
           REPO="${{ github.repository }}"
-          BRANCH="${{ github.ref_name }}"
-          FILES="list.txt list.yml list_raw.txt"
-          
-          URLS=""
-          for f in $FILES; do
-            URLS="${URLS}https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/${f},"
+          BRANCH="main"
+          for f in clash.yml list.txt; do
+            curl -s "https://purge.jsdelivr.net/gh/${REPO}@${BRANCH}/output/${f}" || true
           done
-          curl -s "https://purge.jsdelivr.net/${URLS%,}" || true
