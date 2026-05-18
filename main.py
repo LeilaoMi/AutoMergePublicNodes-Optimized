@@ -138,10 +138,13 @@ async def run(args):
     for k, v in sorted(proto_count.items(), key=lambda x: -x[1]):
         print(f"        {k:14s}: {v}")
 
-    # 3.5) 质量预过滤
-    before = len(nodes)
-    nodes = quality_prefilter(nodes)
-    print(f"[3.5] 质量过滤（端口黑名单 + 同 server 限 2）: {before} -> {len(nodes)}")
+    # 3.5) 质量预过滤 (可选)
+    if args.quality_filter:
+        before = len(nodes)
+        nodes = quality_prefilter(nodes)
+        print(f"[3.5] 质量过滤（端口黑名单 + 同 server 限 2）: {before} -> {len(nodes)}")
+    else:
+        print(f"[3.5] 跳过质量过滤（输出全部去重节点）")
 
     # 4) TCP 预筛选
     if args.tcp_check:
@@ -152,6 +155,7 @@ async def run(args):
         tcp_latency = {id(n): lat for n, lat in tcp_results}
     else:
         print(f"[4/6] 跳过 TCP 预筛选")
+        tcp_latency = {}
 
     # 限制送入真实测试的数量（控制时间）
     if args.test_limit > 0 and len(nodes) > args.test_limit:
@@ -244,7 +248,7 @@ def main():
     p.add_argument("--fetch-concurrency", type=int, default=30)
     p.add_argument("--fetch-timeout", type=int, default=15)
 
-    p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=False)
     p.add_argument("--tcp-concurrency", type=int, default=200)
     p.add_argument("--tcp-timeout", type=float, default=3.0)
 
@@ -253,6 +257,8 @@ def main():
     p.add_argument("--test-timeout", type=float, default=6.0)
     p.add_argument("--startup-wait", type=float, default=0.6)
     p.add_argument("--test-limit", type=int, default=0, help="送入真实测试的最大节点数(0=不限)")
+    p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=False,
+                   help="启用质量预过滤（端口黑名单+同server限2）")
 
     args = p.parse_args()
     asyncio.run(run(args))
