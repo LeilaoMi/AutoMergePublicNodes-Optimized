@@ -35,12 +35,12 @@ class XrayProxyTester:
         self.xray_path = xray_path
         self.lock = threading.Lock()
     
-    def yaml_to_xray_config(self, proxy: Dict[str, Any]) -> Optional[Dict]:
-        """将 Clash YAML 格式转换为 Xray 配置"""
+    def yaml_to_xray_config(self, proxy: Dict[str, Any], port: int = 10808) -> Optional[Dict]:
+        """将 Clash YAML 节点转换为 Xray 配置"""
         ptype = proxy.get("type", "")
         
         inbound = {
-            "port": 10808,
+            "port": port,
             "listen": "127.0.0.1",
             "protocol": "socks",
             "settings": {"udp": True}
@@ -312,8 +312,11 @@ class XrayProxyTester:
         """测试单个代理"""
         name = proxy.get("name", f"proxy-{index}")
         
+        # 为每个测试分配独立端口，避免并发冲突
+        port = 10808 + (index % 1000)
+        
         # 转换配置
-        config = self.yaml_to_xray_config(proxy)
+        config = self.yaml_to_xray_config(proxy, port=port)
         if not config:
             return name, False, 0
         
@@ -337,10 +340,10 @@ class XrayProxyTester:
                 # 进程已退出，启动失败
                 return name, False, 0
             
-            # 测试代理
+            # 测试代理 - 使用对应端口
             proxies = {
-                "http": "socks5://127.0.0.1:10808",
-                "https": "socks5://127.0.0.1:10808"
+                "http": f"socks5://127.0.0.1:{port}",
+                "https": f"socks5://127.0.0.1:{port}"
             }
             
             start = time.time()

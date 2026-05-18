@@ -254,11 +254,26 @@ class Node:
             info = url.split('@')
             srvname = info.pop()
             if '#' in srvname:
-                srv, name = srvname.split('#')
+                srv, name = srvname.split('#', 1)
             else:
                 srv = srvname
                 name = ''
-            server, port = srv.split(':')
+            # 处理 IPv6 地址 [::1]:port 或 IPv4 host:port
+            if srv.startswith('['):
+                # [ipv6]:port
+                bracket_end = srv.rfind(']')
+                if bracket_end > 0:
+                    server = srv[1:bracket_end]
+                    port_part = srv[bracket_end+1:].lstrip(':')
+                    port = port_part
+                else:
+                    raise UnsupportedType('ss', 'IPv6')
+            else:
+                # host:port - 用 rsplit 处理可能的 IPv6
+                if srv.count(':') == 1:
+                    server, port = srv.split(':')
+                else:
+                    server, port = srv.rsplit(':', 1)
             try:
                 port = int(port)
             except ValueError:
@@ -521,7 +536,8 @@ class Node:
                 ret += f"alpn={quote(','.join(data['alpn']))}&"
             if 'network' in data:
                 if data['network'] == 'grpc':
-                    ret += f"type=grpc&serviceName={data['grpc-opts']['grpc-service-name']}"
+                    grpc_name = data.get('grpc-opts', {}).get('grpc-service-name', '')
+                    ret += f"type=grpc&serviceName={grpc_name}"
                 elif data['network'] == 'ws':
                     ret += f"type=ws&"
                     if 'ws-opts' in data:
