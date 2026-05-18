@@ -27,9 +27,14 @@ import aiohttp
 from core.parser import Node
 
 
-# 测试 URL（Google 204，全球可达，1KB 响应）
-TEST_URL = "http://www.gstatic.com/generate_204"
+# 严格测试目标：必须是被墙的 HTTPS 服务，且响应是固定的 204 (No Content)
+# 这是 Karing/v2rayN 等客户端使用的真实判定方式
+TEST_URLS = (
+    "https://www.youtube.com/generate_204",
+    "https://www.google.com/generate_204",
+)
 EXPECTED_STATUS = 204
+REQUEST_TIMEOUT = 10  # 每次请求的超时（秒）
 
 
 @dataclass
@@ -120,38 +125,54 @@ class SingBoxTester:
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )
-            # 等待启动
             await asyncio.sleep(self.startup_wait)
 
             if proc.returncode is not None:
                 result.error = f"sing-box exited {proc.returncode}"
                 return result
 
-            # 通过本地 SOCKS5 发起请求测试
-            connector = aiohttp.TCPConnector(ssl=False, limit=1)
+            # 严格测试：必须两个被墙的 HTTPS 端点都返回 204
             try:
                 from aiohttp_socks import ProxyConnector
-                connector = ProxyConnector.from_url(f"socks5://127.0.0.1:{port}")
             except ImportError:
-                pass
+                result.error = "aiohttp_socks not installed"
+                return result
 
-            start = time.monotonic()
-            try:
-                async with aiohttp.ClientSession(connector=connector) as session:
-                    async with session.get(
-                        TEST_URL,
-                        timeout=aiohttp.ClientTimeout(total=self.request_timeout),
-                    ) as resp:
-                        latency = int((time.monotonic() - start) * 1000)
-                        if resp.status == EXPECTED_STATUS:
-                            result.success = True
-                            result.latency_ms = latency
-                        else:
-                            result.error = f"status {resp.status}"
-            except asyncio.TimeoutError:
-                result.error = "timeout"
-            except Exception as e:
-                result.error = type(e).__name__
+            latencies = []
+            failed_target = None
+            for target in TEST_URLS:
+                connector = ProxyConnector.from_url(f"socks5://127.0.0.1:{port}")
+                start = time.monotonic()
+                try:
+                    async with aiohttp.ClientSession(connector=connector) as session:
+                        async with session.get(
+                            target,
+                            timeout=aiohttp.ClientTimeout(total=self.request_timeout),
+                            allow_redirects=False,
+                        ) as resp:
+                            ms = int((time.monotonic() - start) * 1000)
+                            # 严格验证：status 必须 204，且 body 必须为空
+                            if resp.status != EXPECTED_STATUS:
+                                failed_target = f"{target[8:30]} status={resp.status}"
+                                break
+                            body = await resp.read()
+                            if body:  # 204 必须无 body，有 body 说明被代理服务器伪造响应
+                                failed_target = f"{target[8:30]} faked-body"
+                                break
+                            latencies.append(ms)
+                except asyncio.TimeoutError:
+                    failed_target = f"{target[8:30]} timeout"
+                    break
+                except Exception as e:
+                    failed_target = f"{target[8:30]} {type(e).__name__}"
+                    break
+
+            if failed_target:
+                result.error = failed_target
+            elif len(latencies) == len(TEST_URLS):
+                # 双目标全部通过
+                result.success = True
+                result.latency_ms = max(latencies)  # 取较慢的那个作为延迟（更保守）
 
         except Exception as e:
             result.error = f"start: {e}"
