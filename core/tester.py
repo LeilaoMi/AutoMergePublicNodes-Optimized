@@ -27,17 +27,15 @@ import aiohttp
 from core.parser import Node
 
 
-# 三层严格验证：
-# 1) youtube generate_204 - 被墙的 Google 服务，HTTPS，必须 204 空 body
-# 2) google generate_204 - 同上，避免单点伪造
-# 3) Cloudflare trace - 拿出口 IP 地理位置，必须非 CN（确认真出墙）
-TEST_TARGETS = (
-    ("https://www.youtube.com/generate_204", "204_empty"),
-    ("https://www.google.com/generate_204", "204_empty"),
-    ("https://1.1.1.1/cdn-cgi/trace", "trace_loc"),
-)
-EXPECTED_STATUS = 204
-REQUEST_TIMEOUT = 10
+# 测试目标 4 层 (第 4 层为带宽测试，能下完才算"真用得起来")
+TEST_TARGETS = [
+    ("https://www.youtube.com/generate_204",   "204"),
+    ("https://www.google.com/generate_204",    "204"),
+    ("https://1.1.1.1/cdn-cgi/trace",          "geo"),
+    ("https://speed.cloudflare.com/__down?bytes=102400", "speed"),  # 100KB 带宽测试
+]
+SPEED_REQUIRED_BYTES = 100_000
+SPEED_TIMEOUT_SEC = 8
 
 # 延迟过滤：< MIN_LATENCY_MS 通常是同机房假节点；> MAX 用户用不了
 MIN_LATENCY_MS = 50
@@ -149,59 +147,56 @@ class SingBoxTester:
             failed_target = None
             for target_url, target_kind in TEST_TARGETS:
                 connector = ProxyConnector.from_url(f"socks5://127.0.0.1:{port}")
-                start = time.monotonic()
+                tstart = time.monotonic()
                 try:
-                    async with aiohttp.ClientSession(connector=connector) as session:
-                        async with session.get(
-                            target_url,
-                            timeout=aiohttp.ClientTimeout(total=self.request_timeout),
-                            allow_redirects=False,
-                        ) as resp:
-                            ms = int((time.monotonic() - start) * 1000)
-                            body = await resp.read()
-
-                            if target_kind == "204_empty":
-                                if resp.status != EXPECTED_STATUS:
-                                    failed_target = f"{target_url[8:28]} status={resp.status}"
+                    timeout = aiohttp.ClientTimeout(total=SPEED_TIMEOUT_SEC if target_kind == "speed" else self.request_timeout)
+                    async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+                        async with session.get(target_url) as resp:
+                            if target_kind == "204":
+                                if resp.status != 204:
+                                    failed_target = f"{target_kind}:status={resp.status}"
                                     break
-                                if body:  # 204 必须无 body
-                                    failed_target = f"{target_url[8:28]} faked-body"
+                                body = await resp.read()
+                                if body:  # 必须空 body
+                                    failed_target = f"{target_kind}:non-empty-body"
                                     break
-                            elif target_kind == "trace_loc":
+                            elif target_kind == "geo":
                                 if resp.status != 200:
-                                    failed_target = f"trace status={resp.status}"
+                                    failed_target = f"{target_kind}:status={resp.status}"
                                     break
-                                text = body.decode("utf-8", errors="ignore")
-                                # cdn-cgi/trace 必须含 loc=XX 且不能是 CN
-                                if "loc=" not in text:
-                                    failed_target = "trace no-loc"
+                                text = await resp.text()
+                                # 出口 IP 必须不在中国
+                                if "loc=CN" in text:
+                                    failed_target = f"{target_kind}:exit-loc-CN"
                                     break
-                                loc_line = next((l for l in text.splitlines() if l.startswith("loc=")), "")
-                                loc = loc_line.split("=", 1)[1] if "=" in loc_line else ""
-                                if loc.upper() in ("CN", "", "T1"):
-                                    # CN 表示出口在中国（没翻墙），T1 是 Tor
-                                    failed_target = f"loc={loc}"
+                            elif target_kind == "speed":
+                                # 必须真的下载完 100KB
+                                if resp.status != 200:
+                                    failed_target = f"{target_kind}:status={resp.status}"
                                     break
-                            latencies.append(ms)
-                except asyncio.TimeoutError:
-                    failed_target = f"{target_url[8:28]} timeout"
-                    break
+                                total = 0
+                                async for chunk in resp.content.iter_chunked(8192):
+                                    total += len(chunk)
+                                if total < SPEED_REQUIRED_BYTES:
+                                    failed_target = f"{target_kind}:only-{total}B"
+                                    break
+                    latencies.append((time.monotonic() - tstart) * 1000)
                 except Exception as e:
-                    failed_target = f"{target_url[8:28]} {type(e).__name__}"
+                    failed_target = f"{target_kind}:{type(e).__name__}"
                     break
 
-            if failed_target:
-                result.error = failed_target
-            elif len(latencies) == len(TEST_TARGETS):
-                avg_ms = sum(latencies) // len(latencies)
-                # 延迟必须在合理范围
-                if avg_ms < MIN_LATENCY_MS:
-                    result.error = f"latency too low ({avg_ms}ms) - likely fake"
-                elif avg_ms > MAX_LATENCY_MS:
-                    result.error = f"latency too high ({avg_ms}ms)"
+            if failed_target is None and latencies:
+                # 取前 3 个目标的平均延迟（不算下载耗时）
+                latency_targets = [l for l, (_, k) in zip(latencies, TEST_TARGETS) if k != "speed"]
+                avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0]
+                # 拒绝异常低延迟（< 30ms，可能是回环假节点）
+                if avg_latency < 30:
+                    result.error = f"latency-too-low:{avg_latency:.1f}ms"
                 else:
                     result.success = True
-                    result.latency_ms = avg_ms
+                    result.latency_ms = avg_latency
+            else:
+                result.error = failed_target or "no-test-completed"
 
         except Exception as e:
             result.error = f"start: {e}"

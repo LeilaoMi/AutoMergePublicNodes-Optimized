@@ -40,6 +40,47 @@ def dedupe(nodes: List[Node]) -> List[Node]:
     return out
 
 
+# 协议优先级（数字越小越好；reality > hy2 > tuic > trojan > vmess > ss）
+_PROTO_PRIORITY = {
+    "vless": 0, "hysteria2": 1, "tuic": 2, "trojan": 3,
+    "vmess": 4, "anytls": 4, "wireguard": 4,
+    "shadowsocks": 5, "shadowsocksr": 6,
+    "socks": 7, "http": 7,
+}
+
+
+def protocol_priority(t: str) -> int:
+    return _PROTO_PRIORITY.get(t, 9)
+
+
+# 端口黑名单（容易被运营商干扰 / 明文）
+_PORT_BLOCKLIST = {0, 80, 8080}
+
+
+def quality_prefilter(nodes: List[Node]) -> List[Node]:
+    """质量预过滤：剔除无效端口、按 server+protocol 强去重、同 server 限 2 个"""
+    # 1) 端口黑名单
+    nodes = [n for n in nodes if n.server_port not in _PORT_BLOCKLIST]
+
+    # 2) 同 server+protocol+port 已经被 dedupe 处理；这里按 (server, type) 再去重
+    by_st: Dict[tuple, Node] = {}
+    for n in nodes:
+        key = (n.server, n.type)
+        if key not in by_st:
+            by_st[key] = n
+    step2 = list(by_st.values())
+
+    # 3) 同 server IP 最多保留 2 个（按协议优先级排）
+    by_server: Dict[str, List[Node]] = {}
+    for n in step2:
+        by_server.setdefault(n.server, []).append(n)
+    out: List[Node] = []
+    for server, lst in by_server.items():
+        lst.sort(key=lambda n: protocol_priority(n.type))
+        out.extend(lst[:2])
+    return out
+
+
 async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: float = 3.0) -> List[Node]:
     """快速 TCP 预筛选：仅保留端口可达的节点"""
     sem = asyncio.Semaphore(concurrency)
@@ -92,6 +133,11 @@ async def run(args):
     print(f"[3/6] 去重: {len(all_nodes)} -> {len(nodes)}")
     for k, v in sorted(proto_count.items(), key=lambda x: -x[1]):
         print(f"        {k:14s}: {v}")
+
+    # 3.5) 质量预过滤
+    before = len(nodes)
+    nodes = quality_prefilter(nodes)
+    print(f"[3.5] 质量过滤（端口黑名单 + 同 server 限 2）: {before} -> {len(nodes)}")
 
     # 4) TCP 预筛选
     if args.tcp_check:
