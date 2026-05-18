@@ -19,7 +19,7 @@ import socket
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -81,26 +81,30 @@ def quality_prefilter(nodes: List[Node]) -> List[Node]:
     return out
 
 
-async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: float = 3.0) -> List[Node]:
-    """快速 TCP 预筛选：仅保留端口可达的节点"""
+async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: float = 3.0) -> List[Tuple[Node, float]]:
+    """快速 TCP 预筛选：返回 [(node, tcp_latency_ms)]，按延迟升序"""
     sem = asyncio.Semaphore(concurrency)
 
-    async def _check(n: Node) -> bool:
+    async def _check(n: Node):
         async with sem:
+            t0 = time.perf_counter()
             try:
                 fut = asyncio.open_connection(n.server, n.server_port)
                 reader, writer = await asyncio.wait_for(fut, timeout=timeout)
+                lat_ms = (time.perf_counter() - t0) * 1000
                 writer.close()
                 try:
                     await writer.wait_closed()
                 except Exception:
                     pass
-                return True
+                return (n, lat_ms)
             except Exception:
-                return False
+                return None
 
     results = await asyncio.gather(*[_check(n) for n in nodes], return_exceptions=True)
-    return [n for n, ok in zip(nodes, results) if ok is True]
+    ok = [r for r in results if isinstance(r, tuple)]
+    ok.sort(key=lambda x: x[1])
+    return ok
 
 
 async def run(args):
@@ -142,8 +146,10 @@ async def run(args):
     # 4) TCP 预筛选
     if args.tcp_check:
         print(f"[4/6] TCP 预筛选（并发 {args.tcp_concurrency}, 超时 {args.tcp_timeout}s）...")
-        nodes = await tcp_check_batch(nodes, args.tcp_concurrency, args.tcp_timeout)
-        print(f"      TCP 可达: {len(nodes)}")
+        tcp_results = await tcp_check_batch(nodes, args.tcp_concurrency, args.tcp_timeout)
+        print(f"      TCP 可达: {len(tcp_results)}")
+        nodes = [n for n, _ in tcp_results]
+        tcp_latency = {id(n): lat for n, lat in tcp_results}
     else:
         print(f"[4/6] 跳过 TCP 预筛选")
 
@@ -180,7 +186,7 @@ async def run(args):
         if valid:
             print(f"      最快: {valid[0][1]}ms  最慢: {valid[-1][1]}ms")
     else:
-        valid = [(n, 0) for n in nodes]
+        valid = sorted([(n, tcp_latency.get(id(n), 0)) for n in nodes], key=lambda x: x[1])
         print(f"[5/6] 跳过真实测试")
 
     # 取 Top N 并改名加入延迟
@@ -194,7 +200,7 @@ async def run(args):
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
     from core.generator import write_outputs
-    n_top = write_outputs(final_nodes, args.output_dir, prefix="top50")
+    n_top = write_outputs(final_nodes, args.output_dir, prefix="top")
     # 同时生成全量备份
     all_valid = [n for n, _ in valid]
     n_all = write_outputs(all_valid, args.output_dir, prefix="all")
@@ -233,7 +239,7 @@ def main():
     p.add_argument("--sources", default="config/sources.yaml")
     p.add_argument("--output-dir", default="output")
     p.add_argument("--singbox", default="./sing-box")
-    p.add_argument("--top-n", type=int, default=50, help="最终输出的节点数")
+    p.add_argument("--top-n", type=int, default=100, help="最终输出的节点数")
 
     p.add_argument("--fetch-concurrency", type=int, default=30)
     p.add_argument("--fetch-timeout", type=int, default=15)
@@ -242,11 +248,11 @@ def main():
     p.add_argument("--tcp-concurrency", type=int, default=200)
     p.add_argument("--tcp-timeout", type=float, default=3.0)
 
-    p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=False)
     p.add_argument("--test-concurrency", type=int, default=30)
     p.add_argument("--test-timeout", type=float, default=6.0)
     p.add_argument("--startup-wait", type=float, default=0.6)
-    p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
+    p.add_argument("--test-limit", type=int, default=0, help="送入真实测试的最大节点数(0=不限)")
 
     args = p.parse_args()
     asyncio.run(run(args))

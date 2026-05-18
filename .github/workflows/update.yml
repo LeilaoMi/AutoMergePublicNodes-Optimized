@@ -6,15 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       top_n:
-        description: '最终输出节点数 (Top N)'
+        description: '最终输出节点数 (Top N，按 TCP 延迟)'
         required: false
-        default: '50'
-      test_limit:
-        description: '送入真实测试的节点上限'
-        required: false
-        default: '500'
-      no_real_test:
-        description: '跳过真实测试（仅 TCP）'
+        default: '100'
+      real_test:
+        description: '附加 sing-box 真实代理测试（CI 环境视角，参考意义有限）'
         type: boolean
         default: false
       audit:
@@ -32,7 +28,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 40
 
     steps:
       - uses: actions/checkout@v4
@@ -44,17 +40,15 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Download sing-box
+      - name: Download sing-box (only when real-test enabled)
+        if: ${{ github.event.inputs.real_test == 'true' }}
         run: |
           VERSION=$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
           VER_NUM="${VERSION#v}"
           ARCHIVE="sing-box-${VER_NUM}-linux-amd64.tar.gz"
-          URL="https://github.com/SagerNet/sing-box/releases/download/${VERSION}/${ARCHIVE}"
-          echo "Downloading $URL"
-          curl -fsSL -o sb.tar.gz "$URL"
+          curl -fsSL -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/${ARCHIVE}"
           tar -xzf sb.tar.gz
           mv "sing-box-${VER_NUM}-linux-amd64/sing-box" ./sing-box
           chmod +x ./sing-box
@@ -69,9 +63,9 @@ jobs:
 
       - name: Run pipeline
         run: |
-          ARGS="--top-n ${{ github.event.inputs.top_n || '50' }} --test-limit ${{ github.event.inputs.test_limit || '500' }}"
-          if [ "${{ github.event.inputs.no_real_test }}" = "true" ]; then
-            ARGS="$ARGS --no-real-test"
+          ARGS="--top-n ${{ github.event.inputs.top_n || '100' }}"
+          if [ "${{ github.event.inputs.real_test }}" = "true" ]; then
+            ARGS="$ARGS --real-test --test-limit 500"
           fi
           python main.py $ARGS
 
@@ -89,6 +83,8 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
+          # 清理旧的 top50.* 文件（已改名为 top.*）
+          git rm -f output/top50.* 2>/dev/null || true
           git add output/ 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "no changes"
@@ -102,6 +98,6 @@ jobs:
         continue-on-error: true
         run: |
           REPO="${{ github.repository }}"
-          for f in top50.txt top50.yaml top50.json top50.urls all.txt stats.json; do
+          for f in top.txt top.yaml top.json top.urls all.txt all.yaml all.json all.urls stats.json; do
             curl -s "https://purge.jsdelivr.net/gh/${REPO}@main/output/${f}" >/dev/null || true
           done
