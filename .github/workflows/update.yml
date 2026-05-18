@@ -2,17 +2,38 @@ name: Update Nodes
 
 on:
   schedule:
-    - cron: '0 */12 * * *'
+    - cron: '0 */6 * * *'  # 每 6 小时
   workflow_dispatch:
     inputs:
-      skip_real_test:
-        description: '跳过真实代理测试'
+      top_n:
+        description: '最终输出节点数 (Top N)'
+        required: false
+        default: '50'
+      test_limit:
+        description: '送入真实测试的节点上限'
+        required: false
+        default: '500'
+      no_real_test:
+        description: '跳过真实测试（仅 TCP）'
         type: boolean
         default: false
+      audit:
+        description: '运行订阅源审计'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-nodes
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 50
+
     steps:
       - uses: actions/checkout@v4
 
@@ -20,79 +41,67 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
 
       - name: Install dependencies
         run: |
-          pip install pyyaml requests
-          pip install git+https://github.com/peasoft/requests-file.git
+          pip install -r requirements.txt
 
-      - name: Fetch nodes
+      - name: Download sing-box
         run: |
-          python fetch.py
-          if [ -f list.yml ]; then
-            TOTAL=$(grep -c "type:" list.yml || echo "0")
-            echo "抓取节点: $TOTAL"
+          VERSION=$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
+          VER_NUM="${VERSION#v}"
+          ARCHIVE="sing-box-${VER_NUM}-linux-amd64.tar.gz"
+          URL="https://github.com/SagerNet/sing-box/releases/download/${VERSION}/${ARCHIVE}"
+          echo "Downloading $URL"
+          curl -fsSL -o sb.tar.gz "$URL"
+          tar -xzf sb.tar.gz
+          mv "sing-box-${VER_NUM}-linux-amd64/sing-box" ./sing-box
+          chmod +x ./sing-box
+          ./sing-box version
+
+      - name: Audit sources (optional)
+        if: ${{ github.event.inputs.audit == 'true' }}
+        run: |
+          python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json
+          echo "----- 失效源 -----"
+          python -c "import json; rows=json.load(open('output/source_audit.json')); [print(r['url']) for r in rows if not r['ok'] or r['nodes']==0]"
+
+      - name: Run pipeline
+        run: |
+          ARGS="--top-n ${{ github.event.inputs.top_n || '50' }} --test-limit ${{ github.event.inputs.test_limit || '500' }}"
+          if [ "${{ github.event.inputs.no_real_test }}" = "true" ]; then
+            ARGS="$ARGS --no-real-test"
           fi
-        continue-on-error: true
+          python main.py $ARGS
 
-      - name: TCP connectivity test
+      - name: Show output
+        if: always()
         run: |
-          if [ -f list.yml ]; then
-            python filter.py
-            if [ -f list.yml ]; then
-              VALID=$(grep -c "^- " list.yml || echo "0")
-              echo "TCP可达节点: $VALID"
-            fi
-          fi
+          echo "----- output/ -----"
+          ls -lh output/ || true
+          echo ""
+          echo "----- stats.json -----"
+          cat output/stats.json || true
 
-      - name: Download Xray
-        if: ${{ github.event.inputs.skip_real_test != 'true' }}
-        run: |
-          VERSION=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r '.tag_name')
-          curl -L -o xray.zip "https://github.com/XTLS/Xray-core/releases/download/${VERSION}/Xray-linux-64.zip"
-          unzip -o xray.zip
-          chmod +x xray
-          echo "Xray ${VERSION} 下载完成"
-
-      - name: Real proxy test
-        if: ${{ github.event.inputs.skip_real_test != 'true' && hashFiles('list.yml') != '' }}
-        run: |
-          python xray_test.py --input list.yml --output valid_nodes.txt --xray ./xray --max-workers 50
-          if [ -s valid_nodes.txt ]; then
-            VALID=$(wc -l < valid_nodes.txt)
-            echo "真实可用节点: $VALID"
-          else
-            echo "真实可用节点: 0"
-          fi
-        continue-on-error: true
-
-      - name: Filter valid nodes
-        if: ${{ hashFiles('valid_nodes.txt') != '' && hashFiles('list.yml') != '' }}
-        run: python filter_valid.py
-
-      - name: Generate output
-        run: |
-          mkdir -p output
-          if [ -f list.yml ]; then
-            python generate_output.py
-            TOTAL=$(grep -c "type:" list.yml || echo "0")
-            echo "最终节点: $TOTAL"
-          fi
-        continue-on-error: true
-
-      - name: Commit and push
-        run: |
-          git config user.email "action@github.com"
-          git config user.name "GitHub Action"
-          git add output/ list.yml list.txt 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "Update: $(date '+%Y-%m-%d %H:%M')"
-          git push
-
-      - name: Purge CDN
+      - name: Commit & push
         if: success()
         run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add output/ 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "no changes"
+          else
+            git commit -m "chore: update nodes $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
+
+      - name: Purge jsDelivr cache
+        if: success()
+        continue-on-error: true
+        run: |
           REPO="${{ github.repository }}"
-          BRANCH="main"
-          for f in clash.yml list.txt; do
-            curl -s "https://purge.jsdelivr.net/gh/${REPO}@${BRANCH}/output/${f}" || true
+          for f in top50.txt top50.yaml top50.json top50.urls all.txt stats.json; do
+            curl -s "https://purge.jsdelivr.net/gh/${REPO}@main/output/${f}" >/dev/null || true
           done
