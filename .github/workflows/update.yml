@@ -39,8 +39,8 @@ jobs:
         run: |
           if [ -f list.yml ]; then
             python filter.py
-            if [ -f list.txt ]; then
-              VALID=$(wc -l < list.txt)
+            if [ -f list.yml ]; then
+              VALID=$(grep -c "^- " list.yml || echo "0")
               echo "TCP可达节点: $VALID"
             fi
           fi
@@ -57,11 +57,14 @@ jobs:
       - name: Real proxy test
         if: ${{ github.event.inputs.skip_real_test != 'true' && hashFiles('list.yml') != '' }}
         run: |
-          python xray_test.py list.yml --output valid_nodes.txt --timeout 10 --concurrent 50
+          python xray_test.py --input list.yml --output valid_nodes.txt --xray ./xray --max-workers 50
           if [ -s valid_nodes.txt ]; then
             VALID=$(wc -l < valid_nodes.txt)
             echo "真实可用节点: $VALID"
+          else
+            echo "真实可用节点: 0"
           fi
+        continue-on-error: true
 
       - name: Filter valid nodes
         if: ${{ hashFiles('valid_nodes.txt') != '' && hashFiles('list.yml') != '' }}
