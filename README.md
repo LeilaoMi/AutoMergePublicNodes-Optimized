@@ -12,17 +12,15 @@
 - 🌐 **动态 URL**：支持 `%Y/%m/%d` 日期模板自动填充
 - 🔍 **源审计工具**：一键检测哪些源失效了
 
-## 📌 订阅链接
+## 📌 订阅链接（公开仓库，永久有效）
 
-> 替换 `LeilaoMi/AutoMergePublicNodes-Optimized` 为你的仓库路径
+### 🎯 Top 50（按延迟排序的最优节点）
 
-| 客户端 | 链接 |
-|--------|------|
-| **Karing / sing-box** | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top50.json` |
-| **Clash / Mihomo** | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top50.yaml` |
-| **V2RayN / v2rayNG** | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top50.txt` |
-| 节点 URL 列表 | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top50.urls` |
-| 统计信息 | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/stats.json` |
+| 客户端 | GitHub raw（直链） | jsDelivr CDN（国内推荐） |
+|--------|-------------------|--
+| **Karing / sing-box** | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top50.json` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/top50.json` |
+| **Clash / Mihomo** | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top50.yaml` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/top50.yaml` |
+| **V2RayN / v2rayNG** | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top50.txt` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/top50.txt` |
 
 `all.*` 系列是测试通过的所有节点（不限 50）。
 
