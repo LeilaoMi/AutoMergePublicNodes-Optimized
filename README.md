@@ -31,7 +31,7 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/o
 ## 🔧 工作流程(改 v2 后的现状)
 
 ```
-20 个活跃公开源
+30 个活跃公开源
     ↓ 异步抓取 (并发 30)
     ↓ 多协议解析 (vless / vmess / trojan / ss / hysteria2 / tuic / ...)
     ↓ 协议级质量过滤 (UUID 格式、字段完整性等)
@@ -42,14 +42,15 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/o
     ↓ 过滤同机房假节点(延迟 < MIN_LATENCY_MS)
     ↓ 按真实延迟升序排
     ↓
-verified.* (Top 100 真通)  +  all.* (全量去重备份)
+verified.* (Top 100 真测过)  +  all.* (全量 8K+ 去重池, ~2.3MB)
 ```
 
 **关键改动 vs 上版**:
 - ✅ 默认开 `--real-test` —— Actions 跑 sing-box 真测,过滤掉 TCP 通但代理死的"假节点"
 - ✅ 默认开 `--quality-filter` —— 协议级字段校验
 - ✅ 默认 `--test-limit 500` —— Actions 时间可控
-- ✅ 删了 31 个 404/0 节点的死源 (51→20)
+- ✅ 源池重整为 30 个:删 31 个 404/0 节点死源 + 增 10 个高 star 社区源(snakem982/peasoft/mahdibland 等)
+- ✅ 修了 `all.*` 误等于 TCP 子集的 bug — 现在 all.yaml 真包含 8K+ 去重池
 - ❌ 取消 `top.*` 输出(那时按 TCP 延迟排,误导性强),改为 `verified.*` (真测过的)
 
 ---
@@ -83,7 +84,7 @@ AutoMergePublicNodes-Optimized/
 │   ├── tester.py            # sing-box 真实代理测试器
 │   └── generator.py         # 输出 yaml/json/txt/url
 ├── tools/audit_sources.py   # 源健康审计
-├── config/sources.yaml      # 20 个活跃源
+├── config/sources.yaml      # 30 个活跃源
 ├── output/                  # CI 写出的订阅
 └── .github/workflows/update.yml
 ```
