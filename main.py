@@ -134,6 +134,7 @@ async def run(args):
 
     # 3) 去重
     nodes = dedupe(all_nodes)
+    dedup_pool = list(nodes)  # 保存完整 deduped 池(8K+),供 all.* 输出
     print(f"[3/6] 去重: {len(all_nodes)} -> {len(nodes)}")
     for k, v in sorted(proto_count.items(), key=lambda x: -x[1]):
         print(f"        {k:14s}: {v}")
@@ -206,8 +207,8 @@ async def run(args):
     from core.generator import write_outputs
     n_top = write_outputs(final_nodes, args.output_dir, prefix="verified")
     # 同时生成全量备份(未测速,供客户端再测)
-    # all.* = 全量 deduped 池(不论是否测过),供客户端再测;verified.* 才是已验证子集
-    all_valid = nodes
+    # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
+    all_valid = dedup_pool
     n_all = write_outputs(all_valid, args.output_dir, prefix="all")
 
     elapsed = time.time() - t0

@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 import aiohttp
+from aiohttp_socks import ProxyConnector
 
 from core.parser import Node
 
@@ -37,9 +38,7 @@ TEST_TARGETS = [
 SPEED_REQUIRED_BYTES = 100_000
 SPEED_TIMEOUT_SEC = 8
 
-# 延迟过滤：< MIN_LATENCY_MS 通常是同机房假节点；> MAX 用户用不了
-MIN_LATENCY_MS = 50
-MAX_LATENCY_MS = 2000
+MIN_LATENCY_MS = 30  # 低于此值视为同机房假节点
 
 
 @dataclass
@@ -137,12 +136,6 @@ class SingBoxTester:
                 return result
 
             # 严格测试：必须两个被墙的 HTTPS 端点都返回 204
-            try:
-                from aiohttp_socks import ProxyConnector
-            except ImportError:
-                result.error = "aiohttp_socks not installed"
-                return result
-
             latencies = []
             failed_target = None
             for target_url, target_kind in TEST_TARGETS:
@@ -190,7 +183,7 @@ class SingBoxTester:
                 latency_targets = [l for l, (_, k) in zip(latencies, TEST_TARGETS) if k != "speed"]
                 avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0]
                 # 拒绝异常低延迟（< 30ms，可能是回环假节点）
-                if avg_latency < 30:
+                if avg_latency < MIN_LATENCY_MS:
                     result.error = f"latency-too-low:{avg_latency:.1f}ms"
                 else:
                     result.success = True
