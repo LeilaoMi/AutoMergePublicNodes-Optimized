@@ -11,95 +11,64 @@
 # ============================================================
 
 sources:
-  # ─────────────────────────────────────────────
-  # 顶级源：活跃聚合器，已通过审计
-  # ─────────────────────────────────────────────
-
-  # rtwo2/FastNodes - 每 3 小时更新，多协议，已测速
-  - { url: "https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/everything.txt", name: "FastNodes-all", kind: url }
-  - { url: "https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/protocols/hysteria2.txt", name: "FastNodes-hy2", kind: url }
-  - { url: "https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/protocols/vless.txt", name: "FastNodes-vless", kind: url }
-  - { url: "https://raw.githubusercontent.com/rtwo2/FastNodes/main/sub/protocols/trojan.txt", name: "FastNodes-trojan", kind: url }
-
-  # VovaplusEXP/p-configs - 每 6 小时，REALITY 单独输出
-  - { url: "https://raw.githubusercontent.com/VovaplusEXP/p-configs/main/vless.txt", name: "p-configs-vless", kind: url }
-  - { url: "https://raw.githubusercontent.com/VovaplusEXP/p-configs/main/vmess.txt", name: "p-configs-vmess", kind: url }
-  - { url: "https://raw.githubusercontent.com/VovaplusEXP/p-configs/main/trojan.txt", name: "p-configs-trojan", kind: url }
-  - { url: "https://raw.githubusercontent.com/VovaplusEXP/p-configs/main/hysteria2.txt", name: "p-configs-hy2", kind: url }
-  - { url: "https://raw.githubusercontent.com/VovaplusEXP/p-configs/main/tuic.txt", name: "p-configs-tuic", kind: url }
-
-  # Au1rxx/free-vpn-subscriptions - 每小时，已做真实测速
-  - { url: "https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt", name: "Au1rxx-base64", kind: url }
-  - { url: "https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/clash.yaml", name: "Au1rxx-clash", kind: url }
-
-  # tonykongcn/free-vpn-subscriptions - 每小时
-  - { url: "https://raw.githubusercontent.com/tonykongcn/free-vpn-subscriptions/main/output/clash.yaml", name: "tonykong-clash", kind: url }
-  - { url: "https://raw.githubusercontent.com/tonykongcn/free-vpn-subscriptions/main/output/v2ray-base64.txt", name: "tonykong-base64", kind: url }
-
-  # ninjastrikers/v2ray-configs - 每 60 分钟
-  - { url: "https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/mixed.txt", name: "ninja-mixed", kind: url }
-  - { url: "https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/vless.txt", name: "ninja-vless", kind: url }
-  - { url: "https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/hysteria.txt", name: "ninja-hy2", kind: url }
-  - { url: "https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/tuic.txt", name: "ninja-tuic", kind: url }
-
-  # Surfboardv2ray/TGParse - 从 TG 频道聚合
-  - { url: "https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/mixed", name: "Surfboard-tg-mixed", kind: url }
-  - { url: "https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/vless", name: "Surfboard-tg-vless", kind: url }
-  - { url: "https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/hysteria", name: "Surfboard-tg-hy2", kind: url }
-
-  # MhdiTaheri/V2rayCollector - TG 频道聚合
-  - { url: "https://raw.githubusercontent.com/MhdiTaheri/V2rayCollector/main/sub/Mix/mix.txt", name: "MhdiTaheri-mix", kind: url }
-  - { url: "https://raw.githubusercontent.com/MhdiTaheri/V2rayCollector/main/sub/vless_iran.txt", name: "MhdiTaheri-vless", kind: url }
-
-  # mheidari98/.proxy - 大量原始节点
-  - { url: "https://raw.githubusercontent.com/mheidari98/.proxy/main/all", name: "mheidari-all", kind: url, max_nodes: 2000 }
-
-  # Barabama/FreeNodes - 持续更新
-  - { url: "https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/wenode.txt", name: "Barabama-we", kind: url }
-  - { url: "https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/yudou66.txt", name: "Barabama-yudou", kind: url }
-
-  # snakem982/proxypool - Clash Meta 格式
-  - { url: "https://raw.githubusercontent.com/snakem982/proxypool/main/source/clash-meta.yaml", name: "snakem982", kind: url }
-
-  # NiREvil/vless - 每小时更新
-  - { url: "https://raw.githubusercontent.com/NiREvil/vless/main/sub/vless.txt", name: "NiREvil-vless", kind: url }
-  - { url: "https://raw.githubusercontent.com/NiREvil/vless/main/sub/hysteria2.txt", name: "NiREvil-hy2", kind: url }
-
-  # nikita29a/FreeProxyList - 每日更新（Reality/HY2/TUIC）
-  - { url: "https://raw.githubusercontent.com/nikita29a/FreeProxyList/main/All_Configs_Sub.txt", name: "nikita29a", kind: url }
-
-  # NiceVPN - 大列表
-  - { url: "https://raw.githubusercontent.com/NiceVPN123/NiceVPN/main/Clash.yaml", name: "NiceVPN", kind: url, max_nodes: 1500 }
-
-  # vxiaov/free_proxies - jsDelivr 镜像
-  - { url: "https://cdn.jsdelivr.net/gh/vxiaov/free_proxies@main/clash/clash.provider.yaml", name: "vxiaov", kind: url }
-
-  # ─────────────────────────────────────────────
-  # 动态日期 URL（每日生成新订阅）
-  # ─────────────────────────────────────────────
-  - { url: "https://node.oneclash.cc/%Y/%m/%Y%m%d.yaml", name: "oneclash-daily", kind: dynamic }
-  - { url: "https://hysteria2.github.io/uploads/%Y/%m/%Y%m%d.yaml", name: "hysteria2-site", kind: dynamic }
-  - { url: "https://freev2rayclash.github.io/uploads/%Y/%m/%Y%m%d.yaml", name: "freev2rayclash", kind: dynamic }
-  - { url: "https://v2rayclashnodes.github.io/uploads/%Y/%m/%Y%m%d.yaml", name: "v2rayclashnodes", kind: dynamic }
-  - { url: "https://clashpronode.github.io/uploads/%Y/%m/%Y%m%d.yaml", name: "clashpronode", kind: dynamic }
-  - { url: "https://free-clash-v2ray.github.io/uploads/%Y/%m/%Y%m%d.yaml", name: "free-clash-v2ray", kind: dynamic }
-
-  # ─────────────────────────────────────────────
-  # 老牌稳定源
-  # ─────────────────────────────────────────────
-  - { url: "https://raw.githubusercontent.com/freefq/free/master/v2", name: "freefq", kind: url }
-  - { url: "https://raw.githubusercontent.com/aiboboxx/v2rayfree/main/v2", name: "aiboboxx", kind: url }
-  - { url: "https://raw.githubusercontent.com/aiboboxx/clashfree/main/clash.yml", name: "aiboboxx-clash", kind: url }
-  - { url: "https://raw.githubusercontent.com/anaer/Sub/main/clash.yaml", name: "anaer", kind: url }
-  - { url: "https://raw.githubusercontent.com/learnhard-cn/free_proxy_ss/main/clash/clash.provider.yaml", name: "learnhard", kind: url }
-  - { url: "https://raw.githubusercontent.com/ts-sf/fly/main/clash", name: "ts-sf", kind: url }
-  - { url: "https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub", name: "Pawdroid", kind: url }
-  - { url: "https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt", name: "ermaozi", kind: url }
-  - { url: "https://raw.githubusercontent.com/zhangkaiitugithub/passcro/main/speednodes.yaml", name: "zhangkai", kind: url }
-  - { url: "https://raw.githubusercontent.com/Mr8AHAL/v2ray/main/SERVER.txt", name: "Mr8AHAL", kind: url }
-  - { url: "https://raw.githubusercontent.com/free-nodes/clashfree/main/clash.yml", name: "free-nodes-clashfree", kind: url }
-
-  # Alvin9999 - Clash Meta 系列
-  - { url: "https://raw.githubusercontent.com/Alvin9999/pac2/master/clash.meta2/config.yaml", name: "Alvin9999-0", kind: url }
-  - { url: "https://raw.githubusercontent.com/Alvin9999/pac2/master/clash.meta2/1/config.yaml", name: "Alvin9999-1", kind: url }
-  - { url: "https://raw.githubusercontent.com/Alvin9999/pac2/master/clash.meta2/13/config.yaml", name: "Alvin9999-13", kind: url }
+- url: https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt
+  name: Au1rxx-base64
+  kind: url
+- url: https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/clash.yaml
+  name: Au1rxx-clash
+  kind: url
+- url: https://raw.githubusercontent.com/tonykongcn/free-vpn-subscriptions/main/output/clash.yaml
+  name: tonykong-clash
+  kind: url
+- url: https://raw.githubusercontent.com/tonykongcn/free-vpn-subscriptions/main/output/v2ray-base64.txt
+  name: tonykong-base64
+  kind: url
+- url: https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/vless.txt
+  name: ninja-vless
+  kind: url
+- url: https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/hysteria.txt
+  name: ninja-hy2
+  kind: url
+- url: https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/tuic.txt
+  name: ninja-tuic
+  kind: url
+- url: https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/mixed
+  name: Surfboard-tg-mixed
+  kind: url
+- url: https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/vless
+  name: Surfboard-tg-vless
+  kind: url
+- url: https://raw.githubusercontent.com/mheidari98/.proxy/main/all
+  name: mheidari-all
+  kind: url
+  max_nodes: 2000
+- url: https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/wenode.txt
+  name: Barabama-we
+  kind: url
+- url: https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/yudou66.txt
+  name: Barabama-yudou
+  kind: url
+- url: https://raw.githubusercontent.com/snakem982/proxypool/main/source/clash-meta.yaml
+  name: snakem982
+  kind: url
+- url: https://cdn.jsdelivr.net/gh/vxiaov/free_proxies@main/clash/clash.provider.yaml
+  name: vxiaov
+  kind: url
+- url: https://raw.githubusercontent.com/freefq/free/master/v2
+  name: freefq
+  kind: url
+- url: https://raw.githubusercontent.com/ts-sf/fly/main/clash
+  name: ts-sf
+  kind: url
+- url: https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub
+  name: Pawdroid
+  kind: url
+- url: https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt
+  name: ermaozi
+  kind: url
+- url: https://raw.githubusercontent.com/zhangkaiitugithub/passcro/main/speednodes.yaml
+  name: zhangkai
+  kind: url
+- url: https://raw.githubusercontent.com/Mr8AHAL/v2ray/main/SERVER.txt
+  name: Mr8AHAL
+  kind: url
