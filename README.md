@@ -1,114 +1,115 @@
-# autonodes
+# AutoMergePublicNodes
 
-🚀 **自动聚合公开代理节点 + TCP 预筛选 + 客户端实测**
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue)]()
+[![Update Nodes](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)]()
 
-> ⚠️ **设计理念**：GitHub Actions 在美国机房，**"美国 CI 能连通" ≠ "中国手机能用"**。
-> 实测发现 CI 严测反而会过滤掉本来能用的节点。
-> 所以本项目默认 **只做基础质量过滤 + TCP 可达性检查**，把"真实代理可用"的最终判断**交给你的客户端**（Karing / v2rayN 等都自带延迟测试）。
+> 自动聚合公开代理节点 · GitHub Actions 用 sing-box 做**真实代理测试** · 每 6 小时更新
 
-## ✨ 特性
+⚠️ **声明:仅供学习研究,公开节点稳定性差,请自行甄别合规风险**
 
-- 📡 **全协议支持**：vmess / vless / trojan / ss / ssr / hysteria / hysteria2 / tuic / anytls / wireguard / socks5 / http
-- 🔁 **自动更新**：GitHub Actions 每 6 小时跑一次
-- 🧹 **质量过滤**：去重 / 端口黑名单（0/80/8080）/ 同 server 限 2 个 / 协议优先级
-- ⚡ **TCP 可达性**：剔除连不上的死节点，按 TCP 延迟排序
-- 📦 **大池子 + 精选**：`all.*` 全部可达节点（约 1500 个），`top.*` 延迟最低的 100 个
-- 📥 **4 种格式**：sing-box JSON / Clash YAML / V2Ray Base64 / URL 列表
-- 🌐 **动态 URL**：支持 `%Y/%m/%d` 日期模板自动填充
-- 🔍 **源审计工具**：一键检测哪些源失效了
-- 🧪 **可选真测**：手动触发时可加 `--real-test`（仅供参考）
+---
 
-## 📌 订阅链接（公开仓库，永久有效）
+## 📦 订阅地址
 
-### 推荐用法
+| 用途 | 文件 | 推荐场景 |
+|---|---|---|
+| ⭐ **真测过的优选节点** | `output/verified.yaml` / `verified.json` / `verified.txt` | **优先用这个**,从 US Actions 视角 HTTP 真测过 |
+| 📦 全量未测节点 | `output/all.yaml` / `all.json` / `all.txt` | verified 不够用时备用,自己客户端测速 |
+| 📊 运行统计 | `output/stats.json` | 健康源数、协议分布、Top 延迟 |
 
-**导入 `all.*` 到客户端，用客户端的"延迟测试"在你的真实网络环境下挑选。**
-
-### 🌍 全部可达节点
-
-| 客户端 | GitHub raw（直链） | jsDelivr CDN（国内加速） |
-|--------|-------------------|------------------------|
-| Karing / sing-box | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.json` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.json` |
-| Clash / Mihomo | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.yaml` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.yaml` |
-| V2RayN / v2rayNG | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.txt` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.txt` |
-
-### 🎯 精选 Top 100（按 TCP 延迟最低）
-
-| 客户端 | GitHub raw | jsDelivr CDN |
-|--------|------------|--------------|
-| Karing / sing-box | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top.json` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/top.json` |
-| Clash / Mihomo | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top.yaml` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/top.yaml` |
-| V2RayN / v2rayNG | `https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/top.txt` | `https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/top.txt` |
-
-## 🛠️ 本地运行
-
-```bash
-pip install -r requirements.txt
-
-# 默认模式（推荐）：抓取 → 去重 → TCP 检查 → 输出
-python main.py
-
-# 加上 sing-box 真测（仅参考，CI 视角）
-python main.py --real-test
-
-# 审计订阅源
-python tools/audit_sources.py
-```
-
-## ⚙️ 命令行参数
+复制 raw URL 导入 v2rayN / Karing / Clash Meta:
 
 ```
---top-n N              top.* 输出节点数（默认 100，按 TCP 延迟）
---tcp-check / --no-tcp-check    默认开
---tcp-concurrency N    默认 200
---tcp-timeout S        默认 3
---real-test            可选启用 sing-box 真测（默认关闭）
---test-limit N         真测时下采样上限（默认 0=不限）
---fetch-concurrency N  默认 30
---fetch-timeout S      默认 15
+https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.txt
+https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.yaml
+https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.yaml
 ```
 
-## 📂 项目结构
+---
+
+## 🔧 工作流程(改 v2 后的现状)
 
 ```
-autonodes/
-├── core/                  # 核心模块
-│   ├── parser.py          # 协议解析（统一为 sing-box outbound）
-│   ├── fetcher.py         # 异步订阅抓取（支持动态 URL / 列表）
-│   ├── tester.py          # sing-box 真实测试（可选）
-│   └── generator.py       # 4 种格式订阅生成
-├── tools/
-│   └── audit_sources.py   # 源审计
-├── config/
-│   └── sources.yaml       # 订阅源配置
-├── output/                # 生成的订阅文件
-├── main.py                # 入口
+20 个活跃公开源
+    ↓ 异步抓取 (并发 30)
+    ↓ 多协议解析 (vless / vmess / trojan / ss / hysteria2 / tuic / ...)
+    ↓ 协议级质量过滤 (UUID 格式、字段完整性等)
+    ↓ 按指纹去重 (server + port + protocol-specific)
+    ↓ TCP 预筛选 (并发 200) - 滤掉端口都不通的死节点
+    ↓ 按协议分层下采样到 500 (避免单一协议挤占)
+    ↓ ★ sing-box 真测 (并发 30) - 启动节点本地 SOCKS,实际 fetch Google/Cloudflare
+    ↓ 过滤同机房假节点(延迟 < MIN_LATENCY_MS)
+    ↓ 按真实延迟升序排
+    ↓
+verified.* (Top 100 真通)  +  all.* (全量去重备份)
+```
+
+**关键改动 vs 上版**:
+- ✅ 默认开 `--real-test` —— Actions 跑 sing-box 真测,过滤掉 TCP 通但代理死的"假节点"
+- ✅ 默认开 `--quality-filter` —— 协议级字段校验
+- ✅ 默认 `--test-limit 500` —— Actions 时间可控
+- ✅ 删了 31 个 404/0 节点的死源 (51→20)
+- ❌ 取消 `top.*` 输出(那时按 TCP 延迟排,误导性强),改为 `verified.*` (真测过的)
+
+---
+
+## ⚠️ 重要提示:CI 视角 vs 你的视角
+
+GitHub Actions 在**美国机房**跑测试,即使节点在 CI 视角通过,**在你网络下仍可能**:
+- 被你 ISP 阻断(QoS / RST)
+- 被 GFW 干扰
+- 节点已被分享给一万人达到限速
+
+所以**导入后还是要在客户端再测一遍**,v2rayN 的"测试所有 真实延迟"是最终标准。verified 的意义是**预先筛掉那些连 US 都连不通的纯死节点**,让你在客户端测的命中率从 ~5% 提高到 ~30-50%。
+
+---
+
+## 🔄 触发更新
+
+- **自动**:GitHub Actions 每 6 小时跑一次 cron,把 `output/*` 自动 commit 回 main
+- **手动**:仓库 `Actions → Update Nodes → Run workflow`,可自定义 `top_n` / `test_limit` / 是否同时跑源审计
+
+---
+
+## 📁 项目结构
+
+```
+AutoMergePublicNodes-Optimized/
+├── main.py                  # 主调度
+├── core/
+│   ├── fetcher.py           # 异步抓取
+│   ├── parser.py            # 多协议解析(vless/vmess/trojan/ss/hy2/tuic/...)
+│   ├── tester.py            # sing-box 真实代理测试器
+│   └── generator.py         # 输出 yaml/json/txt/url
+├── tools/audit_sources.py   # 源健康审计
+├── config/sources.yaml      # 20 个活跃源
+├── output/                  # CI 写出的订阅
 └── .github/workflows/update.yml
 ```
 
-## 📜 添加/移除订阅源
+---
 
-编辑 `config/sources.yaml`：
+## 🧪 本地手动跑(可选)
 
-```yaml
-sources:
-  - { url: "https://example.com/sub.txt", name: "示例", kind: url }
-  - { url: "https://example.com/uploads/%Y/%m/%Y%m%d.yaml", name: "动态日期", kind: dynamic }
-  - { url: "https://example.com/list.txt", name: "订阅列表", kind: list }
-  - { url: "...", name: "带过滤", ignore_protocols: [ssr], max_nodes: 200 }
+```bash
+git clone https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized.git
+cd AutoMergePublicNodes-Optimized
+pip install -r requirements.txt
+
+# 下载 sing-box(macOS/Linux)
+curl -fsSL https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.tar.gz | tar xz
+
+python main.py --top-n 100 --test-limit 500
 ```
 
-## 🤝 致谢
+---
 
-聚合了以下高质量公共源（2026 年仍在活跃更新）：
+## 📜 License
 
-- [rtwo2/FastNodes](https://github.com/rtwo2/FastNodes) - 每 3 小时
-- [VovaplusEXP/p-configs](https://github.com/VovaplusEXP/p-configs) - 每 6 小时
-- [Au1rxx/free-vpn-subscriptions](https://github.com/Au1rxx/free-vpn-subscriptions) - 每小时
-- [ninjastrikers/v2ray-configs](https://github.com/ninjastrikers/v2ray-configs) - 每 60 分钟
-- [MhdiTaheri/V2rayCollector](https://github.com/MhdiTaheri/V2rayCollector)
-- 以及 51 个其他 GitHub / Telegram 频道源
+MIT
 
-## ⚠️ 免责
+## 致谢
 
-所有节点均来自互联网公开来源。请合法使用，不要用于浏览敏感账户或财务网站。
+- [sing-box](https://github.com/SagerNet/sing-box) - 真测内核
+- 源贡献者:Au1rxx / tonykongcn / mheidari98 / ninjastrikers / Surfboardv2ray / Barabama / ts-sf / snakem982 / zhangkaiitugithub / qjlxg / vveg26 / Pawdroid / SnapdragonLee / freenode/proxypool / chengaopan / soroushmirzaei / mfuu
