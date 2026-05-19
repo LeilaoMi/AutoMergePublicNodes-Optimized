@@ -206,7 +206,8 @@ async def run(args):
     from core.generator import write_outputs
     n_top = write_outputs(final_nodes, args.output_dir, prefix="verified")
     # 同时生成全量备份(未测速,供客户端再测)
-    all_valid = [n for n, _ in valid] if args.real_test else nodes
+    # all.* = 全量 deduped 池(不论是否测过),供客户端再测;verified.* 才是已验证子集
+    all_valid = nodes
     n_all = write_outputs(all_valid, args.output_dir, prefix="all")
 
     elapsed = time.time() - t0
