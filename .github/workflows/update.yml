@@ -2,19 +2,19 @@ name: Update Nodes
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # 每 6 小时
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       top_n:
-        description: '最终输出节点数 (Top N，按 TCP 延迟)'
+        description: 'verified.* 输出节点数(默认 100)'
         required: false
         default: '100'
-      real_test:
-        description: '附加 sing-box 真实代理测试（CI 环境视角，参考意义有限）'
-        type: boolean
-        default: false
+      test_limit:
+        description: '送入真测的最大节点数(默认 500)'
+        required: false
+        default: '500'
       audit:
-        description: '运行订阅源审计'
+        description: '同时跑订阅源审计'
         type: boolean
         default: false
 
@@ -32,62 +32,41 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 40
-
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: pip
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt
 
-      - name: Download sing-box (only when real-test enabled)
-        if: ${{ github.event.inputs.real_test == 'true' }}
+      - name: Download sing-box
         run: |
           VERSION=$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
           VER_NUM="${VERSION#v}"
-          ARCHIVE="sing-box-${VER_NUM}-linux-amd64.tar.gz"
-          curl -fsSL -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/${ARCHIVE}"
+          curl -fsSL -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VER_NUM}-linux-amd64.tar.gz"
           tar -xzf sb.tar.gz
           mv "sing-box-${VER_NUM}-linux-amd64/sing-box" ./sing-box
           chmod +x ./sing-box
-          ./sing-box version
 
       - name: Audit sources (optional)
         if: ${{ github.event.inputs.audit == 'true' }}
         run: |
           python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json
-          echo "----- 失效源 -----"
-          python -c "import json; rows=json.load(open('output/source_audit.json')); [print(r['url']) for r in rows if not r['ok'] or r['nodes']==0]"
 
       - name: Run pipeline
         run: |
-          ARGS="--top-n ${{ github.event.inputs.top_n || '100' }}"
-          if [ "${{ github.event.inputs.real_test }}" = "true" ]; then
-            ARGS="$ARGS --real-test --test-limit 500"
-          fi
-          python main.py $ARGS
-
-      - name: Show output
-        if: always()
-        run: |
-          echo "----- output/ -----"
-          ls -lh output/ || true
-          echo ""
-          echo "----- stats.json -----"
-          cat output/stats.json || true
+          python main.py \
+            --top-n "${{ github.event.inputs.top_n || '100' }}" \
+            --test-limit "${{ github.event.inputs.test_limit || '500' }}"
 
       - name: Commit & push
-        if: success()
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          # 清理旧的 top50.* 文件（已改名为 top.*）
-          git rm -f output/top50.* 2>/dev/null || true
+          git rm -f output/top.* 2>/dev/null || true
           git add output/ 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "no changes"
@@ -97,10 +76,8 @@ jobs:
           fi
 
       - name: Purge jsDelivr cache
-        if: success()
-        continue-on-error: true
         run: |
-          REPO="${{ github.repository }}"
-          for f in top.txt top.yaml top.json top.urls all.txt all.yaml all.json all.urls stats.json; do
+          REPO="LeilaoMi/AutoMergePublicNodes-Optimized"
+          for f in verified.txt verified.yaml verified.json verified.urls all.txt all.yaml all.json all.urls stats.json; do
             curl -s "https://purge.jsdelivr.net/gh/${REPO}@main/output/${f}" >/dev/null || true
           done
