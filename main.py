@@ -204,9 +204,9 @@ async def run(args):
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
     from core.generator import write_outputs
-    n_top = write_outputs(final_nodes, args.output_dir, prefix="top")
-    # 同时生成全量备份
-    all_valid = [n for n, _ in valid]
+    n_top = write_outputs(final_nodes, args.output_dir, prefix="verified")
+    # 同时生成全量备份(未测速,供客户端再测)
+    all_valid = [n for n, _ in valid] if args.real_test else nodes
     n_all = write_outputs(all_valid, args.output_dir, prefix="all")
 
     elapsed = time.time() - t0
@@ -216,7 +216,7 @@ async def run(args):
     print(f"│  • 去重后:    {len(set(nd.fingerprint() for nd in all_nodes)):>6}")
     print(f"│  • TCP 可达:  {len(nodes):>6}")
     print(f"│  • 真实可用:  {len(valid):>6}")
-    print(f"│  • Top 输出:  {n_top:>6}")
+    print(f"│  • Verified:  {n_top:>6}")
     print(f"└─────────────────────────────────────────────┘")
 
     # 统计 JSON
@@ -229,7 +229,7 @@ async def run(args):
         "nodes_dedup": len(set(nd.fingerprint() for nd in all_nodes)),
         "nodes_tcp_ok": len(nodes),
         "nodes_real_ok": len(valid),
-        "nodes_output": n_top,
+        "nodes_verified_output": n_top,
         "protocol_dist": proto_count,
         "top_latencies_ms": [lat for _, lat in top if lat > 0][:20],
     }
@@ -248,16 +248,16 @@ def main():
     p.add_argument("--fetch-concurrency", type=int, default=30)
     p.add_argument("--fetch-timeout", type=int, default=15)
 
-    p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--tcp-concurrency", type=int, default=200)
     p.add_argument("--tcp-timeout", type=float, default=3.0)
 
-    p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--test-concurrency", type=int, default=30)
     p.add_argument("--test-timeout", type=float, default=6.0)
     p.add_argument("--startup-wait", type=float, default=0.6)
-    p.add_argument("--test-limit", type=int, default=0, help="送入真实测试的最大节点数(0=不限)")
-    p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=False,
+    p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
+    p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=True,
                    help="启用质量预过滤（端口黑名单+同server限2）")
 
     args = p.parse_args()
