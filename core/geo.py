@@ -39,13 +39,15 @@ async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
     if not ips:
         return {}
     result: Dict[str, str] = {}
-    # 每批最多 100 个，批间间隔 1.5s 以避免 429 错误
-    for i in range(0, len(ips), 100):
-        batch = ips[i:i + 100]
-        body = [{"query": ip, "fields": "countryCode"} for ip in batch]
-        try:
-            connector = aiohttp.TCPConnector(ssl=False)
-            async with aiohttp.ClientSession(connector=connector) as session:
+    connector = aiohttp.TCPConnector(ssl=False)
+    async with aiohttp.ClientSession(connector=connector) as session:
+        # 每批最多 100 个，批间间隔 1.5s 以避免 ip-api.com 429 错误
+        for i in range(0, len(ips), 100):
+            if i > 0:
+                await asyncio.sleep(1.5)
+            batch = ips[i:i + 100]
+            body = [{"query": ip, "fields": "countryCode"} for ip in batch]
+            try:
                 async with session.post(
                     "http://ip-api.com/batch?fields=countryCode",
                     json=body,
@@ -57,8 +59,8 @@ async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
                             cc = item.get("countryCode", "")
                             if cc:
                                 result[ip] = cc
-        except Exception:
-            pass
+            except Exception:
+                pass
     return result
 
 

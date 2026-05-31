@@ -371,32 +371,38 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
         f.write(b64)
 
     # 3) Clash YAML — 带完整 DNS + 分流规则 + 按地区分组
-    proxies = [p for n in nodes if (p := node_to_clash(n))]
-    # tag 长度限制
-    for p in proxies:
-        p["name"] = _clamp_tag(p["name"])
+    # 一次遍历，同时构建 proxies 列表和 node→proxy 映射
+    proxies = []
+    node_proxy_pairs: list[tuple[Node, dict]] = []
+    for n in nodes:
+        p = node_to_clash(n)
+        if p is not None:
+            p["name"] = _clamp_tag(p["name"])
+            proxies.append(p)
+            node_proxy_pairs.append((n, p))
 
-    # 按地区分组（用 nodes 对齐 proxies，过滤掉 node_to_clash 返回 None 的）
+    # 按地区分组
     region_groups: Dict[str, List[str]] = {}
-    for p, n in zip(proxies, [n for n in nodes if node_to_clash(n)]):
+    for n, p in node_proxy_pairs:
         region = _extract_region(p["name"])
         region_groups.setdefault(region, []).append(p["name"])
 
+    # 只有 ≥2 节点的地区才建 url-test group
+    valid_regions = {k: v for k, v in region_groups.items() if len(v) >= 2}
+
     proxy_group_defs = [
         {"name": "🚀 Proxy", "type": "select",
-         "proxies": ["♻️ Auto"] + sorted(region_groups.keys()) + [p["name"] for p in proxies if p["name"] in region_groups]},
+         "proxies": ["♻️ Auto"] + sorted(valid_regions.keys()) + [p["name"] for p in proxies]},
         {"name": "♻️ Auto", "type": "url-test",
          "proxies": [p["name"] for p in proxies] or ["DIRECT"],
          "url": "https://www.gstatic.com/generate_204", "interval": 600},
     ]
-    for region_name in sorted(region_groups.keys()):
-        region_nodes = region_groups[region_name]
-        if len(region_nodes) >= 2:
-            proxy_group_defs.append({
-                "name": region_name, "type": "url-test",
-                "proxies": region_nodes,
-                "url": "https://www.gstatic.com/generate_204", "interval": 600,
-            })
+    for region_name in sorted(valid_regions.keys()):
+        proxy_group_defs.append({
+            "name": region_name, "type": "url-test",
+            "proxies": valid_regions[region_name],
+            "url": "https://www.gstatic.com/generate_204", "interval": 600,
+        })
 
     clash = {
         "mixed-port": 7890,
