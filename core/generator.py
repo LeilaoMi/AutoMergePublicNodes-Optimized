@@ -338,9 +338,18 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
             "fallback": ["https://1.1.1.1/dns-query", "https://dns.google/dns-query"],
             "fallback-filter": {"geoip": True, "geoip-code": "CN"},
         },
+        "tun": {
+            "enable": True,
+            "stack": "system",
+            "dns-hijack": ["any:53"],
+            "auto-route": True,
+            "auto-detect-interface": True,
+        },
         "rules": [
+            "GEOSITE,category-ads-all,REJECT",
             "GEOSITE,cn,DIRECT",
             "GEOIP,CN,DIRECT",
+            "GEOSITE,geolocation-!cn,🚀 Proxy",
             "MATCH,🚀 Proxy",
         ],
     }
@@ -375,10 +384,12 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
                 {"protocol": "dns", "outbound": "dns-proxy"},
                 {"rule_set": "geosite-cn", "outbound": "direct"},
                 {"rule_set": "geoip-cn", "outbound": "direct"},
+                {"rule_set": "geosite-geolocation-!cn", "outbound": "proxy"},
             ],
             "rule_set": [
                 {"tag": "geosite-cn", "type": "remote", "format": "binary", "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs", "download_detour": "direct"},
                 {"tag": "geoip-cn", "type": "remote", "format": "binary", "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs", "download_detour": "direct"},
+                {"tag": "geosite-geolocation-!cn", "type": "remote", "format": "binary", "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs", "download_detour": "direct"},
             ],
             "final": "proxy",
             "auto_detect_interface": True,
