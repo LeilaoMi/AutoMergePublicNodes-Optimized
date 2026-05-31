@@ -164,7 +164,7 @@ async def run(args):
         tcp_results = await tcp_check_batch(nodes, args.tcp_concurrency, args.tcp_timeout)
         print(f"      TCP 可达: {len(tcp_results)}")
         nodes = [n for n, _ in tcp_results]
-        tcp_latency = {id(n): lat for n, lat in tcp_results}
+        tcp_latency = {n.fingerprint(): lat for n, lat in tcp_results}
     else:
         print(f"[4/6] 跳过 TCP 预筛选")
         tcp_latency = {}
@@ -203,7 +203,7 @@ async def run(args):
         if valid:
             print(f"      最快: {valid[0][1]:.1f}ms  最慢: {valid[-1][1]:.1f}ms")
     else:
-        valid = sorted([(n, tcp_latency.get(id(n), 0), 0.0) for n in nodes], key=lambda x: x[1])
+        valid = sorted([(n, tcp_latency.get(n.fingerprint(), 0), 0.0) for n in nodes], key=lambda x: x[1])
         print(f"[5/6] 跳过真实测试")
 
     # 取 Top N 并改名加入延迟

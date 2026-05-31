@@ -29,15 +29,6 @@ def b64decode(s: str) -> str:
         return ""
 
 
-def b64decode_bytes(s: str) -> bytes:
-    s = s.strip().replace("-", "+").replace("_", "/")
-    pad = (-len(s)) % 4
-    try:
-        return base64.b64decode(s + "=" * pad)
-    except Exception:
-        return b""
-
-
 def is_b64(s: str) -> bool:
     s = s.strip()
     if len(s) < 16:
