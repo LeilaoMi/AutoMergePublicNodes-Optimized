@@ -39,7 +39,7 @@ async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
     if not ips:
         return {}
     result: Dict[str, str] = {}
-    # 每批最多 100 个
+    # 每批最多 100 个，批间间隔 1.5s 以避免 429 错误
     for i in range(0, len(ips), 100):
         batch = ips[i:i + 100]
         body = [{"query": ip, "fields": "countryCode"} for ip in batch]

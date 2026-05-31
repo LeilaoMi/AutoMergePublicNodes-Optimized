@@ -215,12 +215,16 @@ async def run(args):
         if lat > 0:
             jitter_str = f" +/-{jit:.0f}ms" if jit > 0 else ""
             n.tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag[:30]}"
-        n.tag = _clamp_tag(n.tag)
         final_nodes.append(n)
 
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
     from core.generator import write_outputs, MAX_TAG_LENGTH, _clamp_tag
+
+    # 在生成输出前统一 clamp tag
+    for n in final_nodes:
+        n.tag = _clamp_tag(n.tag)
+
     n_top = write_outputs(final_nodes, args.output_dir, prefix="verified")
     # 同时生成全量备份(未测速,供客户端再测)
     # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
