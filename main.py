@@ -202,6 +202,10 @@ async def run(args):
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
         if valid:
             print(f"      最快: {valid[0][1]:.1f}ms  最慢: {valid[-1][1]:.1f}ms")
+        if not valid and tcp_latency:
+            # 真测 0 通过时回退到 TCP 结果，避免输出空文件
+            print(f"      ⚠️ 真测 0 通过，回退到 TCP 结果")
+            valid = sorted([(n, tcp_latency.get(n.fingerprint(), 0), 0.0) for n in nodes], key=lambda x: x[1])
     else:
         valid = sorted([(n, tcp_latency.get(n.fingerprint(), 0), 0.0) for n in nodes], key=lambda x: x[1])
         print(f"[5/6] 跳过真实测试")
