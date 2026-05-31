@@ -53,7 +53,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./sing-box
-          key: sing-box-${{ runner.os }}-${{ hashFiles('.github/workflows/update.yml') }}
+          key: sing-box-${{ runner.os }}-${{ hashFiles('.github/workflows/update.yml') }}-${{ fromJSON(needs.cache.outputs.tag).tag_name }}
 
       - name: Download sing-box
         if: steps.cache-sb.outputs.cache-hit != 'true'

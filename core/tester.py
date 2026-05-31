@@ -71,9 +71,6 @@ def build_singbox_config(node: Node, socks_port: int) -> dict:
         "listen": "127.0.0.1",
         "listen_port": socks_port,
         "sniff": True,
-        "sniff_override": {
-            "destination": "http,tls,quic",
-        },
     }
     outbound = node.to_singbox()
     return {

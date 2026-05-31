@@ -376,15 +376,15 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
     for p in proxies:
         p["name"] = _clamp_tag(p["name"])
 
-    # 按地区分组
+    # 按地区分组（用 nodes 对齐 proxies，过滤掉 node_to_clash 返回 None 的）
     region_groups: Dict[str, List[str]] = {}
-    for p, n in zip(proxies, nodes):
+    for p, n in zip(proxies, [n for n in nodes if node_to_clash(n)]):
         region = _extract_region(p["name"])
         region_groups.setdefault(region, []).append(p["name"])
 
     proxy_group_defs = [
         {"name": "🚀 Proxy", "type": "select",
-         "proxies": ["♻️ Auto"] + sorted(region_groups.keys()) + [p["name"] for p in proxies]},
+         "proxies": ["♻️ Auto"] + sorted(region_groups.keys()) + [p["name"] for p in proxies if p["name"] in region_groups]},
         {"name": "♻️ Auto", "type": "url-test",
          "proxies": [p["name"] for p in proxies] or ["DIRECT"],
          "url": "https://www.gstatic.com/generate_204", "interval": 600},
@@ -502,7 +502,21 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
         json.dump(singbox, f, ensure_ascii=False, indent=2)
 
     # 5) 订阅转换链接（基于 jsdelivr CDN）
-    sub_url = f"https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/{prefix}.txt"
+    # 从 git remote 推断仓库路径，支持 fork
+    import subprocess
+    try:
+        remote_url = subprocess.check_output(
+            ["git", "remote", "get-url", "origin"], text=True
+        ).strip()
+        # 提取 owner/repo
+        if "github.com" in remote_url:
+            repo_path = remote_url.split("github.com")[-1].strip("/:")
+            repo_path = repo_path.removesuffix(".git")
+        else:
+            repo_path = "LeilaoMi/AutoMergePublicNodes-Optimized"
+    except Exception:
+        repo_path = "LeilaoMi/AutoMergePublicNodes-Optimized"
+    sub_url = f"https://cdn.jsdelivr.net/gh/{repo_path}@main/output/{prefix}.txt"
     generate_converter_links(sub_url, output_dir, prefix)
 
     return len(urls)
