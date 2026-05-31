@@ -13,6 +13,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from typing import Dict
 
 # 让脚本能从仓库根运行
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -26,11 +27,24 @@ def is_dynamic(url: str) -> bool:
     return "%" in url
 
 
+def load_previous_audit(path: str) -> Dict[str, int]:
+    """加载上次审计结果，返回 {name: consecutive_dead}"""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            prev = json.load(f)
+        return {r["name"]: r.get("consecutive_dead", 0) for r in prev}
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        return {}
+
+
 async def audit(sources_path: str, output: str, concurrency: int = 30):
     sources = load_sources(sources_path)
     print(f"加载 {len(sources)} 个订阅源")
     print(f"  动态 URL: {sum(1 for s in sources if is_dynamic(s.url))}")
     print(f"  静态 URL: {sum(1 for s in sources if not is_dynamic(s.url))}")
+
+    # 加载上次审计历史
+    prev_dead = load_previous_audit(output)
 
     print(f"\n开始抓取...")
     start = time.time()
@@ -41,6 +55,10 @@ async def audit(sources_path: str, output: str, concurrency: int = 30):
     rows = []
     healthy, broken = 0, 0
     for r in results:
+        is_dead = not r.success or len(r.nodes) == 0
+        prev_count = prev_dead.get(r.source.name, 0)
+        consecutive = (prev_count + 1) if is_dead else 0
+
         row = {
             "url": r.source.url,
             "name": r.source.name,
@@ -50,6 +68,7 @@ async def audit(sources_path: str, output: str, concurrency: int = 30):
             "bytes": r.bytes_received,
             "duration": round(r.duration, 2),
             "error": r.error,
+            "consecutive_dead": consecutive,
         }
         rows.append(row)
         if r.success and len(r.nodes) > 0:
@@ -67,13 +86,14 @@ async def audit(sources_path: str, output: str, concurrency: int = 30):
         "=" * 80,
         f"总数: {len(rows)} | 健康: {healthy} | 失效: {broken}",
         "",
-        f"{'状态':<6}{'节点':<7}{'类型':<5}{'耗时':<7}URL",
+        f"{'状态':<6}{'节点':<7}{'类型':<5}{'耗时':<7}{'连续死源':<8}URL",
         "-" * 80,
     ]
     for r in rows:
         status = "✅" if r["ok"] and r["nodes"] > 0 else ("⚠️ " if r["ok"] else "❌")
         kind = "动态" if r["dynamic"] else "静态"
-        lines.append(f"{status:<6}{r['nodes']:<7}{kind:<5}{r['duration']}s   {r['url'][:60]}")
+        dead_str = f"{r['consecutive_dead']}次" if r["consecutive_dead"] > 0 else "-"
+        lines.append(f"{status:<6}{r['nodes']:<7}{kind:<5}{r['duration']}s   {dead_str:<8}{r['url'][:60]}")
         if r["error"]:
             lines.append(f"        错误: {r['error']}")
 
@@ -82,6 +102,14 @@ async def audit(sources_path: str, output: str, concurrency: int = 30):
     for r in rows:
         if not r["ok"] or r["nodes"] == 0:
             lines.append(f"  - {r['url']}")
+
+    # 连续 2 次 0 节点的源（建议自动下线）
+    auto_disable = [r for r in rows if r["consecutive_dead"] >= 2]
+    if auto_disable:
+        lines.append("")
+        lines.append("⚠️ 连续 2+ 次 0 节点的源（建议自动下线）:")
+        for r in auto_disable:
+            lines.append(f"  - [{r['consecutive_dead']}次] {r['name']}: {r['url']}")
 
     report = "\n".join(lines)
     print(report)

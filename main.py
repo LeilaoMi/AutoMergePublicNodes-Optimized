@@ -215,11 +215,12 @@ async def run(args):
         if lat > 0:
             jitter_str = f" +/-{jit:.0f}ms" if jit > 0 else ""
             n.tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag[:30]}"
+        n.tag = _clamp_tag(n.tag)
         final_nodes.append(n)
 
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
-    from core.generator import write_outputs
+    from core.generator import write_outputs, MAX_TAG_LENGTH, _clamp_tag
     n_top = write_outputs(final_nodes, args.output_dir, prefix="verified")
     # 同时生成全量备份(未测速,供客户端再测)
     # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
@@ -296,6 +297,11 @@ def main():
                    help="启用质量预过滤（端口黑名单+同server限2）")
 
     args = p.parse_args()
+    # 环境变量覆盖（CI 或容器场景常用）
+    if os.environ.get("AUTONODES_TOP_N"):
+        args.top_n = int(os.environ["AUTONODES_TOP_N"])
+    if os.environ.get("AUTONODES_TEST_LIMIT"):
+        args.test_limit = int(os.environ["AUTONODES_TEST_LIMIT"])
     asyncio.run(run(args))
 
 

@@ -19,6 +19,59 @@ from core.parser import Node
 
 
 # ============================================================
+# 国旗 emoji → 地区分组
+# ============================================================
+
+# 常见地区 → 分组名映射
+_REGION_NAMES = {
+    "HK": "🇭🇰 香港", "TW": "🇹🇼 台湾", "JP": "🇯🇵 日本", "KR": "🇰🇷 韩国",
+    "SG": "🇸🇬 新加坡", "US": "🇺🇸 美国", "GB": "🇬🇧 英国", "DE": "🇩🇪 德国",
+    "FR": "🇫🇷 法国", "CA": "🇨🇦 加拿大", "AU": "🇦🇺 澳大利亚", "IN": "🇮🇳 印度",
+    "MY": "🇲🇾 马来西亚", "TH": "🇹🇭 泰国", "PH": "🇵🇭 菲律宾", "ID": "🇮🇩 印尼",
+    "VN": "🇻🇳 越南", "RU": "🇷🇺 俄罗斯", "NL": "🇳🇱 荷兰", "TR": "🇹🇷 土耳其",
+    "BR": "🇧🇷 巴西", "AR": "🇦🇷 阿根廷", "CL": "🇨🇱 智利", "MX": "🇲🇽 墨西哥",
+}
+
+
+def _flag_to_cc(flag_emoji: str) -> str:
+    """国旗 emoji → ISO 国家代码 (e.g. '🇺🇸' → 'US')"""
+    if len(flag_emoji) < 2:
+        return ""
+    cp0 = ord(flag_emoji[0])
+    cp1 = ord(flag_emoji[1])
+    # Regional Indicator Symbol range: 0x1F1E6..0x1F1FF
+    if 0x1F1E6 <= cp0 <= 0x1F1FF and 0x1F1E6 <= cp1 <= 0x1F1FF:
+        return chr(cp0 - 0x1F1E6 + ord("A")) + chr(cp1 - 0x1F1E6 + ord("A"))
+    return ""
+
+
+def _extract_region(tag: str) -> str:
+    """从节点 tag 中提取地区分组名（如果没有国旗则归入 '其他'）"""
+    if not tag:
+        return "其他"
+    # tag 格式: "🇺🇸 [ 123.4ms +/-5ms] xxx"
+    flag = tag[:2] if len(tag) >= 2 else ""
+    cc = _flag_to_cc(flag)
+    if cc:
+        return _REGION_NAMES.get(cc, f"{flag} 其他")
+    return "其他"
+
+
+# ============================================================
+# Tag 长度限制
+# ============================================================
+
+MAX_TAG_LENGTH = 48
+
+
+def _clamp_tag(tag: str) -> str:
+    """限制 tag 长度，超出则截断（保留末尾字符用于区分）"""
+    if len(tag) <= MAX_TAG_LENGTH:
+        return tag
+    return tag[:MAX_TAG_LENGTH - 1] + "…"
+
+
+# ============================================================
 # Node → URL (V2Ray 订阅格式)
 # ============================================================
 
@@ -317,19 +370,40 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
     with open(f"{output_dir}/{prefix}.txt", "w", encoding="utf-8") as f:
         f.write(b64)
 
-    # 3) Clash YAML — 带完整 DNS + 分流规则
+    # 3) Clash YAML — 带完整 DNS + 分流规则 + 按地区分组
     proxies = [p for n in nodes if (p := node_to_clash(n))]
+    # tag 长度限制
+    for p in proxies:
+        p["name"] = _clamp_tag(p["name"])
+
+    # 按地区分组
+    region_groups: Dict[str, List[str]] = {}
+    for p, n in zip(proxies, nodes):
+        region = _extract_region(p["name"])
+        region_groups.setdefault(region, []).append(p["name"])
+
+    proxy_group_defs = [
+        {"name": "🚀 Proxy", "type": "select",
+         "proxies": ["♻️ Auto"] + sorted(region_groups.keys()) + [p["name"] for p in proxies]},
+        {"name": "♻️ Auto", "type": "url-test",
+         "proxies": [p["name"] for p in proxies] or ["DIRECT"],
+         "url": "https://www.gstatic.com/generate_204", "interval": 600},
+    ]
+    for region_name in sorted(region_groups.keys()):
+        region_nodes = region_groups[region_name]
+        if len(region_nodes) >= 2:
+            proxy_group_defs.append({
+                "name": region_name, "type": "url-test",
+                "proxies": region_nodes,
+                "url": "https://www.gstatic.com/generate_204", "interval": 600,
+            })
+
     clash = {
         "mixed-port": 7890,
         "allow-lan": False,
         "mode": "rule",
         "proxies": proxies,
-        "proxy-groups": [
-            {"name": "🚀 Proxy", "type": "select", "proxies": ["♻️ Auto"] + [p["name"] for p in proxies]},
-            {"name": "♻️ Auto", "type": "url-test",
-             "proxies": [p["name"] for p in proxies] or ["DIRECT"],
-             "url": "https://www.gstatic.com/generate_204", "interval": 300},
-        ],
+        "proxy-groups": proxy_group_defs,
         "dns": {
             "enable": True,
             "enhanced-mode": "fake-ip",
@@ -357,7 +431,41 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
         yaml.dump(clash, f, allow_unicode=True, sort_keys=False)
 
     # 4) sing-box JSON (Karing 直接导入) — 带 DNS + 分流规则
-    outbounds_list = [n.tag for n in nodes] or ["direct"]
+    outbounds_list = [_clamp_tag(n.tag) for n in nodes] or ["direct"]
+
+    # sing-box 按地区分组
+    sb_region_groups: Dict[str, List[str]] = {}
+    for n in nodes:
+        region = _extract_region(n.tag)
+        sb_region_groups.setdefault(region, []).append(_clamp_tag(n.tag))
+
+    sb_outbounds = [
+        {"type": "selector", "tag": "proxy",
+         "outbounds": ["♻️ Auto"] + sorted(sb_region_groups.keys()) + outbounds_list,
+         "default": outbounds_list[0] if outbounds_list else "direct"},
+        {"type": "url-test", "tag": "♻️ Auto",
+         "outbounds": outbounds_list or ["direct"],
+         "url": "https://www.gstatic.com/generate_204", "interval": 600},
+    ]
+    for region_name in sorted(sb_region_groups.keys()):
+        region_tags = sb_region_groups[region_name]
+        if len(region_tags) >= 2:
+            sb_outbounds.append({
+                "type": "url-test", "tag": region_name,
+                "outbounds": region_tags,
+                "url": "https://www.gstatic.com/generate_204", "interval": 600,
+            })
+
+    # 节点 outbound（tag 限长）
+    node_outbounds = []
+    for n in nodes:
+        ob = n.to_singbox()
+        ob["tag"] = _clamp_tag(ob["tag"])
+        node_outbounds.append(ob)
+
+    sb_outbounds.extend(node_outbounds)
+    sb_outbounds.append({"type": "direct", "tag": "direct"})
+
     singbox = {
         "log": {"level": "info"},
         "dns": {
@@ -373,12 +481,7 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
         "inbounds": [
             {"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 2080},
         ],
-        "outbounds": [
-            {"type": "selector", "tag": "proxy",
-             "outbounds": outbounds_list, "default": nodes[0].tag if nodes else "direct"},
-            *[n.to_singbox() for n in nodes],
-            {"type": "direct", "tag": "direct"},
-        ],
+        "outbounds": sb_outbounds,
         "route": {
             "rules": [
                 {"protocol": "dns", "outbound": "dns-proxy"},
@@ -398,4 +501,53 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
     with open(f"{output_dir}/{prefix}.json", "w", encoding="utf-8") as f:
         json.dump(singbox, f, ensure_ascii=False, indent=2)
 
+    # 5) 订阅转换链接（基于 jsdelivr CDN）
+    sub_url = f"https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/{prefix}.txt"
+    generate_converter_links(sub_url, output_dir, prefix)
+
     return len(urls)
+
+
+# ============================================================
+# 订阅转换链接生成
+# ============================================================
+
+# 常用订阅转换后端
+CONVERTERS = [
+    ("sub-web",    "https://sub.xeton.dev/sub"),
+    ("sub-cv",     "https://sub-cv.github.io/sub"),
+    ("伴风订阅转换", "https://api.dler.io/sub"),
+    ("sub-web-v4", "https://sub-webv4.vercel.app/sub"),
+]
+
+def generate_converter_links(sub_url: str, output_dir: str, prefix: str = "nodes"):
+    """生成订阅转换器链接（用户可一键复制到客户端）"""
+    import os
+    encoded = quote(sub_url, safe="")
+    targets = [
+        ("Clash",       "clash"),
+        ("ClashMeta",   "clashmeta"),
+        ("sing-box",    "singbox"),
+        ("V2Ray",       "v2ray"),
+        ("Surge",       "surge"),
+        ("Quantumult X","quanx"),
+        ("Loon",        "loon"),
+        ("Shadowrocket","shadowrocket"),
+    ]
+    lines = [
+        "# 订阅转换链接",
+        f"# 原始订阅: {sub_url}",
+        "",
+    ]
+    for conv_name, conv_base in CONVERTERS:
+        lines.append(f"## {conv_name}")
+        for label, target in targets:
+            link = f"{conv_base}?target={target}&url={encoded}"
+            lines.append(f"  {label}: {link}")
+        lines.append("")
+
+    content = "\n".join(lines)
+    path = f"{output_dir}/{prefix}.converter.md"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return path
