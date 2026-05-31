@@ -445,9 +445,11 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
         region = _extract_region(n.tag)
         sb_region_groups.setdefault(region, []).append(_clamp_tag(n.tag))
 
+    sb_valid_regions = {k: v for k, v in sb_region_groups.items() if len(v) >= 2}
+
     sb_outbounds = [
         {"type": "selector", "tag": "proxy",
-         "outbounds": ["♻️ Auto"] + sorted(sb_region_groups.keys()) + outbounds_list,
+         "outbounds": ["♻️ Auto"] + sorted(sb_valid_regions.keys()) + outbounds_list,
          "default": outbounds_list[0] if outbounds_list else "direct"},
         {"type": "url-test", "tag": "♻️ Auto",
          "outbounds": outbounds_list or ["direct"],

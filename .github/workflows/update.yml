@@ -52,19 +52,20 @@ jobs:
         id: sb-version
         run: |
           VERSION=$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
-          echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Latest sing-box: $VERSION"
 
       - name: Cache sing-box binary
         id: cache-sb
         uses: actions/cache@v4
         with:
           path: ./sing-box
-          key: sing-box-${{ runner.os }}-${{ steps.sb-version.outputs.tag }}
+          key: sing-box-${{ runner.os }}-${{ steps.sb-version.outputs.version }}
 
       - name: Download sing-box
         if: steps.cache-sb.outputs.cache-hit != 'true'
         run: |
-          VERSION="${{ steps.sb-version.outputs.tag }}"
+          VERSION="${{ steps.sb-version.outputs.version }}"
           VER_NUM="${VERSION#v}"
           curl -fsSL -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VER_NUM}-linux-amd64.tar.gz"
           tar -xzf sb.tar.gz
