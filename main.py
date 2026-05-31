@@ -25,6 +25,7 @@ from typing import Dict, List, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from core.fetcher import Source, fetch_all, load_sources, FetchResult
+from core.geo import geo_flag_map, flag_for_server
 from core.parser import Node
 
 
@@ -127,14 +128,24 @@ async def run(args):
 
     all_nodes: List[Node] = []
     proto_count: Dict[str, int] = {}
+    # 跟踪每个节点来自哪个 source（用于 per-source 通过率统计）
+    node_source_map: Dict[str, str] = {}  # fingerprint -> source_name
     for r in fr_list:
+        src_name = r.source.name or r.source.url[:80]
         for n in r.nodes:
             all_nodes.append(n)
             proto_count[n.type] = proto_count.get(n.type, 0) + 1
+            node_source_map.setdefault(n.fingerprint(), src_name)
 
     # 3) 去重
     nodes = dedupe(all_nodes)
     dedup_pool = list(nodes)  # 保存完整 deduped 池(8K+),供 all.* 输出
+
+    # GeoIP 国旗映射
+    print(f"      GeoIP 查询（batch ip-api.com）...")
+    flag_map = await geo_flag_map(all_nodes)
+    print(f"      国旗映射: {len(flag_map)} 个 IP")
+
     print(f"[3/6] 去重: {len(all_nodes)} -> {len(nodes)}")
     for k, v in sorted(proto_count.items(), key=lambda x: -x[1]):
         print(f"        {k:14s}: {v}")
@@ -185,22 +196,25 @@ async def run(args):
         )
         results = await tester.test_all(nodes)
         valid = sorted(
-            [(r.node, r.latency_ms) for r in results if r.success],
+            [(r.node, r.latency_ms, r.jitter_ms) for r in results if r.success],
             key=lambda x: x[1],
         )
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
         if valid:
-            print(f"      最快: {valid[0][1]}ms  最慢: {valid[-1][1]}ms")
+            print(f"      最快: {valid[0][1]:.1f}ms  最慢: {valid[-1][1]:.1f}ms")
     else:
-        valid = sorted([(n, tcp_latency.get(id(n), 0)) for n in nodes], key=lambda x: x[1])
+        valid = sorted([(n, tcp_latency.get(id(n), 0), 0.0) for n in nodes], key=lambda x: x[1])
         print(f"[5/6] 跳过真实测试")
 
     # 取 Top N 并改名加入延迟
     top = valid[:args.top_n]
     final_nodes: List[Node] = []
-    for i, (n, lat) in enumerate(top, 1):
+    for i, (n, lat, jit) in enumerate(top, 1):
+        flag = flag_for_server(n.server, flag_map)
+        prefix = f"{flag} " if flag else ""
         if lat > 0:
-            n.tag = f"[{lat:>5.1f}ms] {n.tag[:30]}"
+            jitter_str = f" +/-{jit:.0f}ms" if jit > 0 else ""
+            n.tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag[:30]}"
         final_nodes.append(n)
 
     # 6) 生成输出
@@ -229,6 +243,15 @@ async def run(args):
         if t not in proto_pass:
             proto_pass[t] = {"pass": 0, "fail": 0}
         proto_pass[t]["pass" if r.success else "fail"] += 1
+
+    # per-source 通过率统计
+    src_pass: Dict[str, Dict[str, int]] = {}
+    for r in results if args.real_test else []:
+        src_name = node_source_map.get(r.node.fingerprint(), "unknown")
+        if src_name not in src_pass:
+            src_pass[src_name] = {"pass": 0, "fail": 0}
+        src_pass[src_name]["pass" if r.success else "fail"] += 1
+
     stats = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "duration_sec": round(elapsed, 1),
@@ -241,7 +264,9 @@ async def run(args):
         "nodes_verified_output": n_top,
         "protocol_dist": proto_count,
         "protocol_pass_rate": proto_pass,
-        "top_latencies_ms": [round(lat, 1) for _, lat in top if lat > 0][:20],
+        "source_pass_rate": src_pass,
+        "top_latencies_ms": [round(lat, 1) for _, lat, _ in top if lat > 0][:20],
+        "top_jitters_ms": [round(jit, 1) for _, _, jit in top if jit > 0][:20],
     }
     os.makedirs(args.output_dir, exist_ok=True)
     with open(f"{args.output_dir}/stats.json", "w", encoding="utf-8") as f:

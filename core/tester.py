@@ -46,6 +46,7 @@ class TestResult:
     node: Node
     success: bool = False
     latency_ms: float = 0.0
+    jitter_ms: float = 0.0  # 延迟抖动（max deviation from avg）
     error: str = ""
 
 
@@ -182,12 +183,13 @@ class SingBoxTester:
                 # 取前 3 个目标的平均延迟（不算下载耗时）
                 latency_targets = [l for l, (_, k) in zip(latencies, TEST_TARGETS) if k != "speed"]
                 avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0]
-                # 拒绝异常低延迟（< 30ms，可能是回环假节点）
+                jitter = max(abs(l - avg_latency) for l in latency_targets) if len(latency_targets) >= 2 else 0.0
                 if avg_latency < MIN_LATENCY_MS:
                     result.error = f"latency-too-low:{avg_latency:.1f}ms"
                 else:
                     result.success = True
                     result.latency_ms = avg_latency
+                    result.jitter_ms = jitter
             else:
                 result.error = failed_target or "no-test-completed"
 
