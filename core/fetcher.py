@@ -60,22 +60,37 @@ def to_jsdelivr(url: str) -> str:
     return f"https://cdn.jsdelivr.net/gh/{user}/{repo}@{branch}/{path}"
 
 
-async def _fetch_one(session: aiohttp.ClientSession, url: str, timeout: int = 15) -> Tuple[bool, str, int]:
-    """抓取单个 URL，返回 (成功, 内容/错误, 字节数)"""
-    try:
-        async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as resp:
-            if resp.status != 200:
-                return False, f"HTTP {resp.status}", 0
-            data = await resp.read()
-            try:
-                text = data.decode("utf-8", errors="replace")
-            except Exception:
-                text = ""
-            return True, text, len(data)
-    except asyncio.TimeoutError:
-        return False, "timeout", 0
-    except Exception as e:
-        return False, str(e)[:100], 0
+async def _fetch_one(session: aiohttp.ClientSession, url: str, timeout: int = 15, retries: int = 2) -> Tuple[bool, str, int]:
+    """抓取单个 URL，返回 (成功, 内容/错误, 字节数)，带重试"""
+    last_err = ""
+    for attempt in range(retries + 1):
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as resp:
+                if resp.status != 200:
+                    last_err = f"HTTP {resp.status}"
+                    if resp.status == 429 and attempt < retries:
+                        await asyncio.sleep(1.5 * (attempt + 1))
+                        continue
+                    return False, last_err, 0
+                data = await resp.read()
+                try:
+                    text = data.decode("utf-8", errors="replace")
+                except Exception:
+                    text = ""
+                return True, text, len(data)
+        except asyncio.TimeoutError:
+            last_err = "timeout"
+            if attempt < retries:
+                await asyncio.sleep(0.5 * (attempt + 1))
+                continue
+            return False, "timeout", 0
+        except Exception as e:
+            last_err = str(e)[:100]
+            if attempt < retries:
+                await asyncio.sleep(0.5 * (attempt + 1))
+                continue
+            return False, last_err, 0
+    return False, last_err, 0
 
 
 async def fetch_source(session: aiohttp.ClientSession, src: Source, timeout: int = 15) -> FetchResult:
@@ -94,7 +109,7 @@ async def fetch_source(session: aiohttp.ClientSession, src: Source, timeout: int
     last_err = ""
     text = ""
     for candidate in candidates:
-        ok, content, n_bytes = await _fetch_one(session, candidate, timeout)
+        ok, content, n_bytes = await _fetch_one(session, candidate, timeout, retries=2)
         if ok:
             text = content
             result.bytes_received = n_bytes

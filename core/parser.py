@@ -618,7 +618,7 @@ def parse_content(text: str) -> List[Node]:
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        m = re.findall(r"(vmess|vless|trojan|ssr|ss|hysteria2|hy2|hysteria|hy|tuic|anytls|socks5|socks|http|https)://[^\s<>'\"]+", line)
+        m = re.findall(r"(vmess|vless|trojan|ssr|ss|hysteria2|hy2|hysteria|hy|tuic|anytls|socks5|socks|https?)://[^\s<>'\"]+", line)
         for scheme in m:
             # 提取完整 URL（贪婪到行尾）
             idx = line.find(scheme + "://")

@@ -45,7 +45,7 @@ MIN_LATENCY_MS = 30  # 低于此值视为同机房假节点
 class TestResult:
     node: Node
     success: bool = False
-    latency_ms: int = 0
+    latency_ms: float = 0.0
     error: str = ""
 
 

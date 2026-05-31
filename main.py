@@ -173,6 +173,7 @@ async def run(args):
 
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms)]
+    results = []  # 保存全部测试结果（含失败），供统计使用
     if args.real_test and nodes:
         from core.tester import SingBoxTester
         print(f"[5/6] sing-box 真实代理测试（并发 {args.test_concurrency}）...")
@@ -199,7 +200,7 @@ async def run(args):
     final_nodes: List[Node] = []
     for i, (n, lat) in enumerate(top, 1):
         if lat > 0:
-            n.tag = f"[{lat:>4}ms] {n.tag[:30]}"
+            n.tag = f"[{lat:>5.1f}ms] {n.tag[:30]}"
         final_nodes.append(n)
 
     # 6) 生成输出
@@ -222,6 +223,12 @@ async def run(args):
     print(f"└─────────────────────────────────────────────┘")
 
     # 统计 JSON
+    proto_pass: Dict[str, Dict[str, int]] = {}
+    for r in results if args.real_test else []:
+        t = r.node.type
+        if t not in proto_pass:
+            proto_pass[t] = {"pass": 0, "fail": 0}
+        proto_pass[t]["pass" if r.success else "fail"] += 1
     stats = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "duration_sec": round(elapsed, 1),
@@ -233,7 +240,8 @@ async def run(args):
         "nodes_real_ok": len(valid),
         "nodes_verified_output": n_top,
         "protocol_dist": proto_count,
-        "top_latencies_ms": [lat for _, lat in top if lat > 0][:20],
+        "protocol_pass_rate": proto_pass,
+        "top_latencies_ms": [round(lat, 1) for _, lat in top if lat > 0][:20],
     }
     os.makedirs(args.output_dir, exist_ok=True)
     with open(f"{args.output_dir}/stats.json", "w", encoding="utf-8") as f:
