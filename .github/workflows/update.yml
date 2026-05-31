@@ -3,6 +3,12 @@ name: Update Nodes
 on:
   schedule:
     - cron: '0 */6 * * *'
+  push:
+    paths:
+      - 'core/**'
+      - 'main.py'
+      - 'config/**'
+      - 'requirements.txt'
   workflow_dispatch:
     inputs:
       top_n:
