@@ -37,7 +37,24 @@ def load_previous_audit(path: str) -> Dict[str, int]:
         return {}
 
 
-async def audit(sources_path: str, output: str, concurrency: int = 30):
+
+
+def disable_dead_sources(sources_path: str, dead_urls: set[str]) -> int:
+    if not dead_urls:
+        return 0
+    path = Path(sources_path)
+    with path.open(encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    changed = 0
+    for entry in data.get("sources", []):
+        if isinstance(entry, dict) and entry.get("url") in dead_urls and entry.get("enabled", True):
+            entry["enabled"] = False
+            changed += 1
+    if changed:
+        path.write_text(yaml.dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    return changed
+
+async def audit(sources_path: str, output: str, concurrency: int = 30, disable_dead_threshold: int = 0):
     sources = load_sources(sources_path)
     print(f"加载 {len(sources)} 个订阅源")
     print(f"  动态 URL: {sum(1 for s in sources if is_dynamic(s.url))}")
@@ -111,12 +128,28 @@ async def audit(sources_path: str, output: str, concurrency: int = 30):
         for r in auto_disable:
             lines.append(f"  - [{r['consecutive_dead']}次] {r['name']}: {r['url']}")
 
+    disabled_count = 0
+    if disable_dead_threshold > 0:
+        dead_urls = {r["url"] for r in rows if r["consecutive_dead"] >= disable_dead_threshold}
+        disabled_count = disable_dead_sources(sources_path, dead_urls)
+        lines.append("")
+        lines.append(f"自动禁用阈值: {disable_dead_threshold} 次；本次禁用: {disabled_count} 个源")
+
     report = "\n".join(lines)
     print(report)
 
     # JSON 输出
+    payload = {
+        "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "sources_total": len(rows),
+        "healthy": healthy,
+        "broken": broken,
+        "auto_disable_candidates": auto_disable,
+        "disabled_count": disabled_count,
+        "sources": rows,
+    }
     with open(output, "w", encoding="utf-8") as f:
-        json.dump(rows, f, ensure_ascii=False, indent=2)
+        json.dump(payload, f, ensure_ascii=False, indent=2)
     print(f"\nJSON 已保存到: {output}")
 
 
@@ -125,13 +158,17 @@ def main():
     parser.add_argument("--sources", default="config/sources.yaml")
     parser.add_argument("--output", default="output/source_audit.json")
     parser.add_argument("--concurrency", type=int, default=30)
+    parser.add_argument("--disable-dead-threshold", type=int, default=0,
+                        help="连续死亡次数达到该阈值时自动将源 enabled=false；0 表示只报告不修改")
     args = parser.parse_args()
     
     # 参数验证
     if args.concurrency <= 0:
         parser.error("--concurrency must be positive")
+    if args.disable_dead_threshold < 0:
+        parser.error("--disable-dead-threshold must be >= 0")
     
-    asyncio.run(audit(args.sources, args.output, args.concurrency))
+    asyncio.run(audit(args.sources, args.output, args.concurrency, args.disable_dead_threshold))
 
 
 if __name__ == "__main__":

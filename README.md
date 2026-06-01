@@ -31,6 +31,7 @@
 | 🔗 订阅转换链接 | `output/verified.converter.md` / `all.converter.md` | 一键转换为 Clash / sing-box / V2Ray / Surge / QX / Loon / Shadowrocket |
 | 📊 运行统计 | `output/stats.json` | 协议分布、源通过率、Top 延迟 + 抖动 |
 | 🔍 源审计报告 | `output/source_audit.json` | 每源节点数、存活性、连续死源计数 |
+| 🧪 健康报告 | `output/health_report.json` | 输出文件完整性、重复 tag、协议/地区分布、all/verified 策略检查 |
 
 ### Raw URL
 
@@ -151,15 +152,17 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 ### 按地区分组
 Clash 和 sing-box 输出自动按 GeoIP 国旗分组, 生成 `🇭🇰 香港` / `🇯🇵 日本` / `🇺🇸 美国` 等 url-test group (≥2 节点的地区才建组), selector 首页可一键切换地区。
 
-### 源审计
-- `tools/audit_sources.py` 测试每个源的存活性和节点数
-- 跟踪 `consecutive_dead` (连续 0 节点次数), 连续 2+ 次建议自动下线
-- 输出 `source_audit.json`
+### 源审计与健康报告
+- `tools/audit_sources.py` 每次 CI 测试每个源的存活性和节点数
+- 跟踪 `consecutive_dead` (连续 0 节点次数)，支持 `--disable-dead-threshold` 自动禁用连续死源
+- `tools/health_report.py` 每次 CI 检查输出文件完整性、重复 tag/name、协议/地区分布、all/verified 策略
+- 输出 `source_audit.json`、`health_report.json`
 
 ### CI 优化
 - sing-box binary 缓存 (actions/cache@v4), 版本变化时自动更新
 - 支持 workflow_dispatch 手动触发, 可自定义 `top_n` / `test_limit`
-- 可选同时跑源审计
+- 每次运行自动生成源审计和健康报告
+- GeoIP 结果缓存到 `output/geo_cache.json`，减少 ip-api 限速风险
 
 ---
 

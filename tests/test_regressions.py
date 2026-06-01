@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.generator import node_to_clash, node_to_url, write_outputs
 from core.geo import _is_public_ip, geo_flag_map
 from core.parser import Node, parse_content
+from tools.health_report import build_health_report
 from core.tester import SingBoxTester
 
 
@@ -58,6 +59,18 @@ class RegressionTests(unittest.TestCase):
         self.assertNotIn("127.0.0.1", flags)
         self.assertFalse(_is_public_ip("127.0.0.1"))
         self.assertFalse(_is_public_ip("10.0.0.1"))
+
+
+    def test_health_report_detects_generated_outputs(self):
+        n = Node("http", "http-test", "example.com", 8080, {})
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            write_outputs([n], d, prefix="verified", repo_path="owner/repo")
+            write_outputs([n], d, prefix="all", repo_path="owner/repo")
+            (out / "stats.json").write_text("{}", encoding="utf-8")
+            report = build_health_report(d, "verified")
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["prefixes"]["verified"]["json_node_count"], 1)
 
     def test_min_latency_can_be_disabled(self):
         with tempfile.NamedTemporaryFile() as f:

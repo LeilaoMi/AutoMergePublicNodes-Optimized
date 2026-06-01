@@ -6,14 +6,19 @@ from __future__ import annotations
 
 import asyncio
 import ipaddress
+import json
 import logging
 import re
 import socket
+import time
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 import aiohttp
 
 logger = logging.getLogger(__name__)
+
+GEO_CACHE_TTL_SEC = 14 * 24 * 60 * 60
 
 
 # 常见 Cloudflare Anycast 节点 IP 段 → 不做映射（无法确定国家）
@@ -25,6 +30,34 @@ _CF_PREFIXES = (
     "104.28.", "104.29.", "104.30.", "104.31.",
     "162.159.",
 )
+
+
+def _load_geo_cache(path: str) -> Dict[str, Dict[str, object]]:
+    try:
+        with Path(path).open(encoding="utf-8") as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_geo_cache(path: str, cache: Dict[str, Dict[str, object]]) -> None:
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    tmp = output.with_suffix(output.suffix + ".tmp")
+    tmp.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(output)
+
+
+def _cache_lookup(cache: Dict[str, Dict[str, object]], server: str, now: float) -> str:
+    entry = cache.get(server)
+    if not isinstance(entry, dict):
+        return ""
+    flag = entry.get("flag")
+    ts = entry.get("timestamp")
+    if isinstance(flag, str) and isinstance(ts, (int, float)) and now - float(ts) <= GEO_CACHE_TTL_SEC:
+        return flag
+    return ""
 
 
 def _country_flag(cc: str) -> str:
@@ -107,11 +140,20 @@ async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
     return result
 
 
-async def geo_flag_map(nodes, max_queries: int = 100, max_domain_resolves: int = 50) -> Dict[str, str]:
+async def geo_flag_map(
+    nodes,
+    max_queries: int = 100,
+    max_domain_resolves: int = 50,
+    cache_path: str = "output/geo_cache.json",
+) -> Dict[str, str]:
     """
     返回 {server: "🇸🇬"} 的映射。
-    IP 直接查询；域名在预算内解析到 IPv4 再查询。Cloudflare Anycast 和非公网 IP 跳过映射。
+    优先使用缓存；IP 直接查询；域名在预算内解析到 IPv4 再查询。
+    Cloudflare Anycast 和非公网 IP 跳过映射。
     """
+    now = time.time()
+    cache = _load_geo_cache(cache_path)
+    result: Dict[str, str] = {}
     direct_ips: List[str] = []
     domains: List[str] = []
     seen_servers = set()
@@ -120,6 +162,10 @@ async def geo_flag_map(nodes, max_queries: int = 100, max_domain_resolves: int =
         if not server or server in seen_servers:
             continue
         seen_servers.add(server)
+        cached_flag = _cache_lookup(cache, server, now)
+        if cached_flag:
+            result[server] = cached_flag
+            continue
         try:
             ipaddress.ip_address(server)
             direct_ips.append(server)
@@ -145,7 +191,19 @@ async def geo_flag_map(nodes, max_queries: int = 100, max_domain_resolves: int =
                 break
 
     ip2cc = await _lookup_batch(unique_ips)
-    return {server: _country_flag(ip2cc[ip]) for server, ip in server_to_ip.items() if ip in ip2cc}
+    cache_changed = False
+    for server, ip in server_to_ip.items():
+        cc = ip2cc.get(ip)
+        if not cc:
+            continue
+        flag = _country_flag(cc)
+        if flag:
+            result[server] = flag
+            cache[server] = {"flag": flag, "ip": ip, "timestamp": now}
+            cache_changed = True
+    if cache_changed:
+        _save_geo_cache(cache_path, cache)
+    return result
 
 
 def flag_for_server(server: str, flag_map: Dict[str, str]) -> str:

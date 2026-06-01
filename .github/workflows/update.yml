@@ -83,8 +83,7 @@ jobs:
           mv "sing-box-${VER_NUM}-linux-amd64/sing-box" ./sing-box
           chmod +x ./sing-box
 
-      - name: Audit sources (optional)
-        if: ${{ github.event.inputs.audit == 'true' }}
+      - name: Audit sources
         run: |
           python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json
 
@@ -99,6 +98,10 @@ jobs:
             --top-n "${{ github.event.inputs.top_n || '100' }}" \
             --test-limit "${{ github.event.inputs.test_limit || '500' }}" \
             --repo "${{ github.repository }}"
+
+      - name: Build health report
+        run: |
+          python tools/health_report.py --output-dir output --verified-prefix verified --output output/health_report.json
 
       - name: Commit & push
         run: |
@@ -127,6 +130,6 @@ jobs:
       - name: Purge jsDelivr cache
         run: |
           REPO="${{ github.repository }}"
-          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json; do
+          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json geo_cache.json; do
             curl -s "https://purge.jsdelivr.net/gh/${REPO}@main/output/${f}" >/dev/null || true
           done
