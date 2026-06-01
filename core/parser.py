@@ -64,10 +64,8 @@ class Node:
         r = self.raw
         if self.type in ("vmess", "vless"):
             return r.get("uuid", "")
-        if self.type in ("trojan", "shadowsocks", "hysteria", "hysteria2", "tuic", "naive"):
+        if self.type in ("trojan", "shadowsocks", "hysteria", "hysteria2", "tuic"):
             return r.get("password", "") or r.get("uuid", "")
-        if self.type == "wireguard":
-            return r.get("private_key", "")
         return ""
 
     def to_singbox(self) -> Dict[str, Any]:

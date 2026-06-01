@@ -8,7 +8,8 @@ import asyncio
 import ipaddress
 import logging
 import re
-from typing import Dict, List
+import socket
+from typing import Dict, List, Tuple
 
 import aiohttp
 
@@ -34,8 +35,37 @@ def _country_flag(cc: str) -> str:
     return chr(0x1F1E6 + ord(cc[0]) - ord("A")) + chr(0x1F1E6 + ord(cc[1]) - ord("A"))
 
 
+def _is_public_ip(ip: str) -> bool:
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return addr.is_global
+
+
 def _is_anycast(ip: str) -> bool:
     return any(ip.startswith(p) for p in _CF_PREFIXES)
+
+
+async def _resolve_server(server: str, timeout: float = 1.0) -> str:
+    try:
+        ipaddress.ip_address(server)
+        return server
+    except ValueError:
+        pass
+    try:
+        loop = asyncio.get_running_loop()
+        infos = await asyncio.wait_for(
+            loop.getaddrinfo(server, None, family=socket.AF_INET, type=socket.SOCK_STREAM),
+            timeout=timeout,
+        )
+    except Exception as exc:
+        logger.debug("DNS resolve failed for %s: %s", server, exc)
+        return ""
+    for family, _, _, _, sockaddr in infos:
+        if family == socket.AF_INET and sockaddr:
+            return sockaddr[0]
+    return ""
 
 
 async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
@@ -77,25 +107,45 @@ async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
     return result
 
 
-async def geo_flag_map(nodes) -> Dict[str, str]:
+async def geo_flag_map(nodes, max_queries: int = 100, max_domain_resolves: int = 50) -> Dict[str, str]:
     """
     返回 {server: "🇸🇬"} 的映射。
-    Cloudflare Anycast IP 跳过映射。
+    IP 直接查询；域名在预算内解析到 IPv4 再查询。Cloudflare Anycast 和非公网 IP 跳过映射。
     """
-    unique_ips: List[str] = []
-    seen = set()
+    direct_ips: List[str] = []
+    domains: List[str] = []
+    seen_servers = set()
     for n in nodes:
-        ip = n.server
-        try:
-            ipaddress.ip_address(ip)
-        except ValueError:
+        server = n.server
+        if not server or server in seen_servers:
             continue
-        if ip and ip not in seen and not _is_anycast(ip):
-            seen.add(ip)
+        seen_servers.add(server)
+        try:
+            ipaddress.ip_address(server)
+            direct_ips.append(server)
+        except ValueError:
+            domains.append(server)
+
+    resolved_pairs: List[Tuple[str, str]] = [(ip, ip) for ip in direct_ips]
+    for i in range(0, min(len(domains), max_domain_resolves), 100):
+        chunk = domains[i:i + 100]
+        resolved_pairs.extend(zip(chunk, await asyncio.gather(*[_resolve_server(server) for server in chunk])))
+
+    unique_ips: List[str] = []
+    seen_ips = set()
+    server_to_ip: Dict[str, str] = {}
+    for server, ip in resolved_pairs:
+        if not ip or not _is_public_ip(ip) or _is_anycast(ip):
+            continue
+        server_to_ip[server] = ip
+        if ip not in seen_ips:
+            seen_ips.add(ip)
             unique_ips.append(ip)
+            if len(unique_ips) >= max_queries:
+                break
 
     ip2cc = await _lookup_batch(unique_ips)
-    return {ip: _country_flag(cc) for ip, cc in ip2cc.items()}
+    return {server: _country_flag(ip2cc[ip]) for server, ip in server_to_ip.items() if ip in ip2cc}
 
 
 def flag_for_server(server: str, flag_map: Dict[str, str]) -> str:

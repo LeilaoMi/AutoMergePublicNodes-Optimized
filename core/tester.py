@@ -7,7 +7,7 @@
 
 为什么用 sing-box 而不是 xray:
 - Karing 用的就是 sing-box，测试结果与 Karing 一致
-- 原生支持 hysteria2/tuic/anytls/wireguard 等新协议
+- 原生支持 hysteria2/tuic/anytls 等新协议
 - 配置格式统一，无需协议转换映射
 """
 from __future__ import annotations

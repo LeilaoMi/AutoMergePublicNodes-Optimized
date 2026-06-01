@@ -34,6 +34,10 @@ _REGION_NAMES = {
 }
 
 
+def _std_b64_no_pad(value: str) -> str:
+    return base64.b64encode(value.encode()).decode().rstrip("=")
+
+
 def _flag_to_cc(flag_emoji: str) -> str:
     """国旗 emoji → ISO 国家代码 (e.g. '🇺🇸' → 'US')"""
     if len(flag_emoji) < 2:
@@ -207,15 +211,15 @@ def node_to_url(n: Node) -> str:
         return f"{url}#{quote(n.tag)}"
 
     if t == "shadowsocksr":
-        password_b64 = base64.urlsafe_b64encode(r.get("password", "").encode()).decode().rstrip("=")
+        password_b64 = _std_b64_no_pad(r.get("password", ""))
         head = f"{n.server}:{n.server_port}:{r.get('protocol','origin')}:{r.get('method','')}:{r.get('obfs','plain')}:{password_b64}"
-        params = [f"remarks={base64.urlsafe_b64encode(n.tag.encode()).decode().rstrip('=')}"]
+        params = [f"remarks={_std_b64_no_pad(n.tag)}"]
         if r.get("obfs_param"):
-            params.append(f"obfsparam={base64.urlsafe_b64encode(r['obfs_param'].encode()).decode().rstrip('=')}")
+            params.append(f"obfsparam={_std_b64_no_pad(r["obfs_param"])}")
         if r.get("protocol_param"):
-            params.append(f"protoparam={base64.urlsafe_b64encode(r['protocol_param'].encode()).decode().rstrip('=')}")
+            params.append(f"protoparam={_std_b64_no_pad(r["protocol_param"])}")
         full = f"{head}/?{'&'.join(params)}"
-        return "ssr://" + base64.urlsafe_b64encode(full.encode()).decode().rstrip("=")
+        return "ssr://" + _std_b64_no_pad(full)
 
     if t == "hysteria2":
         sni = r.get("tls", {}).get("server_name", n.server)
