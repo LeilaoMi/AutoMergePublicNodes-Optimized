@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import base64
 import json
-from typing import Any, Dict, List
+from dataclasses import replace
+from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
 import yaml
@@ -45,15 +46,18 @@ def _flag_to_cc(flag_emoji: str) -> str:
     return ""
 
 
-def _extract_region(tag: str) -> str:
-    """从节点 tag 中提取地区分组名（如果没有国旗则归入 '其他'）"""
-    if not tag:
-        return "其他"
-    # tag 格式: "🇺🇸 [ 123.4ms +/-5ms] xxx"
-    flag = tag[:2] if len(tag) >= 2 else ""
-    cc = _flag_to_cc(flag)
-    if cc:
-        return _REGION_NAMES.get(cc, f"{flag} 其他")
+def _extract_region(tag: str, server: str | None = None, flag_map: Dict[str, str] | None = None) -> str:
+    """从节点 tag 前缀国旗或 GeoIP 映射提取地区分组名。"""
+    if tag:
+        flag = tag[:2] if len(tag) >= 2 else ""
+        cc = _flag_to_cc(flag)
+        if cc:
+            return _REGION_NAMES.get(cc, f"{flag} 其他")
+    if server and flag_map:
+        flag = flag_map.get(server, "")
+        cc = _flag_to_cc(flag)
+        if cc:
+            return _REGION_NAMES.get(cc, f"{flag} 其他")
     return "其他"
 
 
@@ -71,23 +75,27 @@ def _clamp_tag(tag: str) -> str:
     return tag[:MAX_TAG_LENGTH - 1] + "…"
 
 
+def _unique_clamped_tag(tag: str, used: Dict[str, int]) -> str:
+    base = _clamp_tag(tag)
+    if base not in used:
+        used[base] = 0
+        return base
+    used[base] += 1
+    suffix = f"#{used[base]}"
+    return f"{base[:MAX_TAG_LENGTH - len(suffix)]}{suffix}"
+
+
+def _prepare_nodes(nodes: List[Node]) -> List[Node]:
+    """返回 tag 已截断且唯一的新节点列表，不修改输入对象。"""
+    used: Dict[str, int] = {}
+    return [replace(n, tag=_unique_clamped_tag(n.tag, used)) for n in nodes]
+
+
 def _ensure_unique_tags(nodes: List[Node]) -> None:
-    """确保所有节点的 tag 唯一，如有重复则添加数字后缀"""
-    tag_counts: Dict[str, int] = {}
-    for n in nodes:
-        original_tag = n.tag
-        if original_tag in tag_counts:
-            # 找到重复，添加数字后缀
-            tag_counts[original_tag] += 1
-            suffix = f"#{tag_counts[original_tag]}"
-            # 确保添加后缀后不超过最大长度
-            max_base_len = MAX_TAG_LENGTH - len(suffix)
-            if len(original_tag) > max_base_len:
-                n.tag = original_tag[:max_base_len] + suffix
-            else:
-                n.tag = original_tag + suffix
-        else:
-            tag_counts[original_tag] = 0
+    """确保所有节点的 tag 唯一，如有重复则添加数字后缀。"""
+    prepared = _prepare_nodes(nodes)
+    for target, source in zip(nodes, prepared):
+        target.tag = source.tag
 
 
 # ============================================================
@@ -237,6 +245,13 @@ def node_to_url(n: Node) -> str:
             userinfo = f"{quote(r['username'])}:{quote(r.get('password',''))}@"
         return f"socks5://{userinfo}{n.server}:{n.server_port}#{quote(n.tag)}"
 
+    if t == "http":
+        userinfo = ""
+        if r.get("username"):
+            userinfo = f"{quote(r['username'])}:{quote(r.get('password',''))}@"
+        scheme = "https" if r.get("tls", {}).get("enabled") else "http"
+        return f"{scheme}://{userinfo}{n.server}:{n.server_port}#{quote(n.tag)}"
+
     return ""
 
 
@@ -244,7 +259,7 @@ def node_to_url(n: Node) -> str:
 # Node → Clash YAML proxy
 # ============================================================
 
-def node_to_clash(n: Node) -> Dict[str, Any]:
+def node_to_clash(n: Node) -> Optional[Dict[str, Any]]:
     t, r = n.type, n.raw
     base: Dict[str, Any] = {"name": n.tag, "server": n.server, "port": n.server_port}
 
@@ -374,13 +389,18 @@ def node_to_clash(n: Node) -> Dict[str, Any]:
 # 完整文件生成
 # ============================================================
 
-def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
-    """生成全套订阅文件"""
+def write_outputs(
+    nodes: List[Node],
+    output_dir: str,
+    prefix: str = "nodes",
+    repo_path: str | None = None,
+    flag_map: Dict[str, str] | None = None,
+) -> int:
+    """生成全套订阅文件，不修改传入节点。"""
     import os
     os.makedirs(output_dir, exist_ok=True)
 
-    # 确保所有节点 tag 唯一（避免 clamp 后重复）
-    _ensure_unique_tags(nodes)
+    nodes = _prepare_nodes(nodes)
 
     # 1) URL 列表
     urls = [u for n in nodes if (u := node_to_url(n))]
@@ -399,14 +419,13 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
     for n in nodes:
         p = node_to_clash(n)
         if p is not None:
-            p["name"] = _clamp_tag(p["name"])
             proxies.append(p)
             node_proxy_pairs.append((n, p))
 
     # 按地区分组
     region_groups: Dict[str, List[str]] = {}
     for n, p in node_proxy_pairs:
-        region = _extract_region(p["name"])
+        region = _extract_region(p["name"], n.server, flag_map)
         region_groups.setdefault(region, []).append(p["name"])
 
     # 只有 ≥2 节点的地区才建 url-test group
@@ -459,13 +478,13 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
         yaml.dump(clash, f, allow_unicode=True, sort_keys=False)
 
     # 4) sing-box JSON (Karing 直接导入) — 带 DNS + 分流规则
-    outbounds_list = [_clamp_tag(n.tag) for n in nodes] or ["direct"]
+    outbounds_list = [n.tag for n in nodes] or ["direct"]
 
     # sing-box 按地区分组
     sb_region_groups: Dict[str, List[str]] = {}
     for n in nodes:
-        region = _extract_region(n.tag)
-        sb_region_groups.setdefault(region, []).append(_clamp_tag(n.tag))
+        region = _extract_region(n.tag, n.server, flag_map)
+        sb_region_groups.setdefault(region, []).append(n.tag)
 
     sb_valid_regions = {k: v for k, v in sb_region_groups.items() if len(v) >= 2}
 
@@ -490,7 +509,6 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
     node_outbounds = []
     for n in nodes:
         ob = n.to_singbox()
-        ob["tag"] = _clamp_tag(ob["tag"])
         node_outbounds.append(ob)
 
     sb_outbounds.extend(node_outbounds)
@@ -532,20 +550,7 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
         json.dump(singbox, f, ensure_ascii=False, indent=2)
 
     # 5) 订阅转换链接（基于 jsdelivr CDN）
-    # 从 git remote 推断仓库路径，支持 fork
-    import subprocess
-    try:
-        remote_url = subprocess.check_output(
-            ["git", "remote", "get-url", "origin"], text=True
-        ).strip()
-        # 提取 owner/repo
-        if "github.com" in remote_url:
-            repo_path = remote_url.split("github.com")[-1].strip("/:")
-            repo_path = repo_path.removesuffix(".git")
-        else:
-            repo_path = "LeilaoMi/AutoMergePublicNodes-Optimized"
-    except Exception:
-        repo_path = "LeilaoMi/AutoMergePublicNodes-Optimized"
+    repo_path = repo_path or "LeilaoMi/AutoMergePublicNodes-Optimized"
     sub_url = f"https://cdn.jsdelivr.net/gh/{repo_path}@main/output/{prefix}.txt"
     generate_converter_links(sub_url, output_dir, prefix)
 

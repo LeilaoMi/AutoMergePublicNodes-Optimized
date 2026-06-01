@@ -112,7 +112,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 ```
 29 个社区订阅源
     ↓ 异步抓取 (并发 30, 失败回退 jsdelivr CDN, 自动重试)
-    ↓ 多协议解析 (vless / vmess / trojan / ss / ssr / hy2 / tuic / anytls / wg / socks / http)
+    ↓ 多协议解析 (vless / vmess / trojan / ss / ssr / hy2 / tuic / anytls / socks / http)
     ↓ GeoIP 国旗映射 (ip-api.com 批量查询, 跳过 Cloudflare Anycast)
     ↓ 按指纹去重 (type | server | port | key)
     ↓ 质量预过滤 (端口黑名单 + 同 server+protocol 去重 + 同 IP 限 2)
@@ -121,7 +121,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
     ↓ ★ sing-box 真测 (并发 30):
     │   - 启动节点为本地 SOCKS5 (sniff=on, 域名分流)
     │   - 4 层验证: youtube 204 + google 204 + cloudflare geo(出口非CN) + 100KB 带宽下载
-    │   - 拒绝 <30ms 同机房假节点
+    │   - 默认标记并拒绝 <30ms 可疑低延迟节点（可用 --min-latency 0 关闭）
     │   - 计算延迟 + 抖动(jitter)
     ↓ 按真实延迟升序, 取 Top N
     ↓ 按地区自动分组 (🇭🇰 香港 / 🇯🇵 日本 / 🇺🇸 美国 / ...)
@@ -138,7 +138,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 ### 节点测试
 - **sing-box 真测**: 用 Karing 同源内核启动节点, 实际 fetch 被墙端点, 非 TCP 握手
 - **4 层验证**: YouTube/Google 204 + Cloudflare 出口地理 + 100KB 带宽下载
-- **假节点过滤**: 延迟 <30ms 判定为同机房假节点
+- **可疑低延迟过滤**: 默认延迟 <30ms 判定为可疑节点，可用 `--min-latency 0` 关闭
 - **延迟 + 抖动**: 每节点记录平均延迟和 jitter, 入 tag 标注
 
 ### 输出格式
@@ -245,6 +245,8 @@ AUTONODES_TOP_N=200 AUTONODES_TEST_LIMIT=800 python main.py
 | `--test-concurrency` | 30 | sing-box 测试并发数 |
 | `--test-timeout` | 6.0 | 单节点测试超时 (秒) |
 | `--quality-filter` | on | 质量预过滤 (端口黑名单 + 同 server 限 2) |
+| `--min-latency` | 30.0 | 真实测试最低延迟阈值(ms)，设为 0 可关闭 |
+| `--repo` | `LeilaoMi/AutoMergePublicNodes-Optimized` | 生成转换链接所用的 GitHub owner/repo |
 | `--tcp-check` | on | TCP 预筛选 |
 | `--real-test` | on | sing-box 真实测试 |
 

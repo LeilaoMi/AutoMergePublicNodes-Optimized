@@ -38,7 +38,7 @@ TEST_TARGETS = [
 SPEED_REQUIRED_BYTES = 100_000
 SPEED_TIMEOUT_SEC = 8
 
-MIN_LATENCY_MS = 30  # 低于此值视为同机房假节点
+DEFAULT_MIN_LATENCY_MS = 30.0  # 低于此值视为可疑节点；可通过 CLI 设为 0 关闭
 
 
 @dataclass
@@ -86,13 +86,15 @@ def build_singbox_config(node: Node, socks_port: int) -> dict:
 
 class SingBoxTester:
     def __init__(self, sb_path: str = "./sing-box", concurrency: int = 30,
-                 startup_wait: float = 0.6, request_timeout: float = 6.0):
+                 startup_wait: float = 0.6, request_timeout: float = 6.0,
+                 min_latency_ms: float = DEFAULT_MIN_LATENCY_MS):
         if not os.path.exists(sb_path):
             raise FileNotFoundError(f"sing-box binary not found: {sb_path}")
         self.sb_path = os.path.abspath(sb_path)
         self.concurrency = concurrency
         self.startup_wait = startup_wait
         self.request_timeout = request_timeout
+        self.min_latency_ms = min_latency_ms
         self._port_counter = 30000
 
     def _alloc_port(self) -> int:
@@ -191,7 +193,7 @@ class SingBoxTester:
                     latency_targets = [l for l, (_, k) in zip(latencies, TEST_TARGETS) if k != "speed"]
                     avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0]
                     jitter = max(abs(l - avg_latency) for l in latency_targets) if len(latency_targets) >= 2 else 0.0
-                    if avg_latency < MIN_LATENCY_MS:
+                    if self.min_latency_ms > 0 and avg_latency < self.min_latency_ms:
                         result.error = f"latency-too-low:{avg_latency:.1f}ms"
                     else:
                         result.success = True
