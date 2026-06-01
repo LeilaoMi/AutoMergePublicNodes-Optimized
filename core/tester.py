@@ -20,7 +20,7 @@ import socket
 import tempfile
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 import aiohttp
 from aiohttp_socks import ProxyConnector

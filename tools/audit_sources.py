@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import yaml
 
-from core.fetcher import Source, fetch_all, load_sources
+from core.fetcher import fetch_all, load_sources
 
 
 def is_dynamic(url: str) -> bool:
