@@ -109,7 +109,13 @@ class SingBoxTester:
 
     async def test_one(self, node: Node) -> TestResult:
         result = TestResult(node=node)
-        port = self._alloc_port()
+        
+        # 分配端口
+        try:
+            port = self._alloc_port()
+        except RuntimeError:
+            result.error = "no free ports"
+            return result
 
         # 写临时配置
         tmpdir = tempfile.mkdtemp(prefix="sb-")
@@ -136,16 +142,17 @@ class SingBoxTester:
                 result.error = f"sing-box exited {proc.returncode}"
                 return result
 
-            # 严格测试：必须两个被墙的 HTTPS 端点都返回 204
-            latencies = []
-            failed_target = None
-            for target_url, target_kind in TEST_TARGETS:
-                connector = ProxyConnector.from_url(f"socks5://127.0.0.1:{port}")
-                tstart = time.monotonic()
-                try:
-                    timeout = aiohttp.ClientTimeout(total=SPEED_TIMEOUT_SEC if target_kind == "speed" else self.request_timeout)
-                    async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
-                        async with session.get(target_url) as resp:
+            # 创建一个 session 用于所有目标测试
+            connector = ProxyConnector.from_url(f"socks5://127.0.0.1:{port}")
+            async with aiohttp.ClientSession(connector=connector) as session:
+                # 严格测试：必须两个被墙的 HTTPS 端点都返回 204
+                latencies = []
+                failed_target = None
+                for target_url, target_kind in TEST_TARGETS:
+                    tstart = time.monotonic()
+                    try:
+                        timeout = aiohttp.ClientTimeout(total=SPEED_TIMEOUT_SEC if target_kind == "speed" else self.request_timeout)
+                        async with session.get(target_url, timeout=timeout) as resp:
                             if target_kind == "204":
                                 if resp.status != 204:
                                     failed_target = f"{target_kind}:status={resp.status}"
@@ -174,24 +181,24 @@ class SingBoxTester:
                                 if total < SPEED_REQUIRED_BYTES:
                                     failed_target = f"{target_kind}:only-{total}B"
                                     break
-                    latencies.append((time.monotonic() - tstart) * 1000)
-                except Exception as e:
-                    failed_target = f"{target_kind}:{type(e).__name__}"
-                    break
+                        latencies.append((time.monotonic() - tstart) * 1000)
+                    except Exception as e:
+                        failed_target = f"{target_kind}:{type(e).__name__}"
+                        break
 
-            if failed_target is None and latencies:
-                # 取前 3 个目标的平均延迟（不算下载耗时）
-                latency_targets = [l for l, (_, k) in zip(latencies, TEST_TARGETS) if k != "speed"]
-                avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0]
-                jitter = max(abs(l - avg_latency) for l in latency_targets) if len(latency_targets) >= 2 else 0.0
-                if avg_latency < MIN_LATENCY_MS:
-                    result.error = f"latency-too-low:{avg_latency:.1f}ms"
+                if failed_target is None and latencies:
+                    # 取前 3 个目标的平均延迟（不算下载耗时）
+                    latency_targets = [l for l, (_, k) in zip(latencies, TEST_TARGETS) if k != "speed"]
+                    avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0]
+                    jitter = max(abs(l - avg_latency) for l in latency_targets) if len(latency_targets) >= 2 else 0.0
+                    if avg_latency < MIN_LATENCY_MS:
+                        result.error = f"latency-too-low:{avg_latency:.1f}ms"
+                    else:
+                        result.success = True
+                        result.latency_ms = avg_latency
+                        result.jitter_ms = jitter
                 else:
-                    result.success = True
-                    result.latency_ms = avg_latency
-                    result.jitter_ms = jitter
-            else:
-                result.error = failed_target or "no-test-completed"
+                    result.error = failed_target or "no-test-completed"
 
         except Exception as e:
             result.error = f"start: {e}"

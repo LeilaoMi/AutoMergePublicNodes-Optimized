@@ -71,6 +71,25 @@ def _clamp_tag(tag: str) -> str:
     return tag[:MAX_TAG_LENGTH - 1] + "…"
 
 
+def _ensure_unique_tags(nodes: List[Node]) -> None:
+    """确保所有节点的 tag 唯一，如有重复则添加数字后缀"""
+    tag_counts: Dict[str, int] = {}
+    for n in nodes:
+        original_tag = n.tag
+        if original_tag in tag_counts:
+            # 找到重复，添加数字后缀
+            tag_counts[original_tag] += 1
+            suffix = f"#{tag_counts[original_tag]}"
+            # 确保添加后缀后不超过最大长度
+            max_base_len = MAX_TAG_LENGTH - len(suffix)
+            if len(original_tag) > max_base_len:
+                n.tag = original_tag[:max_base_len] + suffix
+            else:
+                n.tag = original_tag + suffix
+        else:
+            tag_counts[original_tag] = 0
+
+
 # ============================================================
 # Node → URL (V2Ray 订阅格式)
 # ============================================================
@@ -359,6 +378,9 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
     """生成全套订阅文件"""
     import os
     os.makedirs(output_dir, exist_ok=True)
+
+    # 确保所有节点 tag 唯一（避免 clamp 后重复）
+    _ensure_unique_tags(nodes)
 
     # 1) URL 列表
     urls = [u for n in nodes if (u := node_to_url(n))]

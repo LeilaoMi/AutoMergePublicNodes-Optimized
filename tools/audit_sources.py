@@ -126,6 +126,11 @@ def main():
     parser.add_argument("--output", default="output/source_audit.json")
     parser.add_argument("--concurrency", type=int, default=30)
     args = parser.parse_args()
+    
+    # 参数验证
+    if args.concurrency <= 0:
+        parser.error("--concurrency must be positive")
+    
     asyncio.run(audit(args.sources, args.output, args.concurrency))
 
 
