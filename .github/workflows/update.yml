@@ -23,6 +23,10 @@ on:
         description: '同时跑订阅源审计'
         type: boolean
         default: false
+      force_push:
+        description: '强制推送（忽略冲突）'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -100,7 +104,11 @@ jobs:
             echo "no changes"
           else
             git commit -m "chore: update nodes $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')"
-            git push
+            if [ "${{ github.event.inputs.force_push }}" = "true" ]; then
+              git push --force-with-lease
+            else
+              git push
+            fi
           fi
 
       - name: Purge jsDelivr cache

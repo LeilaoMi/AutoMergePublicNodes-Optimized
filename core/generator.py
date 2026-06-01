@@ -509,7 +509,7 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
             "strategy": "prefer_ipv4",
         },
         "inbounds": [
-            {"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 2080},
+            {"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 2080, "sniff": true, "sniff_override_destination": false},
         ],
         "outbounds": sb_outbounds,
         "route": {
@@ -520,9 +520,9 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
                 {"rule_set": "geosite-geolocation-!cn", "outbound": "proxy"},
             ],
             "rule_set": [
-                {"tag": "geosite-cn", "type": "remote", "format": "binary", "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs", "download_detour": "direct"},
-                {"tag": "geoip-cn", "type": "remote", "format": "binary", "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs", "download_detour": "direct"},
-                {"tag": "geosite-geolocation-!cn", "type": "remote", "format": "binary", "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs", "download_detour": "direct"},
+                {"tag": "geosite-cn", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-cn.srs", "download_detour": "direct"},
+                {"tag": "geoip-cn", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geoip@rule-set/geoip-cn.srs", "download_detour": "direct"},
+                {"tag": "geosite-geolocation-!cn", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs", "download_detour": "direct"},
             ],
             "final": "proxy",
             "auto_detect_interface": True,

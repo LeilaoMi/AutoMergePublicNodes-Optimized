@@ -40,7 +40,64 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/o
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.yaml
 ```
 
-### jsDelivr CDN (国内更稳)
+---
+
+## 🇨🇳 内地用户优化
+
+### 多种 CDN 镜像
+
+如果 GitHub Raw 访问慢，尝试以下镜像：
+
+**jsDelivr CDN**（推荐，国内加速）：
+```
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.txt
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.yaml
+```
+
+**GitHub 镜像站**（备用）：
+```
+https://ghproxy.com/https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.txt
+https://mirror.ghproxy.com/https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.yaml
+```
+
+### 本地文件导入（最稳定）
+
+如果所有在线地址都访问不了，可以：
+
+1. **手动下载**：用浏览器或下载工具下载 `output/verified.yaml` 或 `verified.txt`
+2. **本地导入**：
+   - **v2rayN**：配置 → 从文件导入 → 选择下载的 yaml/txt 文件
+   - **Clash Meta**：将 yaml 文件放到 `~/.config/clash/` 目录，配置中指定路径
+   - **Karing**：导入 → 从本地文件 → 选择文件
+
+### 自建订阅转换服务
+
+如果需要将 V2Ray 订阅转换为 Clash/sing-box 格式，可以自建 subconverter：
+
+```bash
+# Docker 一键部署
+docker run -d --name subconverter -p 25500:25500 tindy2013/subconverter:latest
+
+# 使用示例
+# 访问 http://localhost:25500/sub?target=clash&url=你的订阅地址
+```
+
+支持的转换目标：
+- `clash` - Clash 配置
+- `clashr` - ClashR 配置
+- `surge` - Surge 配置
+- `quan` - Quantumult 配置
+- `quanx` - Quantumult X 配置
+- `loon` - Loon 配置
+- `ss` - Shadowsocks 配置
+- `sssub` - Shadowsocks 订阅
+- `ssd` - ShadowsocksD 配置
+- `singbox` - sing-box 配置
+- `v2ray` - V2Ray 配置
+
+---
+
+## 🔧 工作流程(改 v2 后的现状)
 
 ```
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.txt
