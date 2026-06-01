@@ -215,9 +215,9 @@ def node_to_url(n: Node) -> str:
         head = f"{n.server}:{n.server_port}:{r.get('protocol','origin')}:{r.get('method','')}:{r.get('obfs','plain')}:{password_b64}"
         params = [f"remarks={_std_b64_no_pad(n.tag)}"]
         if r.get("obfs_param"):
-            params.append(f"obfsparam={_std_b64_no_pad(r["obfs_param"])}")
+            params.append(f"obfsparam={_std_b64_no_pad(r['obfs_param'])}")
         if r.get("protocol_param"):
-            params.append(f"protoparam={_std_b64_no_pad(r["protocol_param"])}")
+            params.append(f"protoparam={_std_b64_no_pad(r['protocol_param'])}")
         full = f"{head}/?{'&'.join(params)}"
         return "ssr://" + _std_b64_no_pad(full)
 
