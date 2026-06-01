@@ -51,7 +51,13 @@ jobs:
       - name: Get sing-box version
         id: sb-version
         run: |
-          VERSION=$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
+          set -euo pipefail
+          VERSION=$(curl -fsSL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error::Failed to fetch sing-box version"
+            exit 1
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Latest sing-box: $VERSION"
 
@@ -65,9 +71,10 @@ jobs:
       - name: Download sing-box
         if: steps.cache-sb.outputs.cache-hit != 'true'
         run: |
+          set -euo pipefail
           VERSION="${{ steps.sb-version.outputs.version }}"
           VER_NUM="${VERSION#v}"
-          curl -fsSL -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VER_NUM}-linux-amd64.tar.gz"
+          curl -fsSL -L -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VER_NUM}-linux-amd64.tar.gz"
           tar -xzf sb.tar.gz
           mv "sing-box-${VER_NUM}-linux-amd64/sing-box" ./sing-box
           chmod +x ./sing-box
