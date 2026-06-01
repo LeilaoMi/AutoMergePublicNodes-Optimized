@@ -152,7 +152,7 @@ async def fetch_source(session: aiohttp.ClientSession, src: Source, timeout: int
 async def fetch_all(sources: List[Source], concurrency: int = 30, timeout: int = 15) -> List[FetchResult]:
     """并发抓取所有订阅源"""
     sem = asyncio.Semaphore(concurrency)
-    connector = aiohttp.TCPConnector(limit=concurrency * 2, ssl=False)
+    connector = aiohttp.TCPConnector(limit=concurrency * 2)
     headers = {
         "User-Agent": "ClashforWindows/0.20.39 (clash-meta)",
         "Accept": "*/*",

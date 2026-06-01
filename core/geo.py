@@ -5,10 +5,14 @@ GeoIP 工具：将 server IP 映射为国旗 emoji
 from __future__ import annotations
 
 import asyncio
+import ipaddress
+import logging
 import re
 from typing import Dict, List
 
 import aiohttp
+
+logger = logging.getLogger(__name__)
 
 
 # 常见 Cloudflare Anycast 节点 IP 段 → 不做映射（无法确定国家）
@@ -35,32 +39,41 @@ def _is_anycast(ip: str) -> bool:
 
 
 async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
-    """批量查询 ip-api.com（免费，每分钟 45 次，支持 batch 100）"""
+    """批量查询 ip-api.com（免费版 15 requests/min，batch 每次最多 100 个）。"""
     if not ips:
         return {}
     result: Dict[str, str] = {}
-    connector = aiohttp.TCPConnector(ssl=False)
-    async with aiohttp.ClientSession(connector=connector) as session:
-        # 每批最多 100 个，批间间隔 1.5s 以避免 ip-api.com 429 错误
+    async with aiohttp.ClientSession() as session:
+        # 每批最多 100 个；免费版 15 req/min，保守使用 4.2s 间隔。
         for i in range(0, len(ips), 100):
             if i > 0:
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(4.2)
             batch = ips[i:i + 100]
             body = [{"query": ip, "fields": "countryCode"} for ip in batch]
-            try:
-                async with session.post(
-                    "http://ip-api.com/batch?fields=countryCode",
-                    json=body,
-                    timeout=aiohttp.ClientTimeout(total=timeout),
-                ) as resp:
-                    if resp.status == 200:
+            for attempt in range(2):
+                try:
+                    async with session.post(
+                        "http://ip-api.com/batch?fields=countryCode",
+                        json=body,
+                        timeout=aiohttp.ClientTimeout(total=timeout),
+                    ) as resp:
+                        if resp.status == 429 and attempt == 0:
+                            retry_after = int(resp.headers.get("X-Ttl", "60") or 60)
+                            logger.warning("ip-api rate limited; retrying after %ss", retry_after)
+                            await asyncio.sleep(max(retry_after, 1))
+                            continue
+                        if resp.status != 200:
+                            logger.warning("ip-api batch failed: HTTP %s", resp.status)
+                            break
                         items = await resp.json()
                         for item, ip in zip(items, batch):
                             cc = item.get("countryCode", "")
                             if cc:
                                 result[ip] = cc
-            except Exception:
-                pass
+                        break
+                except Exception as exc:
+                    logger.warning("ip-api batch lookup failed: %s", exc)
+                    break
     return result
 
 
@@ -73,6 +86,10 @@ async def geo_flag_map(nodes) -> Dict[str, str]:
     seen = set()
     for n in nodes:
         ip = n.server
+        try:
+            ipaddress.ip_address(ip)
+        except ValueError:
+            continue
         if ip and ip not in seen and not _is_anycast(ip):
             seen.add(ip)
             unique_ips.append(ip)

@@ -1,16 +1,17 @@
 """
 节点解析器 - 全协议支持
-支持: vmess, vless, trojan, ss, ssr, hysteria, hysteria2, tuic, anytls, naive, wireguard, socks5, http, juicity
+支持: vmess, vless, trojan, ss, ssr, hysteria, hysteria2, tuic, anytls, socks5, http
 所有节点统一输出为 sing-box outbound 格式（Karing 兼容）
 """
 from __future__ import annotations
 
 import base64
 import json
+import logging
 import re
 import yaml
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, unquote, urlparse
 
 
@@ -42,6 +43,9 @@ def is_b64(s: str) -> bool:
 # ============================================================
 # 统一节点模型 (sing-box outbound 格式)
 # ============================================================
+
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class Node:
@@ -559,7 +563,7 @@ URL_PARSERS = {
 }
 
 
-def parse_url(url: str) -> Optional[Node]:
+def parse_url(url: str, errors: List[str] | None = None) -> Optional[Node]:
     """解析单个节点 URL"""
     url = url.strip()
     if "://" not in url:
@@ -570,7 +574,9 @@ def parse_url(url: str) -> Optional[Node]:
         return None
     try:
         return parser(url)
-    except Exception:
+    except Exception as exc:
+        if errors is not None:
+            errors.append(f"{scheme}: {type(exc).__name__}: {exc}")
         return None
 
 
@@ -597,27 +603,27 @@ def parse_content(text: str) -> List[Node]:
         except Exception:
             pass
 
-    # 2) Base64 编码的订阅
-    stripped = re.sub(r"\s+", "", text)
-    if "://" not in text[:200] and is_b64(stripped):
-        decoded = b64decode(stripped)
-        if "://" in decoded:
+    # 2) Base64 编码的订阅。忽略注释行后再判断，避免注释前缀导致整段漏解析。
+    content_lines = [line.strip() for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")]
+    candidate = "".join(content_lines)
+    if "://" not in text[:200] and is_b64(candidate):
+        decoded = b64decode(candidate)
+        if "://" in decoded or "proxies:" in decoded:
             text = decoded
 
     # 3) 纯文本：逐行匹配 URL
+    url_re = re.compile(r"(?<![A-Za-z0-9+.-])(vmess|vless|trojan|ssr|ss|hysteria2|hy2|hysteria|hy|tuic|anytls|socks5|socks|https?)://[^\s<>'\"]+")
+    parse_errors: List[str] = []
     for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        m = re.findall(r"(vmess|vless|trojan|ssr|ss|hysteria2|hy2|hysteria|hy|tuic|anytls|socks5|socks|https?)://[^\s<>'\"]+", line)
-        for scheme in m:
-            # 提取完整 URL（贪婪到行尾）
-            idx = line.find(scheme + "://")
-            if idx >= 0:
-                url = line[idx:].split()[0].strip("'\",;")
-                n = parse_url(url)
-                if n:
-                    nodes.append(n)
-                    break  # 一行只取第一个
+        for match in url_re.finditer(line):
+            url = match.group(0).strip("'\",;")
+            n = parse_url(url, parse_errors)
+            if n:
+                nodes.append(n)
 
+    if parse_errors:
+        logger.warning("skipped %d invalid node URLs while parsing subscription content", len(parse_errors))
     return nodes

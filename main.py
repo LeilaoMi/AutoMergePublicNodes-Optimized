@@ -3,7 +3,7 @@
 autonodes - 主入口
 功能流水线:
 1) 抓取所有订阅源（异步并发）
-2) 解析全协议节点（vmess/vless/trojan/ss/ssr/hysteria/hysteria2/tuic/anytls/wireguard/socks5/http）
+2) 解析全协议节点（vmess/vless/trojan/ss/ssr/hysteria/hysteria2/tuic/anytls/socks5/http）
 3) 去重 + TCP 预筛选
 4) sing-box 真实代理测试（Karing 同源内核）
 5) 按延迟排序，取 Top N
@@ -18,7 +18,8 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List
+from dataclasses import replace
+from typing import Dict, List, Tuple
 
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -43,7 +44,7 @@ def dedupe(nodes: List[Node]) -> List[Node]:
 # 协议优先级（数字越小越好；reality > hy2 > tuic > trojan > vmess > ss）
 _PROTO_PRIORITY = {
     "vless": 0, "hysteria2": 1, "tuic": 2, "trojan": 3,
-    "vmess": 4, "anytls": 4, "wireguard": 4,
+    "vmess": 4, "anytls": 4,
     "shadowsocks": 5, "shadowsocksr": 6,
     "socks": 7, "http": 7,
 }
@@ -53,8 +54,8 @@ def protocol_priority(t: str) -> int:
     return _PROTO_PRIORITY.get(t, 9)
 
 
-# 端口黑名单（容易被运营商干扰 / 明文）
-_PORT_BLOCKLIST = {0, 80, 8080}
+# 端口黑名单。80/8080 可能是合法 WS/TLS/HTTP 伪装端口，不再硬删除。
+_PORT_BLOCKLIST = {0}
 
 
 def quality_prefilter(nodes: List[Node]) -> List[Node]:
@@ -192,6 +193,7 @@ async def run(args):
             concurrency=args.test_concurrency,
             startup_wait=args.startup_wait,
             request_timeout=args.test_timeout,
+            min_latency_ms=args.min_latency,
         )
         results = await tester.test_all(nodes)
         valid = sorted(
@@ -209,30 +211,27 @@ async def run(args):
         valid = sorted([(n, tcp_latency.get(n.fingerprint(), 0), 0.0) for n in nodes], key=lambda x: x[1])
         print(f"[5/6] 跳过真实测试")
 
-    # 取 Top N 并改名加入延迟
+    # 取 Top N 并改名加入延迟。构造新 Node，避免污染 all.* 的原始去重池。
     top = valid[:args.top_n]
     final_nodes: List[Node] = []
     for i, (n, lat, jit) in enumerate(top, 1):
         flag = flag_for_server(n.server, flag_map)
         prefix = f"{flag} " if flag else ""
+        new_tag = n.tag
         if lat > 0:
             jitter_str = f" +/-{jit:.0f}ms" if jit > 0 else ""
-            n.tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag[:30]}"
-        final_nodes.append(n)
+            new_tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag[:30]}"
+        final_nodes.append(replace(n, tag=new_tag))
 
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
-    from core.generator import write_outputs, _clamp_tag
+    from core.generator import write_outputs
 
-    # 在生成输出前统一 clamp tag
-    for n in final_nodes:
-        n.tag = _clamp_tag(n.tag)
-
-    n_top = write_outputs(final_nodes, args.output_dir, prefix="verified")
+    n_top = write_outputs(final_nodes, args.output_dir, prefix="verified", repo_path=args.repo)
     # 同时生成全量备份(未测速,供客户端再测)
     # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
     all_valid = dedup_pool
-    n_all = write_outputs(all_valid, args.output_dir, prefix="all")
+    n_all = write_outputs(all_valid, args.output_dir, prefix="all", repo_path=args.repo, flag_map=flag_map)
 
     elapsed = time.time() - t0
     print(f"\n┌─────────────────────────────────────────────┐")
@@ -302,6 +301,10 @@ def main():
     p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
     p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=True,
                    help="启用质量预过滤（端口黑名单+同server限2）")
+    p.add_argument("--min-latency", type=float, default=30.0,
+                   help="真实测试最低延迟阈值(ms)，低于此值视为可疑；设为 0 可关闭")
+    p.add_argument("--repo", default="LeilaoMi/AutoMergePublicNodes-Optimized",
+                   help="用于生成 jsDelivr 订阅转换链接的 owner/repo")
 
     args = p.parse_args()
     
@@ -316,6 +319,8 @@ def main():
         p.error("--test-concurrency 必须 > 0")
     if args.test_limit < 0:
         p.error("--test-limit 必须 >= 0")
+    if args.min_latency < 0:
+        p.error("--min-latency 必须 >= 0")
     
     # 环境变量覆盖（CI 或容器场景常用）
     if os.environ.get("AUTONODES_TOP_N"):
