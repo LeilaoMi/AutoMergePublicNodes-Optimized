@@ -509,7 +509,7 @@ def write_outputs(nodes: List[Node], output_dir: str, prefix: str = "nodes"):
             "strategy": "prefer_ipv4",
         },
         "inbounds": [
-            {"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 2080, "sniff": true, "sniff_override_destination": false},
+            {"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 2080, "sniff": True, "sniff_override_destination": False},
         ],
         "outbounds": sb_outbounds,
         "route": {
