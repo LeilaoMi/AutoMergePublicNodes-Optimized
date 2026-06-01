@@ -10,6 +10,18 @@
 
 ---
 
+## 📝 更新日志
+
+### 2026-06-01 - 代码质量修复
+
+- **移除未使用导入**: 清理 main.py, parser.py, fetcher.py 中的冗余导入
+- **优化 tester.py**: 每个节点复用同一 aiohttp session，减少资源开销
+- **改进错误处理**: _alloc_port 失败时返回 TestResult 而非抛异常
+- **参数验证**: main.py 和 audit_sources.py 添加参数范围检查
+- **Tag 去重**: generator.py 添加截断后 tag 去重逻辑，防止 sing-box 配置冲突
+
+---
+
 ## 📦 订阅地址
 
 | 用途 | 文件 | 说明 |
