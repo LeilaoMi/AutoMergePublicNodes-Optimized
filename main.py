@@ -15,16 +15,15 @@ import argparse
 import asyncio
 import json
 import os
-import socket
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from core.fetcher import Source, fetch_all, load_sources, FetchResult
+from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
 from core.parser import Node
 
@@ -223,7 +222,7 @@ async def run(args):
 
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
-    from core.generator import write_outputs, MAX_TAG_LENGTH, _clamp_tag
+    from core.generator import write_outputs, _clamp_tag
 
     # 在生成输出前统一 clamp tag
     for n in final_nodes:
@@ -305,6 +304,19 @@ def main():
                    help="启用质量预过滤（端口黑名单+同server限2）")
 
     args = p.parse_args()
+    
+    # 参数验证
+    if args.top_n < 0:
+        p.error("--top-n 必须 >= 0")
+    if args.fetch_concurrency <= 0:
+        p.error("--fetch-concurrency 必须 > 0")
+    if args.tcp_concurrency <= 0:
+        p.error("--tcp-concurrency 必须 > 0")
+    if args.test_concurrency <= 0:
+        p.error("--test-concurrency 必须 > 0")
+    if args.test_limit < 0:
+        p.error("--test-limit 必须 >= 0")
+    
     # 环境变量覆盖（CI 或容器场景常用）
     if os.environ.get("AUTONODES_TOP_N"):
         args.top_n = int(os.environ["AUTONODES_TOP_N"])
