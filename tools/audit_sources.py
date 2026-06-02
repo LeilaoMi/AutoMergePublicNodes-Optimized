@@ -28,13 +28,21 @@ def is_dynamic(url: str) -> bool:
 
 
 def load_previous_audit(path: str) -> Dict[str, int]:
-    """加载上次审计结果，返回 {name: consecutive_dead}"""
+    """加载上次审计结果，返回 {name: consecutive_dead}。兼容旧 list 格式和新 payload 格式。"""
     try:
         with open(path, "r", encoding="utf-8") as f:
             prev = json.load(f)
-        return {r["name"]: r.get("consecutive_dead", 0) for r in prev}
-    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+    except (FileNotFoundError, json.JSONDecodeError):
         return {}
+
+    rows = prev.get("sources", []) if isinstance(prev, dict) else prev
+    if not isinstance(rows, list):
+        return {}
+    return {
+        r["name"]: r.get("consecutive_dead", 0)
+        for r in rows
+        if isinstance(r, dict) and "name" in r
+    }
 
 
 
