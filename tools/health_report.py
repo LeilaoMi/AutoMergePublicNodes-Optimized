@@ -102,8 +102,11 @@ def build_health_report(output_dir: str = "output", verified_prefix: str = "veri
     stats_path = out / "stats.json"
     source_audit_path = out / "source_audit.json"
     stats = _load_json(stats_path) if stats_path.exists() else {}
-    source_audit = _load_json(source_audit_path) if source_audit_path.exists() else []
-    dead_sources = [r for r in source_audit if isinstance(r, dict) and r.get("consecutive_dead", 0) >= 2]
+    source_audit_payload = _load_json(source_audit_path) if source_audit_path.exists() else []
+    source_rows = source_audit_payload.get("sources", []) if isinstance(source_audit_payload, dict) else source_audit_payload
+    if not isinstance(source_rows, list):
+        source_rows = []
+    dead_sources = [r for r in source_rows if isinstance(r, dict) and r.get("consecutive_dead", 0) >= 2]
 
     all_count = prefix_reports.get("all", {}).get("json_node_count", 0)
     verified_count = prefix_reports.get(verified_prefix, {}).get("json_node_count", 0)
