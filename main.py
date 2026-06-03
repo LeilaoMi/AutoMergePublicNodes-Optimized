@@ -24,6 +24,8 @@ from typing import Dict, List, Tuple
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+__version__ = "2.1.0"  # §4.5 — 加版本号, 写进 stats.json / health_report
+
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
 from core.parser import Node
@@ -58,8 +60,13 @@ def protocol_priority(t: str) -> int:
 _PORT_BLOCKLIST = {0}
 
 
-def quality_prefilter(nodes: List[Node]) -> List[Node]:
-    """质量预过滤：剔除无效端口、按 server+protocol 强去重、同 server 限 2 个"""
+def quality_prefilter(nodes: List[Node], max_per_server: int = 0) -> List[Node]:
+    """质量预过滤：剔除无效端口、按 server+protocol 强去重、同 server 限 max_per_server 个
+
+    §2.2 — 把"同 server 限 2"改为 CLI 参数, 默认 0 = 不限
+    原因: 大型 VPS (AWS Lightsail / Azure / Hetzner) 上可能跑多个不同用户不同协议的节点,
+    盲目限 2 会误杀一批本应保留的节点。如果限流, 建议在真测通过后做。
+    """
     # 1) 端口黑名单
     nodes = [n for n in nodes if n.server_port not in _PORT_BLOCKLIST]
 
@@ -71,14 +78,16 @@ def quality_prefilter(nodes: List[Node]) -> List[Node]:
             by_st[key] = n
     step2 = list(by_st.values())
 
-    # 3) 同 server IP 最多保留 2 个（按协议优先级排）
+    # 3) 同 server IP 最多保留 max_per_server 个 (按协议优先级排)
+    if max_per_server <= 0:
+        return step2
     by_server: Dict[str, List[Node]] = {}
     for n in step2:
         by_server.setdefault(n.server, []).append(n)
     out: List[Node] = []
     for server, lst in by_server.items():
         lst.sort(key=lambda n: protocol_priority(n.type))
-        out.extend(lst[:2])
+        out.extend(lst[:max_per_server])
     return out
 
 
@@ -153,8 +162,11 @@ async def run(args):
     # 3.5) 质量预过滤 (可选)
     if args.quality_filter:
         before = len(nodes)
-        nodes = quality_prefilter(nodes)
-        print(f"[3.5] 质量过滤（端口黑名单 + 同 server 限 2）: {before} -> {len(nodes)}")
+        nodes = quality_prefilter(nodes, max_per_server=args.max_per_server)
+        if args.max_per_server > 0:
+            print(f"[3.5] 质量过滤（端口黑名单 + 同 server 限 {args.max_per_server}）: {before} -> {len(nodes)}")
+        else:
+            print(f"[3.5] 质量过滤（端口黑名单, 同 server 不限）: {before} -> {len(nodes)}")
     else:
         print(f"[3.5] 跳过质量过滤（输出全部去重节点）")
 
@@ -183,8 +195,9 @@ async def run(args):
         print(f"      下采样: {len(nodes)}（每协议最多 {per} 个）")
 
     # 5) 真实代理测试（sing-box）
-    valid: List[tuple] = []  # [(node, latency_ms)]
+    valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
     results = []  # 保存全部测试结果（含失败），供统计使用
+    real_test_passed = False
     if args.real_test and nodes:
         from core.tester import SingBoxTester
         print(f"[5/6] sing-box 真实代理测试（并发 {args.test_concurrency}）...")
@@ -200,18 +213,52 @@ async def run(args):
             [(r.node, r.latency_ms, r.jitter_ms) for r in results if r.success],
             key=lambda x: x[1],
         )
+        real_test_passed = bool(valid)
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
         if valid:
             print(f"      最快: {valid[0][1]:.1f}ms  最慢: {valid[-1][1]:.1f}ms")
-        if not valid and tcp_latency:
-            # 真测 0 通过时回退到 TCP 结果，避免输出空文件
-            print(f"      ⚠️ 真测 0 通过，回退到 TCP 结果")
-            valid = sorted([(n, tcp_latency.get(n.fingerprint(), 0), 0.0) for n in nodes], key=lambda x: x[1])
     else:
-        valid = sorted([(n, tcp_latency.get(n.fingerprint(), 0), 0.0) for n in nodes], key=lambda x: x[1])
         print(f"[5/6] 跳过真实测试")
 
+    # TCP 延迟只保留为"是否可达"信息, 不参与延迟排序. 真测 0 通过时显式失败.
+    if real_test_passed:
+        pass
+    elif not args.real_test:
+        # 用户主动跳过真测, 用 TCP 延迟填充 (向后兼容)
+        valid = sorted(
+            [(n, tcp_latency.get(n.fingerprint(), 0), 0.0) for n in nodes],
+            key=lambda x: x[1],
+        )
+        print(f"[5/6] TCP 模式: {len(valid)} 节点")
+    else:
+        # 真测 0 成功: 报警并退出, 不静默回退到 TCP 延迟
+        # 统计失败原因, 方便排查
+        err_counter: Dict[str, int] = {}
+        for r in results:
+            if not r.success and r.error:
+                # 只取前 60 字符防止爆内存
+                key = r.error[:60]
+                err_counter[key] = err_counter.get(key, 0) + 1
+        top_errs = sorted(err_counter.items(), key=lambda x: -x[1])[:5]
+        print(f"      ❌ 真测 0 通过 — sing-box 启动 / 端点可达性 / ip-api 限流可能异常")
+        for err, cnt in top_errs:
+            print(f"        [{cnt}×] {err}")
+        # 把失败原因暂存到全局给 stats 阶段用
+        global _REAL_TEST_FAIL_REASONS
+        _REAL_TEST_FAIL_REASONS = dict(err_counter)
+        # verified 输出空, 写 stats 后 SystemExit
+        valid = []
+
+    # 真实测试失败原因统计 — 让 stats.json 自带诊断
+    real_test_errors: Dict[str, int] = {}
+    for r in results if args.real_test else []:
+        if r.success:
+            continue
+        err_key = (r.error or "unknown").split(":", 1)[0]
+        real_test_errors[err_key] = real_test_errors.get(err_key, 0) + 1
+
     # 取 Top N 并改名加入延迟。构造新 Node，避免污染 all.* 的原始去重池。
+    # §2.1 tag 不再在 main.py 截断 30 字符, 留给 generator._clamp_tag 统一处理
     top = valid[:args.top_n]
     final_nodes: List[Node] = []
     for i, (n, lat, jit) in enumerate(top, 1):
@@ -220,18 +267,18 @@ async def run(args):
         new_tag = n.tag
         if lat > 0:
             jitter_str = f" +/-{jit:.0f}ms" if jit > 0 else ""
-            new_tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag[:30]}"
+            new_tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag}"
         final_nodes.append(replace(n, tag=new_tag))
 
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
     from core.generator import write_outputs
 
-    n_top = write_outputs(final_nodes, args.output_dir, prefix="verified", repo_path=args.repo)
+    n_top = write_outputs(final_nodes, args.output_dir, prefix="verified", repo_path=args.repo, branch=args.branch)
     # 同时生成全量备份(未测速,供客户端再测)
     # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
     all_valid = dedup_pool
-    n_all = write_outputs(all_valid, args.output_dir, prefix="all", repo_path=args.repo, flag_map=flag_map)
+    n_all = write_outputs(all_valid, args.output_dir, prefix="all", repo_path=args.repo, flag_map=flag_map, branch=args.branch)
 
     elapsed = time.time() - t0
     print(f"\n┌─────────────────────────────────────────────┐")
@@ -260,6 +307,7 @@ async def run(args):
         src_pass[src_name]["pass" if r.success else "fail"] += 1
 
     stats = {
+        "version": __version__,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "duration_sec": round(elapsed, 1),
         "sources_total": len(sources),
@@ -272,6 +320,7 @@ async def run(args):
         "protocol_dist": proto_count,
         "protocol_pass_rate": proto_pass,
         "source_pass_rate": src_pass,
+        "real_test_errors": real_test_errors,
         "top_latencies_ms": [round(lat, 1) for _, lat, _ in top if lat > 0][:20],
         "top_jitters_ms": [round(jit, 1) for _, _, jit in top if jit > 0][:20],
     }
@@ -300,11 +349,15 @@ def main():
     p.add_argument("--startup-wait", type=float, default=0.6)
     p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
     p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=True,
-                   help="启用质量预过滤（端口黑名单+同server限2）")
+                   help="启用质量预过滤（端口黑名单）")
+    p.add_argument("--max-per-server", type=int, default=0,
+                   help="§2.2 同 server IP 最多保留的节点数 (0=不限, 默认; 1/2=严格, 但可能误杀 AWS/Hetzner 上不同用户的节点)")
     p.add_argument("--min-latency", type=float, default=30.0,
                    help="真实测试最低延迟阈值(ms)，低于此值视为可疑；设为 0 可关闭")
     p.add_argument("--repo", default="LeilaoMi/AutoMergePublicNodes-Optimized",
                    help="用于生成 jsDelivr 订阅转换链接的 owner/repo")
+    p.add_argument("--branch", default=os.environ.get("AUTONODES_BRANCH", "main"),
+                   help="用于生成 jsDelivr 订阅转换链接的分支名 (默认 main; CI 传入 ${{ github.event.repository.default_branch }})")
 
     args = p.parse_args()
     

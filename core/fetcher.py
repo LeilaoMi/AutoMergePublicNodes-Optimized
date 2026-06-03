@@ -10,9 +10,12 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import List, Set, Tuple
+
+logger = logging.getLogger(__name__)
 
 import aiohttp
 import yaml
@@ -50,6 +53,9 @@ class FetchResult:
 
 JSDELIVR_RE = re.compile(r"https?://raw\.githubusercontent\.com/([^/]+)/([^/]+)/(?:refs/heads/)?([^/]+)/(.+)")
 
+# §2.6 单源最大下载字节数, 超过直接 reject, 防止恶意源喂大文件吃光内存
+MAX_FETCH_BYTES = 20 * 1024 * 1024
+
 
 def to_jsdelivr(url: str) -> str:
     """将 raw.githubusercontent.com 转 jsdelivr CDN（国内更稳定）"""
@@ -72,7 +78,11 @@ async def _fetch_one(session: aiohttp.ClientSession, url: str, timeout: int = 15
                         await asyncio.sleep(1.5 * (attempt + 1))
                         continue
                     return False, last_err, 0
-                data = await resp.read()
+                data = bytearray()
+                async for chunk in resp.content.iter_chunked(65536):
+                    data.extend(chunk)
+                    if len(data) > MAX_FETCH_BYTES:
+                        return False, f"too-large:>{MAX_FETCH_BYTES}", 0
                 try:
                     text = data.decode("utf-8", errors="replace")
                 except Exception:
@@ -149,8 +159,12 @@ async def fetch_source(session: aiohttp.ClientSession, src: Source, timeout: int
     return result
 
 
-async def fetch_all(sources: List[Source], concurrency: int = 30, timeout: int = 15) -> List[FetchResult]:
-    """并发抓取所有订阅源"""
+async def fetch_all(sources: List[Source], concurrency: int = 30, timeout: int = 15,
+                  overall_timeout: int = 120) -> List[FetchResult]:
+    """并发抓取所有订阅源
+
+    §3.3 — 加 overall_timeout 防止单源 hang 住整批, 默认 120s 总上限
+    """
     sem = asyncio.Semaphore(concurrency)
     connector = aiohttp.TCPConnector(limit=concurrency * 2)
     headers = {
@@ -164,7 +178,16 @@ async def fetch_all(sources: List[Source], concurrency: int = 30, timeout: int =
 
     async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
         tasks = [_wrapped(session, s) for s in sources if s.enabled]
-        return await asyncio.gather(*tasks)
+        try:
+            return await asyncio.wait_for(asyncio.gather(*tasks), timeout=overall_timeout)
+        except asyncio.TimeoutError:
+            logger.warning("fetch_all overall timeout (%ss), returning partial results", overall_timeout)
+            # 返回已完成的任务
+            done_results = [t.result() for t in tasks if t.done() and not t.cancelled()]
+            for t in tasks:
+                if not t.done():
+                    t.cancel()
+            return done_results
 
 
 def load_sources(path: str) -> List[Source]:

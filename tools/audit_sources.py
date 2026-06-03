@@ -48,6 +48,7 @@ def load_previous_audit(path: str) -> Dict[str, int]:
 
 
 def disable_dead_sources(sources_path: str, dead_urls: set[str]) -> int:
+    """§2.4 原子写: 先写到 .tmp, 再 rename 替换原文件, 避免中途崩溃损坏 sources.yaml"""
     if not dead_urls:
         return 0
     path = Path(sources_path)
@@ -59,7 +60,10 @@ def disable_dead_sources(sources_path: str, dead_urls: set[str]) -> int:
             entry["enabled"] = False
             changed += 1
     if changed:
-        path.write_text(yaml.dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+        # 原子写: 写到 .tmp 再 rename, 避免 yaml.dump 中途崩溃损坏原文件
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(yaml.dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+        tmp.replace(path)
     return changed
 
 async def audit(sources_path: str, output: str, concurrency: int = 30, disable_dead_threshold: int = 0):

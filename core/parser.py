@@ -578,11 +578,21 @@ def parse_url(url: str, errors: List[str] | None = None) -> Optional[Node]:
         return None
 
 
+# 解析时遇到 base64 / 普通文本, 单条源最大的可解析字节数
+# 防止恶意源喂几 GB payload 吃光内存 (mheidari-all 单源 4MB 已经接近临界)
+MAX_PARSE_BYTES = 10 * 1024 * 1024
+
+
 def parse_content(text: str) -> List[Node]:
     """从订阅内容中提取所有节点（自动识别格式）"""
     text = text.strip()
     if not text:
         return []
+
+    # §2.3 防止恶意大文件把整篇 base64 一次性 decode 到内存
+    if len(text) > MAX_PARSE_BYTES:
+        logger.warning("parse_content: input too large (%d bytes), truncate to %d", len(text), MAX_PARSE_BYTES)
+        text = text[:MAX_PARSE_BYTES]
 
     nodes: List[Node] = []
 

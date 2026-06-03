@@ -101,29 +101,36 @@ async def _resolve_server(server: str, timeout: float = 1.0) -> str:
     return ""
 
 
-async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
-    """批量查询 ip-api.com（免费版 15 requests/min，batch 每次最多 100 个）。"""
+async def _lookup_batch(ips: List[str], timeout: float = 5.0, max_retries: int = 3) -> Dict[str, str]:
+    """批量查询 ip-api.com（免费版 15 requests/min，batch 每次最多 100 个）。
+
+    §2.8 — 指数退避 + 尊重 X-Ttl 响应头, 不再固定 sleep 4.2s
+    """
     if not ips:
         return {}
     result: Dict[str, str] = {}
     async with aiohttp.ClientSession() as session:
-        # 每批最多 100 个；免费版 15 req/min，保守使用 4.2s 间隔。
+        # 每批最多 100 个；失败时指数退避 (1s, 2s, 4s, 8s)
         for i in range(0, len(ips), 100):
             if i > 0:
-                await asyncio.sleep(4.2)
+                await asyncio.sleep(4.5)  # 批间基础间隔
             batch = ips[i:i + 100]
             body = [{"query": ip, "fields": "countryCode"} for ip in batch]
-            for attempt in range(2):
+            attempt = 0
+            backoff = 1.0
+            while attempt < max_retries:
                 try:
                     async with session.post(
                         "http://ip-api.com/batch?fields=countryCode",
                         json=body,
                         timeout=aiohttp.ClientTimeout(total=timeout),
                     ) as resp:
-                        if resp.status == 429 and attempt == 0:
-                            retry_after = int(resp.headers.get("X-Ttl", "60") or 60)
-                            logger.warning("ip-api rate limited; retrying after %ss", retry_after)
-                            await asyncio.sleep(max(retry_after, 1))
+                        if resp.status == 429:
+                            ttl = int(resp.headers.get("X-Ttl", "60") or 60)
+                            logger.warning("ip-api rate limited; backing off %ss (attempt %d)", max(ttl, backoff), attempt + 1)
+                            await asyncio.sleep(max(ttl, backoff))
+                            backoff = min(backoff * 2, 60)
+                            attempt += 1
                             continue
                         if resp.status != 200:
                             logger.warning("ip-api batch failed: HTTP %s", resp.status)
@@ -136,7 +143,9 @@ async def _lookup_batch(ips: List[str], timeout: float = 5.0) -> Dict[str, str]:
                         break
                 except Exception as exc:
                     logger.warning("ip-api batch lookup failed: %s", exc)
-                    break
+                    await asyncio.sleep(backoff)
+                    backoff = min(backoff * 2, 60)
+                    attempt += 1
     return result
 
 

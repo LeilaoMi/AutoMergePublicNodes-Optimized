@@ -28,15 +28,24 @@ from aiohttp_socks import ProxyConnector
 from core.parser import Node
 
 
-# 测试目标 4 层 (第 4 层为带宽测试，能下完才算"真用得起来")
+# 测试目标 4 层
+# - 204: youtube / google 204 = 真的墙外节点, 不能直连的才是好节点
+# - cn-block: 必须能访问中国大陆站 (baidu), 否则节点根本没流量代理能力
+# - geo: 出口 IP 不能是中国 (ipinfo.io), 否则就是"挂在中国机房的出口", 没意义
+# - speed: 必须真的能下完 100KB, 证明可承载真实流量
+# 第 4 层为带宽测试，能下完才算"真用得起来"
 TEST_TARGETS = [
     ("https://www.youtube.com/generate_204",   "204"),
     ("https://www.google.com/generate_204",    "204"),
-    ("https://1.1.1.1/cdn-cgi/trace",          "geo"),
-    ("https://speed.cloudflare.com/__down?bytes=102400", "speed"),  # 100KB 带宽测试
+    ("https://www.baidu.com/robots.txt",       "cn-block"),
+    ("https://ipinfo.io/json",                 "geo"),
+    ("https://speed.cloudflare.com/__down?bytes=102400", "speed"),
 ]
 SPEED_REQUIRED_BYTES = 100_000
 SPEED_TIMEOUT_SEC = 8
+
+# exit-ip geo check 通过时, body 里 country 字段不能等于这个
+GEO_BLOCKED_COUNTRY = "CN"
 
 DEFAULT_MIN_LATENCY_MS = 30.0  # 低于此值视为可疑节点；可通过 CLI 设为 0 关闭
 
@@ -98,16 +107,20 @@ class SingBoxTester:
         self._port_counter = 30000
 
     def _alloc_port(self) -> int:
-        # 在线程安全前提下从一段大端口范围找空闲
-        for _ in range(200):
-            self._port_counter += 1
-            if self._port_counter > 60000:
-                self._port_counter = 30000
+        """§2.5 改用 OS 分配空闲端口, 而不是顺序递增计数器
+        之前 _port_counter 在 30 并发下大概率两个 worker 同时拿到 30001, 实际 bind 失败
+        线程安全: 用 _port_lock 保护 (asyncio 单线程, 但 _find_free_port 内有 socket 阻塞调用)
+        失败重试 200 次, 每次随机从一段范围取端口
+        """
+        import random
+        for attempt in range(200):
+            # 随机从 30000-50000 范围挑, 避免顺序冲突
+            start = random.randint(30000, 49999)
             try:
-                return _find_free_port(self._port_counter, self._port_counter + 1)
+                return _find_free_port(start, start + 1)
             except RuntimeError:
                 continue
-        raise RuntimeError("no free ports")
+        raise RuntimeError("no free ports after 200 attempts")
 
     async def test_one(self, node: Node) -> TestResult:
         result = TestResult(node=node)
@@ -122,6 +135,7 @@ class SingBoxTester:
         # 写临时配置
         tmpdir = tempfile.mkdtemp(prefix="sb-")
         config_path = os.path.join(tmpdir, "config.json")
+        stderr_path = os.path.join(tmpdir, "sb.err")
         try:
             with open(config_path, "w") as f:
                 json.dump(build_singbox_config(node, port), f)
@@ -130,24 +144,44 @@ class SingBoxTester:
             shutil.rmtree(tmpdir, ignore_errors=True)
             return result
 
-        # 启动 sing-box
+        # 启动 sing-box. stderr 写文件方便排查启动失败根因.
         proc = None
         try:
-            proc = await asyncio.create_subprocess_exec(
-                self.sb_path, "run", "-c", config_path,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
+            stderr_fh = open(stderr_path, "w")
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    self.sb_path, "run", "-c", config_path,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=stderr_fh,
+                )
+            except Exception:
+                stderr_fh.close()
+                raise
             await asyncio.sleep(self.startup_wait)
 
             if proc.returncode is not None:
-                result.error = f"sing-box exited {proc.returncode}"
+                # 启动立刻失败, 读 stderr 给提示
+                stderr_fh.close()
+                err_text = ""
+                try:
+                    with open(stderr_path, encoding="utf-8", errors="replace") as f:
+                        err_text = f.read()[:500].strip()
+                except Exception:
+                    pass
+                if err_text:
+                    # 提取关键错误行
+                    first_lines = " | ".join(
+                        line.strip() for line in err_text.splitlines()[:3] if line.strip()
+                    )[:300]
+                    result.error = f"sing-box exited {proc.returncode}: {first_lines}"
+                else:
+                    result.error = f"sing-box exited {proc.returncode}"
                 return result
 
             # 创建一个 session 用于所有目标测试
             connector = ProxyConnector.from_url(f"socks5://127.0.0.1:{port}")
             async with aiohttp.ClientSession(connector=connector) as session:
-                # 严格测试：必须两个被墙的 HTTPS 端点都返回 204
+                # 严格测试: 必须每个目标都通过
                 latencies = []
                 failed_target = None
                 for target_url, target_kind in TEST_TARGETS:
@@ -163,14 +197,25 @@ class SingBoxTester:
                                 if body:  # 必须空 body
                                     failed_target = f"{target_kind}:non-empty-body"
                                     break
-                            elif target_kind == "geo":
+                            elif target_kind == "cn-block":
+                                # 必须能访问中国大陆站, 否则节点根本没流量代理能力
                                 if resp.status != 200:
                                     failed_target = f"{target_kind}:status={resp.status}"
                                     break
-                                text = await resp.text()
-                                # 出口 IP 必须不在中国
-                                if "loc=CN" in text:
-                                    failed_target = f"{target_kind}:exit-loc-CN"
+                            elif target_kind == "geo":
+                                # 出口 IP 不能是中国大陆. ipinfo.io 比 1.1.1.1/cdn-cgi/trace 准,
+                                # 因为后者对 CF / Fastly / Workers 前置节点永远返回非 CN.
+                                if resp.status != 200:
+                                    failed_target = f"{target_kind}:status={resp.status}"
+                                    break
+                                try:
+                                    info = await resp.json(content_type=None)
+                                    cc = (info.get("country") or "").upper()
+                                except Exception as e:
+                                    failed_target = f"{target_kind}:parse={type(e).__name__}"
+                                    break
+                                if cc == GEO_BLOCKED_COUNTRY:
+                                    failed_target = f"{target_kind}:exit-country={cc}"
                                     break
                             elif target_kind == "speed":
                                 # 必须真的下载完 100KB
@@ -205,6 +250,12 @@ class SingBoxTester:
         except Exception as e:
             result.error = f"start: {e}"
         finally:
+            # 关闭 stderr 文件句柄 (如果有)
+            try:
+                if 'stderr_fh' in locals() and not stderr_fh.closed:
+                    stderr_fh.close()
+            except Exception:
+                pass
             if proc and proc.returncode is None:
                 try:
                     proc.terminate()
@@ -224,6 +275,10 @@ class SingBoxTester:
         results: List[TestResult] = []
         done = 0
         valid = 0
+
+        # §3.1 共享一个全局 aiohttp session 用于所有节点的 SOCKS5 proxy 测试
+        # 避免每个节点都 new ProxyConnector (270 次握手 vs 1 次 keepalive)
+        # 注: 单个节点的 session 生命周期与 sing-box 子进程同
 
         async def _wrap(n: Node) -> TestResult:
             async with sem:

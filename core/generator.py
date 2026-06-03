@@ -73,10 +73,13 @@ MAX_TAG_LENGTH = 48
 
 
 def _clamp_tag(tag: str) -> str:
-    """限制 tag 长度，超出则截断（保留末尾字符用于区分）"""
+    """限制 tag 长度，超出则截断（保留末尾字符用于区分）
+
+    §2.1 截断符从 `…` 改成 `(…)` 兼容老客户端显示
+    """
     if len(tag) <= MAX_TAG_LENGTH:
         return tag
-    return tag[:MAX_TAG_LENGTH - 1] + "…"
+    return tag[:MAX_TAG_LENGTH - 3] + "(…)"
 
 
 def _unique_clamped_tag(tag: str, used: Dict[str, int]) -> str:
@@ -399,6 +402,7 @@ def write_outputs(
     prefix: str = "nodes",
     repo_path: str | None = None,
     flag_map: Dict[str, str] | None = None,
+    branch: str = "main",
 ) -> int:
     """生成全套订阅文件，不修改传入节点。"""
     import os
@@ -555,7 +559,7 @@ def write_outputs(
 
     # 5) 订阅转换链接（基于 jsdelivr CDN）
     repo_path = repo_path or "LeilaoMi/AutoMergePublicNodes-Optimized"
-    sub_url = f"https://cdn.jsdelivr.net/gh/{repo_path}@main/output/{prefix}.txt"
+    sub_url = f"https://cdn.jsdelivr.net/gh/{repo_path}@{branch}/output/{prefix}.txt"
     generate_converter_links(sub_url, output_dir, prefix)
 
     return len(urls)

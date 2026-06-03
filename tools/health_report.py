@@ -112,6 +112,18 @@ def build_health_report(output_dir: str = "output", verified_prefix: str = "veri
     verified_count = prefix_reports.get(verified_prefix, {}).get("json_node_count", 0)
     strategy_ok = all_count >= verified_count
 
+    # §4.1 — 加报警字段, 让 CI 报警有明确根因
+    # protocol_pass_rate 任何协议 pass 率 < 10% 算异常
+    low_pass_protocols = []
+    for proto, counts in stats.get("protocol_pass_rate", {}).items():
+        total = counts.get("pass", 0) + counts.get("fail", 0)
+        if total > 0:
+            rate = counts.get("pass", 0) / total
+            if rate < 0.1:
+                low_pass_protocols.append({"protocol": proto, "pass_rate": round(rate, 3)})
+
+    real_test_errors = stats.get("real_test_errors", {})
+
     report = {
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "ok": all(r.get("ok", False) for r in prefix_reports.values()) and strategy_ok,
@@ -130,6 +142,10 @@ def build_health_report(output_dir: str = "output", verified_prefix: str = "veri
         "source_cleanup": {
             "dead_2_plus_count": len(dead_sources),
             "dead_2_plus": dead_sources,
+        },
+        "alerts": {
+            "low_pass_protocols": low_pass_protocols,
+            "real_test_errors": real_test_errors,
         },
     }
     return report
