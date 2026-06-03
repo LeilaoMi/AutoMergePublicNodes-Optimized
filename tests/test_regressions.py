@@ -123,7 +123,7 @@ class RegressionTests(unittest.TestCase):
             result = subprocess.run(
                 [sys.executable, "tools/health_report.py", "--output-dir", str(out)],
                 capture_output=True, text=True,
-                cwd="/home/.z/workspaces/con_zD1MfA0NPSFcSApa/AutoMergePublicNodes-Optimized",
+                cwd=str(Path(__file__).resolve().parent.parent),
             )
         self.assertEqual(result.returncode, 2, f"expected exit 2, got {result.returncode}: {result.stderr}")
         self.assertIn("verified 输出为 0", result.stderr)
