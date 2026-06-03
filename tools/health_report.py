@@ -156,6 +156,8 @@ def main():
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--verified-prefix", default="verified")
     parser.add_argument("--output", default="output/health_report.json")
+    parser.add_argument("--strict", action="store_true",
+                        help="§1.5 — 报警时也 exit 1 (默认只记录, 不失败 CI)")
     args = parser.parse_args()
 
     report = build_health_report(args.output_dir, args.verified_prefix)
@@ -165,6 +167,14 @@ def main():
     print(json.dumps(report, ensure_ascii=False, indent=2))
     if not report["ok"]:
         raise SystemExit(1)
+    # §1.5 — verified 为 0 时硬失败 (这是真测全挂的明确信号)
+    if report["prefixes"].get("verified", {}).get("json_node_count", 0) == 0:
+        print("::error::verified 输出为 0, 真测全挂或测试源全失效", file=sys.stderr)
+        raise SystemExit(2)
+    # §1.5 — strict 模式下报警也失败
+    if args.strict and (report["alerts"]["low_pass_protocols"] or report["alerts"]["real_test_errors"]):
+        print("::error::alerts 触发, 但启用 --strict 才失败", file=sys.stderr)
+        raise SystemExit(3)
 
 
 if __name__ == "__main__":
