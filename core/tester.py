@@ -73,13 +73,17 @@ def _find_free_port(start: int, end: int) -> int:
 
 
 def build_singbox_config(node: Node, socks_port: int) -> dict:
-    """构造 sing-box 临时配置：SOCKS5 入站 + 节点出站"""
+    """构造 sing-box 临时配置：SOCKS5 入站 + 节点出站
+
+    §1.6 (紧急修复) — sing-box 1.11+ 移除了 inbound 上的 sniff 字段, 移到 route rule action
+    之前用 {inbound: sniff: True} 在 1.13+ 报 "legacy inbound fields are deprecated" + exit 1
+    新格式: inbounds 只保留 type/tag/listen/listen_port
+    """
     inbound = {
         "type": "socks",
         "tag": "socks-in",
         "listen": "127.0.0.1",
         "listen_port": socks_port,
-        "sniff": True,
     }
     outbound = node.to_singbox()
     return {

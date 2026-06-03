@@ -5,6 +5,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import os
+import subprocess
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -93,6 +95,30 @@ class RegressionTests(unittest.TestCase):
         with tempfile.NamedTemporaryFile() as f:
             tester = SingBoxTester(sb_path=f.name, min_latency_ms=0)
         self.assertEqual(tester.min_latency_ms, 0)
+
+    def test_singbox_config_compatible_with_1_13(self):
+        """§1.6 紧急修复 — sing-box 1.11+ 移除了 inbound 上的 sniff 字段
+        build_singbox_config 不再输出 sniff, 且走 sing-box check 通过
+        """
+        from core.tester import build_singbox_config
+        cfg = build_singbox_config(
+            Node("vless", "test", "1.2.3.4", 443, {"uuid": "u"}),
+            socks_port=12345,
+        )
+        # inbound 不应含 sniff
+        self.assertNotIn("sniff", cfg["inbounds"][0])
+        # 如果环境里有 sing-box, 跑 check 验证
+        for sb in ("./sing-box", "/tmp/sing-box"):
+            if os.path.exists(sb):
+                with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+                    json.dump(cfg, f)
+                    path = f.name
+                try:
+                    r = subprocess.run([sb, "check", "-c", path], capture_output=True, text=True, timeout=10)
+                    self.assertEqual(r.returncode, 0, f"sing-box check failed: {r.stderr}")
+                finally:
+                    os.unlink(path)
+                break
 
     # ===== v2.1 新增回归测试 =====
 
