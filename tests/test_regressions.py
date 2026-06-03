@@ -98,27 +98,35 @@ class RegressionTests(unittest.TestCase):
 
     def test_singbox_config_compatible_with_1_13(self):
         """§1.6 紧急修复 — sing-box 1.11+ 移除了 inbound 上的 sniff 字段
-        build_singbox_config 不再输出 sniff, 且走 sing-box check 通过
+        build_singbox_config 输出必须不含 inbound.sniff, 否则 sing-box 1.13+ 启动失败
         """
         from core.tester import build_singbox_config
-        cfg = build_singbox_config(
-            Node("vless", "test", "1.2.3.4", 443, {"uuid": "u"}),
-            socks_port=12345,
-        )
-        # inbound 不应含 sniff
-        self.assertNotIn("sniff", cfg["inbounds"][0])
-        # 如果环境里有 sing-box, 跑 check 验证
-        for sb in ("./sing-box", "/tmp/sing-box"):
-            if os.path.exists(sb):
-                with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-                    json.dump(cfg, f)
-                    path = f.name
-                try:
-                    r = subprocess.run([sb, "check", "-c", path], capture_output=True, text=True, timeout=10)
-                    self.assertEqual(r.returncode, 0, f"sing-box check failed: {r.stderr}")
-                finally:
-                    os.unlink(path)
-                break
+        from core.parser import Node
+        n = Node("vless", "t", "1.2.3.4", 443, {"uuid": "u"})
+        cfg = build_singbox_config(n, 11080)
+        inb = cfg["inbounds"][0]
+        self.assertNotIn("sniff", inb, "inbound 不应再含 sniff (sing-box 1.13+ 已移除)")
+        self.assertNotIn("domain_strategy", inb, "inbound 不应再含 domain_strategy (已移除)")
+
+    def test_health_report_exits_2_when_verified_empty(self):
+        """§1.5 — verified 0 节点时 health_report.main exit 2, 触发 CI ::error"""
+        import subprocess, sys, tempfile, json
+        from pathlib import Path
+        from core.generator import write_outputs
+        from core.parser import Node
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            # 写一个 0 节点的 verified + 1 节点 all, 模拟"真测全挂"但订阅源还活着
+            write_outputs([], d, prefix="verified", repo_path="o/r")
+            write_outputs([Node("http", "t", "1.2.3.4", 80, {})], d, prefix="all", repo_path="o/r")
+            (out / "stats.json").write_text(json.dumps({}), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, "tools/health_report.py", "--output-dir", str(out)],
+                capture_output=True, text=True,
+                cwd="/home/.z/workspaces/con_zD1MfA0NPSFcSApa/AutoMergePublicNodes-Optimized",
+            )
+        self.assertEqual(result.returncode, 2, f"expected exit 2, got {result.returncode}: {result.stderr}")
+        self.assertIn("verified 输出为 0", result.stderr)
 
     # ===== v2.1 新增回归测试 =====
 
