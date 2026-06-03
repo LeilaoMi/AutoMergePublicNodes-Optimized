@@ -113,20 +113,31 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
+          # 显式 fetch 一次确保 origin/main 是最新的, 避免 stale shallow ref
+          git fetch --unshallow origin main 2>/dev/null || git fetch origin main
           git rm -f output/top.* 2>/dev/null || true
           git add output/ 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "no changes"
           else
             git commit -m "chore: update nodes $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')"
-            for i in 1 2 3; do
+            # §1.7 — pull rebase 失败 (output 冲突) 时用 -X theirs 自动以 origin 为准,
+            # 因为 output/ 是 always-overwrite 的 ci 数据, ours 没用任何手动改动
+            for i in 1 2 3 4 5; do
               if [ "${{ github.event.inputs.force_push }}" = "true" ]; then
                 git push --force-with-lease && break
               else
-                git pull --rebase --autostash && git push && break
+                if git pull --rebase --autostash --strategy-option=theirs origin main; then
+                  git push origin HEAD:main && break
+                else
+                  # rebase 真出不可解冲突, abort 走 force push (output 数据可丢)
+                  git rebase --abort 2>/dev/null || true
+                  echo "::warning::rebase failed, falling back to force push"
+                  git push --force-with-lease origin HEAD:main && break
+                fi
               fi
-              if [ "$i" = "3" ]; then
-                echo "::error::git push failed after 3 attempts"
+              if [ "$i" = "5" ]; then
+                echo "::error::git push failed after 5 attempts"
                 exit 1
               fi
               sleep 5
