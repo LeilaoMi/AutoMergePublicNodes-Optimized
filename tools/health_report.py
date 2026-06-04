@@ -124,9 +124,19 @@ def build_health_report(output_dir: str = "output", verified_prefix: str = "veri
 
     real_test_errors = stats.get("real_test_errors", {})
 
+    has_alerts = bool(low_pass_protocols or real_test_errors)
+    ok = all(r.get("ok", False) for r in prefix_reports.values()) and strategy_ok
+    if not ok or verified_count == 0:
+        status = "critical"
+    elif has_alerts:
+        status = "warning"
+    else:
+        status = "ok"
+
     report = {
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "ok": all(r.get("ok", False) for r in prefix_reports.values()) and strategy_ok,
+        "ok": ok,
+        "status": status,
         "prefixes": prefix_reports,
         "strategy": {
             "all_json_nodes": all_count,
@@ -168,11 +178,11 @@ def main():
     if not report["ok"]:
         raise SystemExit(1)
     # §1.5 — verified 为 0 时硬失败 (这是真测全挂的明确信号)
-    if report["prefixes"].get("verified", {}).get("json_node_count", 0) == 0:
+    if report["prefixes"].get(args.verified_prefix, {}).get("json_node_count", 0) == 0:
         print("::error::verified 输出为 0, 真测全挂或测试源全失效", file=sys.stderr)
         raise SystemExit(2)
     # §1.5 — strict 模式下报警也失败
-    if args.strict and (report["alerts"]["low_pass_protocols"] or report["alerts"]["real_test_errors"]):
+    if args.strict and report["status"] in {"warning", "critical"}:
         print("::error::alerts 触发, 但启用 --strict 才失败", file=sys.stderr)
         raise SystemExit(3)
 

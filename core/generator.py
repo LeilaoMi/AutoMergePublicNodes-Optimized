@@ -403,8 +403,12 @@ def write_outputs(
     repo_path: str | None = None,
     flag_map: Dict[str, str] | None = None,
     branch: str = "main",
+    mode: str = "full",
 ) -> int:
-    """生成全套订阅文件，不修改传入节点。"""
+    """生成订阅文件，不修改传入节点。
+
+    mode=full 生成 json/yaml/txt/urls/converter；mode=light 只生成 txt/urls/converter。
+    """
     import os
     os.makedirs(output_dir, exist_ok=True)
 
@@ -419,6 +423,12 @@ def write_outputs(
     b64 = base64.b64encode("\n".join(urls).encode()).decode()
     with open(f"{output_dir}/{prefix}.txt", "w", encoding="utf-8") as f:
         f.write(b64)
+
+    if mode == "light":
+        repo_path = repo_path or "LeilaoMi/AutoMergePublicNodes-Optimized"
+        sub_url = f"https://cdn.jsdelivr.net/gh/{repo_path}@{branch}/output/{prefix}.txt"
+        generate_converter_links(sub_url, output_dir, prefix)
+        return len(urls)
 
     # 3) Clash YAML — 带完整 DNS + 分流规则 + 按地区分组
     # 一次遍历，同时构建 proxies 列表和 node→proxy 映射
@@ -535,7 +545,7 @@ def write_outputs(
             "strategy": "prefer_ipv4",
         },
         "inbounds": [
-            {"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 2080, "sniff": True, "sniff_override_destination": False},
+            {"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 2080},
         ],
         "outbounds": sb_outbounds,
         "route": {

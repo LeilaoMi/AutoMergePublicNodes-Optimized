@@ -26,10 +26,6 @@ on:
         description: '同时跑订阅源审计'
         type: boolean
         default: false
-      force_push:
-        description: '强制推送（忽略冲突）'
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -46,9 +42,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
@@ -99,9 +95,16 @@ jobs:
         env:
           AUTONODES_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
+          set -euo pipefail
+          TOP_N="${{ github.event.inputs.top_n || '100' }}"
+          TEST_LIMIT="${{ github.event.inputs.test_limit || '500' }}"
+          [[ "$TOP_N" =~ ^[0-9]+$ ]] || { echo "::error::top_n must be a non-negative integer"; exit 1; }
+          [[ "$TEST_LIMIT" =~ ^[0-9]+$ ]] || { echo "::error::test_limit must be a non-negative integer"; exit 1; }
+          [ "$TOP_N" -le 1000 ] || { echo "::error::top_n must be <= 1000"; exit 1; }
+          [ "$TEST_LIMIT" -le 3000 ] || { echo "::error::test_limit must be <= 3000"; exit 1; }
           python main.py \
-            --top-n "${{ github.event.inputs.top_n || '100' }}" \
-            --test-limit "${{ github.event.inputs.test_limit || '500' }}" \
+            --top-n "$TOP_N" \
+            --test-limit "$TEST_LIMIT" \
             --repo "${{ github.repository }}" \
             --branch "${{ github.event.repository.default_branch }}"
 
@@ -121,20 +124,13 @@ jobs:
             echo "no changes"
           else
             git commit -m "chore: update nodes $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')"
-            # §1.7 — pull rebase 失败 (output 冲突) 时用 -X theirs 自动以 origin 为准,
-            # 因为 output/ 是 always-overwrite 的 ci 数据, ours 没用任何手动改动
             for i in 1 2 3 4 5; do
-              if [ "${{ github.event.inputs.force_push }}" = "true" ]; then
-                git push --force-with-lease && break
+              if git pull --rebase --autostash --strategy-option=theirs origin main; then
+                git push origin HEAD:main && break
               else
-                if git pull --rebase --autostash --strategy-option=theirs origin main; then
-                  git push origin HEAD:main && break
-                else
-                  # rebase 真出不可解冲突, abort 走 force push (output 数据可丢)
-                  git rebase --abort 2>/dev/null || true
-                  echo "::warning::rebase failed, falling back to force push"
-                  git push --force-with-lease origin HEAD:main && break
-                fi
+                git rebase --abort 2>/dev/null || true
+                echo "::error::rebase failed; refusing to force push automatically"
+                exit 1
               fi
               if [ "$i" = "5" ]; then
                 echo "::error::git push failed after 5 attempts"
@@ -144,9 +140,29 @@ jobs:
             done
           fi
 
+      - name: Upload debug artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonodes-debug
+          path: |
+            output/stats.json
+            output/source_audit.json
+            output/health_report.json
+            output/*.converter.md
+
       - name: Purge jsDelivr cache
         run: |
+          set -euo pipefail
           REPO="${{ github.repository }}"
+          failed=0
           for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json geo_cache.json; do
-            curl -s "https://purge.jsdelivr.net/gh/${REPO}@main/output/${f}" >/dev/null || true
+            code=$(curl -s -o /tmp/jsdelivr-purge.json -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@main/output/${f}" || true)
+            if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then
+              echo "::warning::jsDelivr purge failed for output/${f} HTTP ${code}"
+              failed=$((failed + 1))
+            else
+              echo "purged output/${f} HTTP ${code}"
+            fi
           done
+          echo "jsDelivr purge warnings: ${failed}"
