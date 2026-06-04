@@ -91,12 +91,51 @@ def quality_prefilter(nodes: List[Node], max_per_server: int = 0) -> List[Node]:
     return out
 
 
+def sample_for_real_test(nodes: List[Node], tcp_latency: Dict[str, float], limit: int) -> List[Node]:
+    if limit <= 0 or len(nodes) <= limit:
+        return nodes
+
+    by_type: Dict[str, List[Node]] = {}
+    for n in nodes:
+        by_type.setdefault(n.type, []).append(n)
+    for lst in by_type.values():
+        lst.sort(key=lambda n: tcp_latency.get(n.fingerprint(), float("inf")))
+
+    sampled: List[Node] = []
+    used = set()
+    per = max(limit // max(len(by_type), 1), 1)
+    for t in sorted(by_type, key=protocol_priority):
+        for n in by_type[t][:per]:
+            if len(sampled) >= limit:
+                return sampled
+            fp = n.fingerprint()
+            if fp not in used:
+                sampled.append(n)
+                used.add(fp)
+
+    remaining = [
+        n for n in nodes
+        if n.fingerprint() not in used
+    ]
+    remaining.sort(key=lambda n: (tcp_latency.get(n.fingerprint(), float("inf")), protocol_priority(n.type)))
+    sampled.extend(remaining[:max(limit - len(sampled), 0)])
+    return sampled[:limit]
+
+
 async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: float = 3.0) -> List[Tuple[Node, float]]:
     """快速 TCP 预筛选：返回 [(node, tcp_latency_ms)]，按延迟升序"""
-    sem = asyncio.Semaphore(concurrency)
+    queue: asyncio.Queue[Node] = asyncio.Queue()
+    for n in nodes:
+        queue.put_nowait(n)
 
-    async def _check(n: Node):
-        async with sem:
+    ok: List[Tuple[Node, float]] = []
+
+    async def _worker():
+        while True:
+            try:
+                n = queue.get_nowait()
+            except asyncio.QueueEmpty:
+                return
             t0 = time.perf_counter()
             try:
                 fut = asyncio.open_connection(n.server, n.server_port)
@@ -107,18 +146,23 @@ async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: fl
                     await writer.wait_closed()
                 except Exception:
                     pass
-                return (n, lat_ms)
+                ok.append((n, lat_ms))
             except Exception:
-                return None
+                pass
+            finally:
+                queue.task_done()
 
-    results = await asyncio.gather(*[_check(n) for n in nodes], return_exceptions=True)
-    ok = [r for r in results if isinstance(r, tuple)]
+    worker_count = min(max(concurrency, 1), len(nodes))
+    if worker_count > 0:
+        await asyncio.gather(*[asyncio.create_task(_worker()) for _ in range(worker_count)])
     ok.sort(key=lambda x: x[1])
     return ok
 
 
 async def run(args):
     t0 = time.time()
+    stage_durations: Dict[str, float] = {}
+    stage_start = t0
     print(f"╔══════════════════════════════════════════════╗")
     print(f"║  autonodes - 自动节点聚合 + 真实测试        ║")
     print(f"╚══════════════════════════════════════════════╝\n")
@@ -130,6 +174,8 @@ async def run(args):
     # 2) 抓取
     print(f"[2/6] 异步抓取（并发 {args.fetch_concurrency}）...")
     fr_list = await fetch_all(sources, concurrency=args.fetch_concurrency, timeout=args.fetch_timeout)
+    stage_durations["fetch"] = round(time.time() - stage_start, 1)
+    stage_start = time.time()
 
     total_raw = sum(len(r.nodes) for r in fr_list)
     healthy = sum(1 for r in fr_list if r.success and len(r.nodes) > 0)
@@ -153,6 +199,8 @@ async def run(args):
     # GeoIP 国旗映射
     print(f"      GeoIP 查询（batch ip-api.com）...")
     flag_map = await geo_flag_map(all_nodes)
+    stage_durations["geo"] = round(time.time() - stage_start, 1)
+    stage_start = time.time()
     print(f"      国旗映射: {len(flag_map)} 个 IP")
 
     print(f"[3/6] 去重: {len(all_nodes)} -> {len(nodes)}")
@@ -174,25 +222,22 @@ async def run(args):
     if args.tcp_check:
         print(f"[4/6] TCP 预筛选（并发 {args.tcp_concurrency}, 超时 {args.tcp_timeout}s）...")
         tcp_results = await tcp_check_batch(nodes, args.tcp_concurrency, args.tcp_timeout)
+        stage_durations["tcp"] = round(time.time() - stage_start, 1)
+        stage_start = time.time()
         print(f"      TCP 可达: {len(tcp_results)}")
         nodes = [n for n, _ in tcp_results]
         tcp_latency = {n.fingerprint(): lat for n, lat in tcp_results}
     else:
         print(f"[4/6] 跳过 TCP 预筛选")
         tcp_latency = {}
+        stage_durations["tcp"] = 0.0
+        stage_start = time.time()
 
     # 限制送入真实测试的数量（控制时间）
     if args.test_limit > 0 and len(nodes) > args.test_limit:
-        # 简单分布：按协议分层取样（避免某协议挤占）
-        by_type: Dict[str, List[Node]] = {}
-        for n in nodes:
-            by_type.setdefault(n.type, []).append(n)
-        sampled: List[Node] = []
-        per = max(args.test_limit // max(len(by_type), 1), 1)
-        for t, lst in by_type.items():
-            sampled.extend(lst[:per])
-        nodes = sampled[:args.test_limit]
-        print(f"      下采样: {len(nodes)}（每协议最多 {per} 个）")
+        before_sample = len(nodes)
+        nodes = sample_for_real_test(nodes, tcp_latency, args.test_limit)
+        print(f"      下采样: {before_sample} -> {len(nodes)}（协议基础配额 + TCP 延迟补齐）")
 
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
@@ -209,6 +254,8 @@ async def run(args):
             min_latency_ms=args.min_latency,
         )
         results = await tester.test_all(nodes)
+        stage_durations["real_test"] = round(time.time() - stage_start, 1)
+        stage_start = time.time()
         valid = sorted(
             [(r.node, r.latency_ms, r.jitter_ms) for r in results if r.success],
             key=lambda x: x[1],
@@ -219,6 +266,8 @@ async def run(args):
             print(f"      最快: {valid[0][1]:.1f}ms  最慢: {valid[-1][1]:.1f}ms")
     else:
         print(f"[5/6] 跳过真实测试")
+        stage_durations["real_test"] = 0.0
+        stage_start = time.time()
 
     # TCP 延迟只保留为"是否可达"信息, 不参与延迟排序. 真测 0 通过时显式失败.
     if real_test_passed:
@@ -251,11 +300,19 @@ async def run(args):
 
     # 真实测试失败原因统计 — 让 stats.json 自带诊断
     real_test_errors: Dict[str, int] = {}
+    real_test_error_details_counter: Dict[str, int] = {}
     for r in results if args.real_test else []:
         if r.success:
             continue
-        err_key = (r.error or "unknown").split(":", 1)[0]
+        error = r.error or "unknown"
+        err_key = error.split(":", 1)[0]
         real_test_errors[err_key] = real_test_errors.get(err_key, 0) + 1
+        detail_key = error[:120]
+        real_test_error_details_counter[detail_key] = real_test_error_details_counter.get(detail_key, 0) + 1
+    real_test_error_details = [
+        {"error": error, "count": count}
+        for error, count in sorted(real_test_error_details_counter.items(), key=lambda x: -x[1])[:10]
+    ]
 
     # 取 Top N 并改名加入延迟。构造新 Node，避免污染 all.* 的原始去重池。
     # §2.1 tag 不再在 main.py 截断 30 字符, 留给 generator._clamp_tag 统一处理
@@ -278,7 +335,16 @@ async def run(args):
     # 同时生成全量备份(未测速,供客户端再测)
     # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
     all_valid = dedup_pool
-    n_all = write_outputs(all_valid, args.output_dir, prefix="all", repo_path=args.repo, flag_map=flag_map, branch=args.branch)
+    n_all = write_outputs(
+        all_valid,
+        args.output_dir,
+        prefix="all",
+        repo_path=args.repo,
+        flag_map=flag_map,
+        branch=args.branch,
+        mode=args.all_output_mode,
+    )
+    stage_durations["generate"] = round(time.time() - stage_start, 1)
 
     elapsed = time.time() - t0
     print(f"\n┌─────────────────────────────────────────────┐")
@@ -310,6 +376,7 @@ async def run(args):
         "version": __version__,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "duration_sec": round(elapsed, 1),
+        "stage_durations": stage_durations,
         "sources_total": len(sources),
         "sources_healthy": healthy,
         "nodes_raw": total_raw,
@@ -317,10 +384,13 @@ async def run(args):
         "nodes_tcp_ok": len(nodes),
         "nodes_real_ok": len(valid),
         "nodes_verified_output": n_top,
+        "nodes_all_output": n_all,
+        "all_output_mode": args.all_output_mode,
         "protocol_dist": proto_count,
         "protocol_pass_rate": proto_pass,
         "source_pass_rate": src_pass,
         "real_test_errors": real_test_errors,
+        "real_test_error_details": real_test_error_details,
         "top_latencies_ms": [round(lat, 1) for _, lat, _ in top if lat > 0][:20],
         "top_jitters_ms": [round(jit, 1) for _, _, jit in top if jit > 0][:20],
     }
@@ -354,6 +424,8 @@ def main():
                    help="§2.2 同 server IP 最多保留的节点数 (0=不限, 默认; 1/2=严格, 但可能误杀 AWS/Hetzner 上不同用户的节点)")
     p.add_argument("--min-latency", type=float, default=30.0,
                    help="真实测试最低延迟阈值(ms)，低于此值视为可疑；设为 0 可关闭")
+    p.add_argument("--all-output-mode", choices=("full", "light"), default=os.environ.get("AUTONODES_ALL_OUTPUT_MODE", "full"),
+                   help="all.* 输出模式: full=全格式兼容旧 URL; light=只保留 txt/urls/converter, 降低大文件成本")
     p.add_argument("--repo", default="LeilaoMi/AutoMergePublicNodes-Optimized",
                    help="用于生成 jsDelivr 订阅转换链接的 owner/repo")
     p.add_argument("--branch", default=os.environ.get("AUTONODES_BRANCH", "main"),

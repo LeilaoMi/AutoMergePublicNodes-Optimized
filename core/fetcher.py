@@ -177,16 +177,19 @@ async def fetch_all(sources: List[Source], concurrency: int = 30, timeout: int =
             return await fetch_source(session, src, timeout)
 
     async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
-        tasks = [_wrapped(session, s) for s in sources if s.enabled]
+        tasks = [asyncio.create_task(_wrapped(session, s)) for s in sources if s.enabled]
         try:
             return await asyncio.wait_for(asyncio.gather(*tasks), timeout=overall_timeout)
         except asyncio.TimeoutError:
             logger.warning("fetch_all overall timeout (%ss), returning partial results", overall_timeout)
-            # 返回已完成的任务
-            done_results = [t.result() for t in tasks if t.done() and not t.cancelled()]
+            done_results = []
+            for t in tasks:
+                if t.done() and not t.cancelled() and t.exception() is None:
+                    done_results.append(t.result())
             for t in tasks:
                 if not t.done():
                     t.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
             return done_results
 
 

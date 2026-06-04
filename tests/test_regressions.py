@@ -7,9 +7,11 @@ import unittest
 from pathlib import Path
 import os
 import subprocess
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from core.fetcher import Source, fetch_all
 from core.generator import node_to_clash, node_to_url, write_outputs
 from core.geo import _is_public_ip, geo_flag_map
 from core.parser import Node, parse_content
@@ -121,12 +123,32 @@ class RegressionTests(unittest.TestCase):
             write_outputs([Node("http", "t", "1.2.3.4", 80, {})], d, prefix="all", repo_path="o/r")
             (out / "stats.json").write_text(json.dumps({}), encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, "tools/health_report.py", "--output-dir", str(out)],
+                [
+                    sys.executable,
+                    "tools/health_report.py",
+                    "--output-dir", str(out),
+                    "--output", str(out / "health_report.json"),
+                ],
                 capture_output=True, text=True,
                 cwd=str(Path(__file__).resolve().parent.parent),
             )
         self.assertEqual(result.returncode, 2, f"expected exit 2, got {result.returncode}: {result.stderr}")
         self.assertIn("verified 输出为 0", result.stderr)
+
+    def test_fetch_all_overall_timeout_returns_partial_results(self):
+        """P0 — overall timeout 时返回已完成源, 不因 coroutine.done() AttributeError 二次失败"""
+        async def fake_fetch_source(session, src, timeout):
+            if src.name == "slow":
+                await asyncio.sleep(1)
+            return type("Result", (), {"source": src})()
+
+        sources = [
+            Source(url="https://fast.example", name="fast"),
+            Source(url="https://slow.example", name="slow"),
+        ]
+        with patch("core.fetcher.fetch_source", fake_fetch_source):
+            results = asyncio.run(fetch_all(sources, concurrency=2, timeout=1, overall_timeout=0.05))
+        self.assertEqual([r.source.name for r in results], ["fast"])
 
     # ===== v2.1 新增回归测试 =====
 
@@ -225,6 +247,170 @@ class RegressionTests(unittest.TestCase):
         # alerts.low_pass_protocols 是 [{protocol, pass_rate}, ...] 格式
         flagged = [p["protocol"] for p in report["alerts"]["low_pass_protocols"]]
         self.assertIn("vless", flagged)
+
+    def test_health_report_status_warning_when_alerts_exist(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            n = Node("vless", "n", "1.2.3.4", 443, {"uuid": "u"})
+            write_outputs([n], d, prefix="verified", repo_path="o/r")
+            write_outputs([n], d, prefix="all", repo_path="o/r")
+            (out / "stats.json").write_text('{"real_test_errors": {"204": 1}}', encoding="utf-8")
+            report = build_health_report(d, "verified")
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["status"], "warning")
+
+    def test_health_report_status_critical_when_verified_empty(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            write_outputs([], d, prefix="verified", repo_path="o/r")
+            write_outputs([Node("http", "t", "1.2.3.4", 80, {})], d, prefix="all", repo_path="o/r")
+            (out / "stats.json").write_text("{}", encoding="utf-8")
+            report = build_health_report(d, "verified")
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["status"], "critical")
+
+    def test_write_outputs_singbox_inbound_compatible_with_1_13(self):
+        n = Node("vless", "test", "example.com", 443, {"uuid": "u1"})
+        with tempfile.TemporaryDirectory() as d:
+            write_outputs([n], d, prefix="n", repo_path="o/r")
+            cfg = json.loads((Path(d) / "n.json").read_text(encoding="utf-8"))
+        inb = cfg["inbounds"][0]
+        self.assertNotIn("sniff", inb)
+        self.assertNotIn("sniff_override_destination", inb)
+
+    def test_tcp_check_batch_uses_worker_queue_and_sorts_results(self):
+        import main as m
+
+        class FakeWriter:
+            def close(self):
+                pass
+
+            async def wait_closed(self):
+                pass
+
+        async def fake_open_connection(host, port):
+            await asyncio.sleep(0.02 if host == "slow.example" else 0.01)
+            if host == "bad.example":
+                raise OSError("connection failed")
+            return object(), FakeWriter()
+
+        nodes = [
+            Node("http", "slow", "slow.example", 80, {}),
+            Node("http", "bad", "bad.example", 80, {}),
+            Node("http", "fast", "fast.example", 80, {}),
+        ]
+        with patch("asyncio.open_connection", fake_open_connection):
+            results = asyncio.run(m.tcp_check_batch(nodes, concurrency=2, timeout=1))
+        self.assertEqual([n.tag for n, _ in results], ["fast", "slow"])
+
+    def test_main_stats_include_stage_durations_and_error_details(self):
+        import main as m
+
+        class Args:
+            sources = "config/sources.yaml"
+            output_dir = ""
+            repo = "o/r"
+            branch = "main"
+            fetch_concurrency = 1
+            fetch_timeout = 1
+            quality_filter = False
+            max_per_server = 0
+            tcp_check = False
+            tcp_concurrency = 1
+            tcp_timeout = 0.1
+            test_limit = 0
+            real_test = False
+            top_n = 10
+            all_output_mode = "full"
+
+        source = Source(url="https://example.com/sub.txt", name="mock-source")
+        node = Node("http", "mock", "127.0.0.1", 8080, {})
+        fetch_result = type("FetchResult", (), {
+            "source": source,
+            "success": True,
+            "nodes": [node],
+        })()
+
+        async def fake_fetch_all(sources, concurrency=30, timeout=15):
+            return [fetch_result]
+
+        async def fake_geo_flag_map(nodes):
+            return {}
+
+        with tempfile.TemporaryDirectory() as d:
+            args = Args()
+            args.output_dir = d
+            with patch("main.load_sources", return_value=[source]), \
+                 patch("main.fetch_all", fake_fetch_all), \
+                 patch("main.geo_flag_map", fake_geo_flag_map):
+                asyncio.run(m.run(args))
+            stats = json.loads((Path(d) / "stats.json").read_text(encoding="utf-8"))
+        self.assertIn("stage_durations", stats)
+        self.assertIn("fetch", stats["stage_durations"])
+        self.assertIn("geo", stats["stage_durations"])
+        self.assertIn("tcp", stats["stage_durations"])
+        self.assertIn("real_test", stats["stage_durations"])
+        self.assertIn("generate", stats["stage_durations"])
+        self.assertIn("real_test_error_details", stats)
+
+    def test_sample_for_real_test_balances_protocols_and_fills_by_latency(self):
+        import main as m
+        nodes = [
+            Node("vless", "v1", "1.1.1.1", 443, {"uuid": "1"}),
+            Node("vless", "v2", "1.1.1.2", 443, {"uuid": "2"}),
+            Node("trojan", "t1", "1.1.1.3", 443, {"password": "p1"}),
+            Node("vmess", "m1", "1.1.1.4", 443, {"uuid": "3"}),
+        ]
+        lat = {nodes[0].fingerprint(): 40, nodes[1].fingerprint(): 10, nodes[2].fingerprint(): 20, nodes[3].fingerprint(): 30}
+        sampled = m.sample_for_real_test(nodes, lat, 3)
+        self.assertEqual(len(sampled), 3)
+        self.assertEqual({n.type for n in sampled}, {"vless", "trojan", "vmess"})
+        self.assertIn("v2", [n.tag for n in sampled])
+
+    def test_write_outputs_light_mode_skips_large_json_yaml(self):
+        n = Node("http", "http-test", "example.com", 8080, {})
+        with tempfile.TemporaryDirectory() as d:
+            count = write_outputs([n], d, prefix="all", repo_path="o/r", mode="light")
+            out = Path(d)
+            self.assertEqual(count, 1)
+            self.assertTrue((out / "all.urls").exists())
+            self.assertTrue((out / "all.txt").exists())
+            self.assertTrue((out / "all.converter.md").exists())
+            self.assertFalse((out / "all.json").exists())
+            self.assertFalse((out / "all.yaml").exists())
+
+    def test_protocol_fixture_corpus_parse_and_generate(self):
+        fixture_dir = Path(__file__).parent / "fixtures" / "protocols"
+        for path in sorted(fixture_dir.iterdir()):
+            content = path.read_text(encoding="utf-8")
+            nodes = parse_content(content)
+            self.assertGreater(len(nodes), 0, path.name)
+            with tempfile.TemporaryDirectory() as d:
+                count = write_outputs(nodes, d, prefix="fixture", repo_path="o/r")
+                self.assertGreater(count, 0, path.name)
+                self.assertTrue((Path(d) / "fixture.json").exists(), path.name)
+                self.assertTrue((Path(d) / "fixture.yaml").exists(), path.name)
+
+    def test_prepare_artifact_output_copies_expected_files(self):
+        import tools.prepare_artifact_output as prep
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            output = root / "output"
+            dest = root / "artifact"
+            output.mkdir()
+            for name in ("verified.txt", "verified.yaml", "all.txt", "all.json", "stats.json", "health_report.json"):
+                (output / name).write_text(name, encoding="utf-8")
+            old_argv = sys.argv
+            try:
+                sys.argv = ["prepare_artifact_output.py", "--output-dir", str(output), "--dest-dir", str(dest)]
+                prep.main()
+            finally:
+                sys.argv = old_argv
+            self.assertTrue((dest / "verified.txt").exists())
+            self.assertTrue((dest / "verified.yaml").exists())
+            self.assertTrue((dest / "all.txt").exists())
+            self.assertFalse((dest / "all.json").exists())
+            self.assertTrue((dest / "MANIFEST.txt").exists())
 
 
 if __name__ == "__main__":
