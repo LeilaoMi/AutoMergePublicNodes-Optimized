@@ -1,147 +1,206 @@
 {
   "version": "2.1.0",
-  "timestamp": "2026-06-04 09:59:54",
-  "duration_sec": 73.8,
+  "timestamp": "2026-06-04 14:41:23",
+  "duration_sec": 89.4,
+  "stage_durations": {
+    "fetch": 1.7,
+    "geo": 1.1,
+    "tcp": 41.0,
+    "real_test": 42.4,
+    "generate": 3.2
+  },
   "sources_total": 29,
   "sources_healthy": 29,
-  "nodes_raw": 14623,
-  "nodes_dedup": 8171,
-  "nodes_tcp_ok": 270,
-  "nodes_real_ok": 37,
-  "nodes_verified_output": 37,
+  "nodes_raw": 14630,
+  "nodes_dedup": 8343,
+  "nodes_tcp_ok": 500,
+  "nodes_real_ok": 46,
+  "nodes_verified_output": 46,
+  "nodes_all_output": 8343,
+  "all_output_mode": "full",
   "protocol_dist": {
-    "shadowsocks": 4215,
-    "vmess": 2565,
-    "trojan": 1254,
-    "vless": 6444,
-    "hysteria2": 56,
+    "shadowsocks": 4181,
+    "vmess": 2556,
+    "trojan": 1353,
+    "vless": 6353,
+    "hysteria2": 58,
     "hysteria": 3,
     "tuic": 1,
-    "socks": 7,
-    "http": 22,
-    "shadowsocksr": 56
+    "socks": 9,
+    "http": 58,
+    "shadowsocksr": 58
   },
   "protocol_pass_rate": {
     "vless": {
-      "pass": 2,
-      "fail": 60
+      "pass": 4,
+      "fail": 159
+    },
+    "trojan": {
+      "pass": 3,
+      "fail": 59
     },
     "vmess": {
       "pass": 0,
-      "fail": 62
-    },
-    "trojan": {
-      "pass": 1,
-      "fail": 61
+      "fail": 180
     },
     "shadowsocks": {
-      "pass": 25,
-      "fail": 37
-    },
-    "shadowsocksr": {
-      "pass": 0,
-      "fail": 9
-    },
-    "http": {
-      "pass": 9,
-      "fail": 1
+      "pass": 29,
+      "fail": 33
     },
     "tuic": {
       "pass": 0,
       "fail": 1
     },
+    "shadowsocksr": {
+      "pass": 0,
+      "fail": 9
+    },
     "socks": {
       "pass": 0,
       "fail": 2
+    },
+    "http": {
+      "pass": 10,
+      "fail": 11
     }
   },
   "source_pass_rate": {
     "Surfboard-tg-mixed": {
-      "pass": 7,
-      "fail": 65
+      "pass": 8,
+      "fail": 87
     },
     "ninja-vless": {
       "pass": 0,
-      "fail": 27
+      "fail": 99
     },
-    "Barabama-yudou": {
+    "Surfboard-tg-vless": {
+      "pass": 3,
+      "fail": 7
+    },
+    "Barabama-we": {
       "pass": 0,
       "fail": 3
     },
     "mahdibland-V2RayAggregator": {
       "pass": 1,
-      "fail": 88
+      "fail": 182
+    },
+    "Barabama-yudou": {
+      "pass": 0,
+      "fail": 3
     },
     "Au1rxx-base64": {
-      "pass": 15,
-      "fail": 18
+      "pass": 17,
+      "fail": 29
+    },
+    "Mr8AHAL": {
+      "pass": 0,
+      "fail": 6
     },
     "mheidari-all": {
-      "pass": 5,
-      "fail": 29
+      "pass": 7,
+      "fail": 24
+    },
+    "ninja-tuic": {
+      "pass": 0,
+      "fail": 1
     },
     "vxiaov": {
       "pass": 0,
       "fail": 1
     },
     "snakem982": {
-      "pass": 9,
-      "fail": 1
-    },
-    "ninja-tuic": {
-      "pass": 0,
-      "fail": 1
+      "pass": 10,
+      "fail": 12
     }
   },
   "real_test_errors": {
-    "204": 219,
-    "geo": 3,
-    "sing-box exited 1": 9,
-    "speed": 1,
-    "cn-block": 1
+    "204": 418,
+    "geo": 16,
+    "speed": 6,
+    "cn-block": 5,
+    "sing-box exited 1": 9
   },
+  "real_test_error_details": [
+    {
+      "error": "204:ProxyError",
+      "count": 346
+    },
+    {
+      "error": "204:ClientOSError",
+      "count": 54
+    },
+    {
+      "error": "204:TimeoutError",
+      "count": 18
+    },
+    {
+      "error": "geo:status=429",
+      "count": 12
+    },
+    {
+      "error": "sing-box exited 1: \u001b[31mFATAL\u001b[0m[0000] create service: initialize outbound[0]: ShadowsocksR is deprecated and removed i",
+      "count": 9
+    },
+    {
+      "error": "speed:TimeoutError",
+      "count": 6
+    },
+    {
+      "error": "cn-block:TimeoutError",
+      "count": 5
+    },
+    {
+      "error": "geo:status=403",
+      "count": 3
+    },
+    {
+      "error": "geo:ClientOSError",
+      "count": 1
+    }
+  ],
   "top_latencies_ms": [
-    251.3,
-    254.1,
-    254.4,
-    307.4,
-    315.6,
-    317.2,
-    317.3,
-    317.7,
-    338.1,
-    371.4,
-    377.1,
-    417.6,
-    451.2,
-    461.3,
-    482.6,
-    530.4,
-    539.6,
-    549.3,
-    564.9,
-    588.4
+    251.8,
+    252.6,
+    255.5,
+    310.8,
+    316.0,
+    336.0,
+    352.2,
+    375.7,
+    390.2,
+    401.4,
+    407.4,
+    411.4,
+    412.1,
+    415.3,
+    433.4,
+    463.9,
+    479.3,
+    490.2,
+    491.4,
+    494.5
   ],
   "top_jitters_ms": [
-    597.8,
-    610.1,
-    601.5,
-    595.9,
-    581.3,
-    582.7,
-    591.6,
-    584.5,
-    873.9,
-    779.3,
-    530.9,
-    647.5,
-    668.9,
-    749.1,
-    771.6,
-    580.3,
-    640.4,
-    719.5,
-    758.7,
-    799.2
+    548.5,
+    545.8,
+    559.5,
+    504.8,
+    722.4,
+    731.1,
+    619.2,
+    598.5,
+    586.5,
+    571.3,
+    630.0,
+    656.5,
+    656.0,
+    627.9,
+    677.6,
+    808.6,
+    711.0,
+    215.3,
+    227.3,
+    228.1
   ]
 }

@@ -1,33 +1,36 @@
 {
-  "generated_at": "2026-06-04 10:00:01",
+  "generated_at": "2026-06-04 14:41:29",
   "ok": true,
+  "status": "warning",
   "prefixes": {
     "verified": {
       "prefix": "verified",
       "missing_files": [],
       "ok": true,
       "files": {
-        "json": 18874,
-        "yaml": 13050,
-        "urls": 5260,
-        "txt": 7012,
+        "json": 24439,
+        "yaml": 17214,
+        "urls": 7040,
+        "txt": 9388,
         "converter.md": 5599
       },
-      "url_count": 37,
-      "txt_url_count": 37,
-      "json_node_count": 37,
-      "yaml_proxy_count": 37,
+      "url_count": 46,
+      "txt_url_count": 46,
+      "json_node_count": 46,
+      "yaml_proxy_count": 46,
       "protocol_dist": {
-        "shadowsocks": 25,
-        "vless": 2,
-        "http": 9,
-        "trojan": 1
+        "shadowsocks": 29,
+        "trojan": 3,
+        "vless": 4,
+        "http": 10
       },
-      "region_group_count": 4,
+      "region_group_count": 6,
       "region_groups": [
         "其他",
+        "🇨🇦 加拿大",
+        "🇩🇪 德国",
         "🇬🇧 英国",
-        "🇳🇱 荷兰",
+        "🇯🇵 日本",
         "🇺🇸 美国"
       ],
       "duplicate_json_tags": [],
@@ -39,29 +42,29 @@
       "missing_files": [],
       "ok": true,
       "files": {
-        "json": 3607831,
-        "yaml": 2501433,
-        "urls": 1530382,
-        "txt": 2040508,
+        "json": 3694930,
+        "yaml": 2560342,
+        "urls": 1560534,
+        "txt": 2080712,
         "converter.md": 5434
       },
-      "url_count": 8171,
-      "txt_url_count": 8171,
-      "json_node_count": 8171,
-      "yaml_proxy_count": 8171,
+      "url_count": 8343,
+      "txt_url_count": 8343,
+      "json_node_count": 8343,
+      "yaml_proxy_count": 8343,
       "protocol_dist": {
-        "shadowsocks": 2673,
-        "vmess": 1961,
-        "trojan": 816,
-        "vless": 2609,
-        "hysteria2": 39,
+        "shadowsocks": 2681,
+        "vmess": 1958,
+        "trojan": 826,
+        "vless": 2745,
+        "hysteria2": 41,
         "hysteria": 3,
         "tuic": 1,
         "socks": 6,
-        "http": 10,
+        "http": 29,
         "shadowsocksr": 53
       },
-      "region_group_count": 72,
+      "region_group_count": 75,
       "region_groups": [
         "其他",
         "🇦🇪 其他",
@@ -91,6 +94,7 @@
         "🇫🇮 其他",
         "🇫🇷 法国",
         "🇬🇧 英国",
+        "🇬🇪 其他",
         "🇬🇷 其他",
         "🇭🇰 香港",
         "🇭🇺 其他",
@@ -99,6 +103,7 @@
         "🇮🇱 其他",
         "🇮🇳 印度",
         "🇮🇷 其他",
+        "🇮🇸 其他",
         "🇮🇹 其他",
         "🇯🇴 其他",
         "🇯🇵 日本",
@@ -121,6 +126,7 @@
         "🇵🇰 其他",
         "🇵🇱 其他",
         "🇷🇴 其他",
+        "🇷🇸 其他",
         "🇷🇺 俄罗斯",
         "🇸🇦 其他",
         "🇸🇨 其他",
@@ -142,15 +148,15 @@
     }
   },
   "strategy": {
-    "all_json_nodes": 8171,
-    "verified_json_nodes": 37,
+    "all_json_nodes": 8343,
+    "verified_json_nodes": 46,
     "all_contains_at_least_verified_count": true,
     "note": "all.* 来自去重池；verified.* 来自质量过滤/TCP/真测后的 Top N。"
   },
   "stats_summary": {
-    "nodes_raw": 14623,
-    "nodes_dedup": 8171,
-    "nodes_real_ok": 37
+    "nodes_raw": 14630,
+    "nodes_dedup": 8343,
+    "nodes_real_ok": 46
   },
   "source_cleanup": {
     "dead_2_plus_count": 0,
@@ -160,22 +166,22 @@
     "low_pass_protocols": [
       {
         "protocol": "vless",
-        "pass_rate": 0.032
+        "pass_rate": 0.025
+      },
+      {
+        "protocol": "trojan",
+        "pass_rate": 0.048
       },
       {
         "protocol": "vmess",
         "pass_rate": 0.0
       },
       {
-        "protocol": "trojan",
-        "pass_rate": 0.016
-      },
-      {
-        "protocol": "shadowsocksr",
+        "protocol": "tuic",
         "pass_rate": 0.0
       },
       {
-        "protocol": "tuic",
+        "protocol": "shadowsocksr",
         "pass_rate": 0.0
       },
       {
@@ -184,11 +190,11 @@
       }
     ],
     "real_test_errors": {
-      "204": 219,
-      "geo": 3,
-      "sing-box exited 1": 9,
-      "speed": 1,
-      "cn-block": 1
+      "204": 418,
+      "geo": 16,
+      "speed": 6,
+      "cn-block": 5,
+      "sing-box exited 1": 9
     }
   }
 }
