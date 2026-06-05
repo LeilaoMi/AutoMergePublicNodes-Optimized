@@ -482,6 +482,22 @@ class RegressionTests(unittest.TestCase):
         )
         self.assertIn("good", [n.tag for n in sampled])
 
+    def test_weighted_sample_uses_high_source_quota(self):
+        import main as m
+        good_nodes = [Node("shadowsocks", f"good-{i}", f"2.2.2.{i}", 443, {"method": "aes-128-gcm", "password": "p"}) for i in range(1, 4)]
+        bad_nodes = [Node("vmess", f"bad-{i}", f"3.3.3.{i}", 443, {"uuid": str(i)}) for i in range(1, 7)]
+        nodes = bad_nodes + good_nodes
+        lat = {n.fingerprint(): i for i, n in enumerate(bad_nodes, 1)}
+        lat.update({n.fingerprint(): 100 + i for i, n in enumerate(good_nodes, 1)})
+        source_map = {n.fingerprint(): "bad-source" for n in bad_nodes}
+        source_map.update({n.fingerprint(): "good-source" for n in good_nodes})
+        sampled = m.sample_for_real_test_weighted(
+            nodes, lat, 5, source_map,
+            protocol_rates={"shadowsocks": 0.4, "vmess": 0.1},
+            source_rates={"good-source": 0.5, "bad-source": 0.05},
+        )
+        self.assertTrue(any(n.tag.startswith("good-") for n in sampled))
+
     def test_output_shrink_guard_helpers(self):
         import main as m
         with tempfile.TemporaryDirectory() as d:

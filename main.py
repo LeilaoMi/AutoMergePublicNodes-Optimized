@@ -163,6 +163,38 @@ def sample_for_real_test_weighted(
     sampled = sample_for_real_test(nodes, tcp_latency, min(base_quota, limit))
     used = {n.fingerprint() for n in sampled}
 
+    high_source_quota = max(limit // 3, 1)
+    by_source: Dict[str, List[Node]] = {}
+    for n in nodes:
+        fp = n.fingerprint()
+        if fp in used:
+            continue
+        src = node_source_map.get(fp, "")
+        if source_rates.get(src, 0.0) >= 0.2:
+            by_source.setdefault(src, []).append(n)
+    for lst in by_source.values():
+        lst.sort(key=lambda n: tcp_latency.get(n.fingerprint(), float("inf")))
+    high_sources = sorted(by_source, key=lambda src: source_rates.get(src, 0.0), reverse=True)
+    added_from_high_sources = 0
+    while high_sources and len(sampled) < limit and added_from_high_sources < high_source_quota:
+        progressed = False
+        for src in high_sources:
+            while by_source[src]:
+                n = by_source[src].pop(0)
+                fp = n.fingerprint()
+                if fp in used:
+                    continue
+                sampled.append(n)
+                used.add(fp)
+                added_from_high_sources += 1
+                progressed = True
+                break
+            if len(sampled) >= limit or added_from_high_sources >= high_source_quota:
+                break
+        high_sources = [src for src in high_sources if by_source[src]]
+        if not progressed:
+            break
+
     def score(n: Node) -> Tuple[float, float, int]:
         fp = n.fingerprint()
         src = node_source_map.get(fp, "")
