@@ -170,8 +170,8 @@ light 模式下 `all.*` 只生成：
 
 - 自动：GitHub Actions 每 6 小时运行。
 - 手动：`Actions → Update Nodes → Run workflow`
-  - `top_n`：verified 输出节点数上限，默认 100，workflow 限制最大 1000。
-  - `test_limit`：送入真测的最大节点数，默认 500，workflow 限制最大 3000。
+  - `top_n`：verified 输出节点数上限，默认 200，workflow 限制最大 1000。
+  - `test_limit`：送入真测的最大节点数，默认 1000，workflow 限制最大 3000。
   - `audit`：是否同时跑源审计。
 
 ---
