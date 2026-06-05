@@ -110,7 +110,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 - `force_push` 手动输入已移除。
 - rebase 冲突时直接失败，避免覆盖人工修改。
 - `top_n` / `test_limit` 在 workflow 层有限制，避免误填导致 CI 超时。
-- 输出缩水守门：`verified.*` / `global.*` 如果低于上一轮数量的 70%，会保留上一轮文件，避免订阅突然大幅缩水。
+- GitHub Actions 默认关闭输出缩水守门：`verified.*` / `global.*` 会写入本轮真测结果，避免仓库真测文件停留在上一轮。手动运行 workflow 时可设置 `min_retain_ratio`，例如 `0.7` 表示本轮数量低于上一轮 70% 时保留上一轮。
 - CI 失败时上传 debug artifact：`stats.json`、`source_audit.json`、`health_report.json`、converter 文件。
 - jsDelivr purge 会记录 HTTP 状态，不再完全静默。
 
@@ -189,6 +189,7 @@ light 模式下 `all.*` 只生成：
 - 手动：`Actions → Update Nodes → Run workflow`
   - `top_n`：verified 输出节点数上限，默认 300，workflow 限制最大 1000。
   - `test_limit`：送入真测的最大节点数，默认 1500，workflow 限制最大 3000。
+  - `min_retain_ratio`：缩水守门比例，默认 0（关闭，仓库输出始终更新为本轮真测结果）；可手动设为 0.7 来保留上一轮防止订阅突然缩水。
   - `audit`：是否同时跑源审计。
 
 ---
