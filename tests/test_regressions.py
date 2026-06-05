@@ -322,6 +322,7 @@ class RegressionTests(unittest.TestCase):
             real_test = False
             top_n = 10
             global_output = False
+            min_retain_ratio = 0.7
             all_output_mode = "full"
 
         source = Source(url="https://example.com/sub.txt", name="mock-source")
@@ -373,6 +374,7 @@ class RegressionTests(unittest.TestCase):
             real_test = True
             top_n = 10
             global_output = True
+            min_retain_ratio = 0.7
             all_output_mode = "light"
             singbox = __file__
             test_concurrency = 1
@@ -479,6 +481,17 @@ class RegressionTests(unittest.TestCase):
             source_rates={"good-source": 0.9, "bad-source": 0.1},
         )
         self.assertIn("good", [n.tag for n in sampled])
+
+    def test_output_shrink_guard_helpers(self):
+        import main as m
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "verified.urls"
+            path.write_text("a\n\n b \n", encoding="utf-8")
+            self.assertEqual(m.count_existing_urls(d, "verified"), 2)
+        self.assertTrue(m.should_preserve_previous_output(60, 100, 0.7))
+        self.assertFalse(m.should_preserve_previous_output(70, 100, 0.7))
+        self.assertFalse(m.should_preserve_previous_output(1, 0, 0.7))
+        self.assertFalse(m.should_preserve_previous_output(1, 100, 0))
 
     def test_write_outputs_light_mode_skips_large_json_yaml(self):
         n = Node("http", "http-test", "example.com", 8080, {})

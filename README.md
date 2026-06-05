@@ -110,6 +110,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 - `force_push` 手动输入已移除。
 - rebase 冲突时直接失败，避免覆盖人工修改。
 - `top_n` / `test_limit` 在 workflow 层有限制，避免误填导致 CI 超时。
+- 输出缩水守门：`verified.*` / `global.*` 如果低于上一轮数量的 70%，会保留上一轮文件，避免订阅突然大幅缩水。
 - CI 失败时上传 debug artifact：`stats.json`、`source_audit.json`、`health_report.json`、converter 文件。
 - jsDelivr purge 会记录 HTTP 状态，不再完全静默。
 
@@ -127,6 +128,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
   - protocol/source pass rate
   - `stage_durations` 阶段耗时
   - `real_test_error_details` 错误明细 Top 10
+  - `output_guard` 输出缩水守门结果
   - `all_output_mode`
 
 ### 仓库体积控制准备
