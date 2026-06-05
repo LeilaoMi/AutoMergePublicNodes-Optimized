@@ -1,29 +1,29 @@
 {
   "version": "2.1.0",
-  "timestamp": "2026-06-04 20:09:09",
-  "duration_sec": 80.7,
+  "timestamp": "2026-06-05 03:58:42",
+  "duration_sec": 89.8,
   "stage_durations": {
     "fetch": 1.7,
-    "geo": 1.1,
-    "tcp": 40.4,
-    "real_test": 34.3,
-    "generate": 3.3
+    "geo": 1.2,
+    "tcp": 40.3,
+    "real_test": 43.1,
+    "generate": 3.5
   },
   "sources_total": 29,
   "sources_healthy": 29,
-  "nodes_raw": 15535,
-  "nodes_dedup": 8590,
+  "nodes_raw": 16276,
+  "nodes_dedup": 8446,
   "nodes_tcp_ok": 500,
-  "nodes_real_ok": 38,
-  "nodes_verified_output": 38,
-  "nodes_all_output": 8590,
+  "nodes_real_ok": 74,
+  "nodes_verified_output": 74,
+  "nodes_all_output": 8446,
   "all_output_mode": "full",
   "protocol_dist": {
-    "vmess": 2590,
-    "trojan": 1422,
-    "vless": 7069,
-    "shadowsocks": 4267,
-    "hysteria2": 57,
+    "vmess": 2772,
+    "shadowsocks": 4256,
+    "trojan": 1473,
+    "vless": 7590,
+    "hysteria2": 55,
     "hysteria": 3,
     "tuic": 1,
     "socks": 9,
@@ -32,191 +32,175 @@
   },
   "protocol_pass_rate": {
     "vless": {
-      "pass": 5,
-      "fail": 167
+      "pass": 10,
+      "fail": 148
     },
     "trojan": {
-      "pass": 1,
-      "fail": 54
-    },
-    "vmess": {
-      "pass": 0,
-      "fail": 183
+      "pass": 24,
+      "fail": 31
     },
     "hysteria2": {
       "pass": 1,
-      "fail": 0
+      "fail": 2
+    },
+    "vmess": {
+      "pass": 1,
+      "fail": 194
     },
     "tuic": {
       "pass": 0,
       "fail": 1
     },
     "shadowsocks": {
-      "pass": 24,
-      "fail": 31
+      "pass": 26,
+      "fail": 29
     },
     "shadowsocksr": {
       "pass": 0,
       "fail": 10
     },
     "http": {
-      "pass": 7,
-      "fail": 14
+      "pass": 11,
+      "fail": 10
     },
     "socks": {
-      "pass": 0,
-      "fail": 2
+      "pass": 1,
+      "fail": 1
     }
   },
   "source_pass_rate": {
+    "Surfboard-tg-mixed": {
+      "pass": 41,
+      "fail": 104
+    },
     "ninja-vless": {
       "pass": 0,
-      "fail": 71
-    },
-    "Surfboard-tg-mixed": {
-      "pass": 10,
-      "fail": 123
-    },
-    "Surfboard-tg-vless": {
-      "pass": 0,
-      "fail": 5
+      "fail": 75
     },
     "Barabama-yudou": {
-      "pass": 0,
+      "pass": 1,
       "fail": 5
     },
-    "ts-sf": {
-      "pass": 0,
-      "fail": 1
-    },
     "mahdibland-V2RayAggregator": {
-      "pass": 2,
-      "fail": 199
-    },
-    "chromego_merge": {
-      "pass": 0,
-      "fail": 1
-    },
-    "Au1rxx-base64": {
-      "pass": 15,
-      "fail": 9
-    },
-    "Mr8AHAL": {
-      "pass": 0,
-      "fail": 4
+      "pass": 1,
+      "fail": 196
     },
     "ninja-tuic": {
       "pass": 0,
       "fail": 1
     },
     "mheidari-all": {
-      "pass": 4,
-      "fail": 24
+      "pass": 5,
+      "fail": 22
+    },
+    "Au1rxx-base64": {
+      "pass": 15,
+      "fail": 2
     },
     "vxiaov": {
       "pass": 0,
       "fail": 1
     },
     "snakem982": {
-      "pass": 7,
-      "fail": 15
-    },
-    "Barabama-we": {
-      "pass": 0,
-      "fail": 2
+      "pass": 11,
+      "fail": 11
     },
     "freefq": {
       "pass": 0,
       "fail": 1
+    },
+    "Mr8AHAL": {
+      "pass": 0,
+      "fail": 8
     }
   },
   "real_test_errors": {
-    "204": 422,
-    "geo": 23,
-    "speed": 6,
+    "204": 393,
+    "speed": 15,
     "sing-box exited 1": 10,
-    "cn-block": 1
+    "geo": 4,
+    "cn-block": 4
   },
   "real_test_error_details": [
     {
       "error": "204:ProxyError",
-      "count": 334
+      "count": 317
     },
     {
       "error": "204:ClientOSError",
-      "count": 63
+      "count": 56
     },
     {
       "error": "204:TimeoutError",
-      "count": 25
+      "count": 20
     },
     {
-      "error": "geo:status=429",
-      "count": 21
+      "error": "speed:TimeoutError",
+      "count": 13
     },
     {
       "error": "sing-box exited 1: \u001b[31mFATAL\u001b[0m[0000] create service: initialize outbound[0]: ShadowsocksR is deprecated and removed i",
       "count": 10
     },
     {
-      "error": "speed:TimeoutError",
-      "count": 5
-    },
-    {
-      "error": "geo:status=403",
-      "count": 2
-    },
-    {
       "error": "cn-block:TimeoutError",
-      "count": 1
+      "count": 4
+    },
+    {
+      "error": "geo:TimeoutError",
+      "count": 3
     },
     {
       "error": "speed:ClientOSError",
+      "count": 2
+    },
+    {
+      "error": "geo:status=403",
       "count": 1
     }
   ],
   "top_latencies_ms": [
-    253.3,
-    254.9,
-    258.9,
-    259.5,
-    262.1,
-    309.0,
-    320.4,
-    324.3,
-    326.9,
-    345.8,
-    357.6,
-    358.9,
-    376.3,
-    418.0,
-    422.0,
-    435.9,
-    564.5,
-    565.0,
-    624.0,
-    624.6
+    250.0,
+    252.1,
+    261.2,
+    262.3,
+    305.7,
+    309.8,
+    310.5,
+    316.5,
+    318.1,
+    319.0,
+    325.1,
+    327.6,
+    357.0,
+    371.0,
+    374.7,
+    377.5,
+    415.6,
+    596.4,
+    608.7,
+    611.2
   ],
   "top_jitters_ms": [
-    604.8,
-    602.0,
-    638.3,
-    599.5,
-    623.9,
-    591.3,
-    583.7,
-    585.1,
-    601.8,
-    867.7,
-    703.0,
-    649.6,
-    515.5,
-    643.6,
-    507.8,
-    633.7,
-    529.3,
-    838.5,
-    876.4,
-    888.5
+    648.0,
+    596.4,
+    608.4,
+    627.1,
+    601.5,
+    559.8,
+    772.0,
+    665.9,
+    795.9,
+    566.0,
+    553.0,
+    583.8,
+    719.0,
+    725.0,
+    498.9,
+    731.9,
+    623.0,
+    849.4,
+    890.0,
+    891.1
   ]
 }
