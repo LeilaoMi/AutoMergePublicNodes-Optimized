@@ -122,6 +122,19 @@ def sample_for_real_test(nodes: List[Node], tcp_latency: Dict[str, float], limit
     return sampled[:limit]
 
 
+def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int) -> List[Node]:
+    output_nodes: List[Node] = []
+    for i, (n, lat, jit) in enumerate(valid[:top_n], 1):
+        flag = flag_for_server(n.server, flag_map)
+        prefix = f"{flag} " if flag else ""
+        new_tag = n.tag
+        if lat > 0:
+            jitter_str = f" +/-{jit:.0f}ms" if jit > 0 else ""
+            new_tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag}"
+        output_nodes.append(replace(n, tag=new_tag))
+    return output_nodes
+
+
 async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: float = 3.0) -> List[Tuple[Node, float]]:
     """快速 TCP 预筛选：返回 [(node, tcp_latency_ms)]，按延迟升序"""
     queue: asyncio.Queue[Node] = asyncio.Queue()
@@ -242,6 +255,8 @@ async def run(args):
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
     results = []  # 保存全部测试结果（含失败），供统计使用
+    cn_block_retry_results = []
+    cn_block_retry_valid: List[tuple] = []
     real_test_passed = False
     if args.real_test and nodes:
         from core.tester import SingBoxTester
@@ -264,10 +279,33 @@ async def run(args):
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
         if valid:
             print(f"      最快: {valid[0][1]:.1f}ms  最慢: {valid[-1][1]:.1f}ms")
+
+        if args.global_output and results:
+            cn_block_nodes = [r.node for r in results if (not r.success and r.error.startswith("cn-block:"))]
+            if cn_block_nodes:
+                print(f"      Global 兼顾复测（跳过百度连通）: {len(cn_block_nodes)} 个...")
+                global_tester = SingBoxTester(
+                    sb_path=args.singbox,
+                    concurrency=args.test_concurrency,
+                    startup_wait=args.startup_wait,
+                    request_timeout=args.test_timeout,
+                    min_latency_ms=args.min_latency,
+                    skip_target_kinds={"cn-block"},
+                )
+                cn_block_retry_results = await global_tester.test_all(cn_block_nodes)
+                cn_block_retry_valid = sorted(
+                    [(r.node, r.latency_ms, r.jitter_ms) for r in cn_block_retry_results if r.success],
+                    key=lambda x: x[1],
+                )
+                print(f"      Global 追加可用: {len(cn_block_retry_valid)}/{len(cn_block_nodes)}")
     else:
         print(f"[5/6] 跳过真实测试")
         stage_durations["real_test"] = 0.0
         stage_start = time.time()
+
+    if not args.real_test:
+        cn_block_retry_results = []
+        cn_block_retry_valid = []
 
     # TCP 延迟只保留为"是否可达"信息, 不参与延迟排序. 真测 0 通过时显式失败.
     if real_test_passed:
@@ -317,21 +355,16 @@ async def run(args):
     # 取 Top N 并改名加入延迟。构造新 Node，避免污染 all.* 的原始去重池。
     # §2.1 tag 不再在 main.py 截断 30 字符, 留给 generator._clamp_tag 统一处理
     top = valid[:args.top_n]
-    final_nodes: List[Node] = []
-    for i, (n, lat, jit) in enumerate(top, 1):
-        flag = flag_for_server(n.server, flag_map)
-        prefix = f"{flag} " if flag else ""
-        new_tag = n.tag
-        if lat > 0:
-            jitter_str = f" +/-{jit:.0f}ms" if jit > 0 else ""
-            new_tag = f"{prefix}[{lat:>5.1f}ms{jitter_str}] {n.tag}"
-        final_nodes.append(replace(n, tag=new_tag))
+    final_nodes = build_output_nodes(valid, flag_map, args.top_n)
+    global_valid = sorted(valid + cn_block_retry_valid, key=lambda x: x[1])
+    global_nodes = build_output_nodes(global_valid, flag_map, args.top_n)
 
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
     from core.generator import write_outputs
 
     n_top = write_outputs(final_nodes, args.output_dir, prefix="verified", repo_path=args.repo, branch=args.branch)
+    n_global = write_outputs(global_nodes, args.output_dir, prefix="global", repo_path=args.repo, branch=args.branch) if args.global_output else 0
     # 同时生成全量备份(未测速,供客户端再测)
     # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
     all_valid = dedup_pool
@@ -354,6 +387,8 @@ async def run(args):
     print(f"│  • TCP 可达:  {len(nodes):>6}")
     print(f"│  • 真实可用:  {len(valid):>6}")
     print(f"│  • Verified:  {n_top:>6}")
+    if args.global_output:
+        print(f"│  • Global:    {n_global:>6}")
     print(f"└─────────────────────────────────────────────┘")
 
     # 统计 JSON
@@ -384,6 +419,9 @@ async def run(args):
         "nodes_tcp_ok": len(nodes),
         "nodes_real_ok": len(valid),
         "nodes_verified_output": n_top,
+        "nodes_global_output": n_global,
+        "nodes_global_extra_from_cn_block": len(cn_block_retry_valid),
+        "global_skip_target_kinds": ["cn-block"] if args.global_output else [],
         "nodes_all_output": n_all,
         "all_output_mode": args.all_output_mode,
         "protocol_dist": proto_count,
@@ -424,6 +462,8 @@ def main():
                    help="§2.2 同 server IP 最多保留的节点数 (0=不限, 默认; 1/2=严格, 但可能误杀 AWS/Hetzner 上不同用户的节点)")
     p.add_argument("--min-latency", type=float, default=30.0,
                    help="真实测试最低延迟阈值(ms)，低于此值视为可疑；设为 0 可关闭")
+    p.add_argument("--global-output", action=argparse.BooleanOptionalAction, default=True,
+                   help="生成 global.* 兼顾输出：严格 verified 之外，复测并纳入仅因百度连通失败的节点")
     p.add_argument("--all-output-mode", choices=("full", "light"), default=os.environ.get("AUTONODES_ALL_OUTPUT_MODE", "full"),
                    help="all.* 输出模式: full=全格式兼容旧 URL; light=只保留 txt/urls/converter, 降低大文件成本")
     p.add_argument("--repo", default="LeilaoMi/AutoMergePublicNodes-Optimized",

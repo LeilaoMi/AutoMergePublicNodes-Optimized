@@ -321,6 +321,7 @@ class RegressionTests(unittest.TestCase):
             test_limit = 0
             real_test = False
             top_n = 10
+            global_output = False
             all_output_mode = "full"
 
         source = Source(url="https://example.com/sub.txt", name="mock-source")
@@ -352,6 +353,84 @@ class RegressionTests(unittest.TestCase):
         self.assertIn("real_test", stats["stage_durations"])
         self.assertIn("generate", stats["stage_durations"])
         self.assertIn("real_test_error_details", stats)
+
+    def test_global_output_adds_cn_block_retry_successes(self):
+        import main as m
+
+        class Args:
+            sources = "config/sources.yaml"
+            output_dir = ""
+            repo = "o/r"
+            branch = "main"
+            fetch_concurrency = 1
+            fetch_timeout = 1
+            quality_filter = False
+            max_per_server = 0
+            tcp_check = False
+            tcp_concurrency = 1
+            tcp_timeout = 0.1
+            test_limit = 0
+            real_test = True
+            top_n = 10
+            global_output = True
+            all_output_mode = "light"
+            singbox = __file__
+            test_concurrency = 1
+            startup_wait = 0
+            test_timeout = 0.1
+            min_latency = 0
+
+        source = Source(url="https://example.com/sub.txt", name="mock-source")
+        strict_node = Node("http", "strict", "127.0.0.1", 8080, {})
+        global_node = Node("http", "global", "127.0.0.2", 8080, {})
+        fetch_result = type("FetchResult", (), {
+            "source": source,
+            "success": True,
+            "nodes": [strict_node, global_node],
+        })()
+
+        async def fake_fetch_all(sources, concurrency=30, timeout=15):
+            return [fetch_result]
+
+        async def fake_geo_flag_map(nodes):
+            return {}
+
+        class FakeTester:
+            def __init__(self, *args, skip_target_kinds=None, **kwargs):
+                self.skip_target_kinds = set(skip_target_kinds or [])
+
+            async def test_all(self, nodes):
+                from core.tester import TestResult
+                if "cn-block" in self.skip_target_kinds:
+                    return [TestResult(node=nodes[0], success=True, latency_ms=80, jitter_ms=0)]
+                return [
+                    TestResult(node=strict_node, success=True, latency_ms=50, jitter_ms=0),
+                    TestResult(node=global_node, success=False, error="cn-block:status=403"),
+                ]
+
+        with tempfile.TemporaryDirectory() as d:
+            args = Args()
+            args.output_dir = d
+            with patch("main.load_sources", return_value=[source]), \
+                 patch("main.fetch_all", fake_fetch_all), \
+                 patch("main.geo_flag_map", fake_geo_flag_map), \
+                 patch("core.tester.SingBoxTester", FakeTester):
+                asyncio.run(m.run(args))
+            stats = json.loads((Path(d) / "stats.json").read_text(encoding="utf-8"))
+            global_urls = (Path(d) / "global.urls").read_text(encoding="utf-8")
+            verified_urls = (Path(d) / "verified.urls").read_text(encoding="utf-8")
+        self.assertEqual(stats["nodes_verified_output"], 1)
+        self.assertEqual(stats["nodes_global_output"], 2)
+        self.assertEqual(stats["nodes_global_extra_from_cn_block"], 1)
+        self.assertEqual(stats["global_skip_target_kinds"], ["cn-block"])
+        self.assertIn("strict", global_urls)
+        self.assertIn("global", global_urls)
+        self.assertNotIn("global", verified_urls)
+
+    def test_singbox_tester_records_skipped_target_kinds(self):
+        with tempfile.NamedTemporaryFile() as f:
+            tester = SingBoxTester(sb_path=f.name, skip_target_kinds={"cn-block"})
+        self.assertEqual(tester.skip_target_kinds, {"cn-block"})
 
     def test_sample_for_real_test_balances_protocols_and_fills_by_latency(self):
         import main as m
@@ -398,7 +477,7 @@ class RegressionTests(unittest.TestCase):
             output = root / "output"
             dest = root / "artifact"
             output.mkdir()
-            for name in ("verified.txt", "verified.yaml", "all.txt", "all.json", "stats.json", "health_report.json"):
+            for name in ("verified.txt", "verified.yaml", "global.txt", "global.yaml", "all.txt", "all.json", "stats.json", "health_report.json"):
                 (output / name).write_text(name, encoding="utf-8")
             old_argv = sys.argv
             try:
@@ -408,6 +487,8 @@ class RegressionTests(unittest.TestCase):
                 sys.argv = old_argv
             self.assertTrue((dest / "verified.txt").exists())
             self.assertTrue((dest / "verified.yaml").exists())
+            self.assertTrue((dest / "global.txt").exists())
+            self.assertTrue((dest / "global.yaml").exists())
             self.assertTrue((dest / "all.txt").exists())
             self.assertFalse((dest / "all.json").exists())
             self.assertTrue((dest / "MANIFEST.txt").exists())

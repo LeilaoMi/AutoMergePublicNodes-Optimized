@@ -13,6 +13,7 @@ from pathlib import Path
 
 DEFAULT_PATTERNS = (
     "verified.*",
+    "global.*",
     "all.txt",
     "all.urls",
     "all.converter.md",
