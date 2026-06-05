@@ -73,7 +73,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
     ↓ GeoIP 国旗映射（带缓存）
     ↓ 质量预过滤（端口黑名单 + server/protocol 降噪）
     ↓ TCP 预筛选（固定 worker 队列，避免海量协程）
-    ↓ 协议基础配额 + TCP 延迟补齐下采样
+    ↓ 协议基础探索 + 历史源/协议通过率加权下采样
     ↓ sing-box 真实代理测试
        - Google / YouTube 204
        - 出口地理检测

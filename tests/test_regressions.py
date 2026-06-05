@@ -446,6 +446,40 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual({n.type for n in sampled}, {"vless", "trojan", "vmess"})
         self.assertIn("v2", [n.tag for n in sampled])
 
+    def test_load_historical_pass_rates_uses_smoothed_rates(self):
+        import main as m
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "stats.json").write_text(json.dumps({
+                "protocol_pass_rate": {"trojan": {"pass": 8, "fail": 2}},
+                "source_pass_rate": {"good": {"pass": 9, "fail": 1}},
+            }), encoding="utf-8")
+            protocol_rates, source_rates = m.load_historical_pass_rates(d)
+        self.assertAlmostEqual(protocol_rates["trojan"], 9 / 12)
+        self.assertAlmostEqual(source_rates["good"], 10 / 12)
+
+    def test_weighted_sample_prefers_historical_success_after_exploration_quota(self):
+        import main as m
+        good = Node("trojan", "good", "1.1.1.1", 443, {"password": "p"})
+        bad_fast = Node("vmess", "bad-fast", "1.1.1.2", 443, {"uuid": "u"})
+        bad_slow = Node("vmess", "bad-slow", "1.1.1.3", 443, {"uuid": "u2"})
+        nodes = [bad_fast, bad_slow, good]
+        lat = {
+            good.fingerprint(): 100,
+            bad_fast.fingerprint(): 1,
+            bad_slow.fingerprint(): 2,
+        }
+        source_map = {
+            good.fingerprint(): "good-source",
+            bad_fast.fingerprint(): "bad-source",
+            bad_slow.fingerprint(): "bad-source",
+        }
+        sampled = m.sample_for_real_test_weighted(
+            nodes, lat, 2, source_map,
+            protocol_rates={"trojan": 0.8, "vmess": 0.1},
+            source_rates={"good-source": 0.9, "bad-source": 0.1},
+        )
+        self.assertIn("good", [n.tag for n in sampled])
+
     def test_write_outputs_light_mode_skips_large_json_yaml(self):
         n = Node("http", "http-test", "example.com", 8080, {})
         with tempfile.TemporaryDirectory() as d:

@@ -56,6 +56,33 @@ def protocol_priority(t: str) -> int:
     return _PROTO_PRIORITY.get(t, 9)
 
 
+def _smoothed_pass_rate(stats: Dict[str, int]) -> float:
+    passed = int(stats.get("pass", 0) or 0)
+    failed = int(stats.get("fail", 0) or 0)
+    return (passed + 1) / (passed + failed + 2)
+
+
+def load_historical_pass_rates(output_dir: str) -> Tuple[Dict[str, float], Dict[str, float]]:
+    stats_path = Path(output_dir) / "stats.json"
+    if not stats_path.exists():
+        return {}, {}
+    try:
+        stats = json.loads(stats_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}, {}
+    protocol_rates = {
+        name: _smoothed_pass_rate(values)
+        for name, values in (stats.get("protocol_pass_rate") or {}).items()
+        if isinstance(values, dict)
+    }
+    source_rates = {
+        name: _smoothed_pass_rate(values)
+        for name, values in (stats.get("source_pass_rate") or {}).items()
+        if isinstance(values, dict)
+    }
+    return protocol_rates, source_rates
+
+
 # 端口黑名单。80/8080 可能是合法 WS/TLS/HTTP 伪装端口，不再硬删除。
 _PORT_BLOCKLIST = {0}
 
@@ -122,6 +149,34 @@ def sample_for_real_test(nodes: List[Node], tcp_latency: Dict[str, float], limit
     return sampled[:limit]
 
 
+def sample_for_real_test_weighted(
+    nodes: List[Node],
+    tcp_latency: Dict[str, float],
+    limit: int,
+    node_source_map: Dict[str, str],
+    protocol_rates: Dict[str, float],
+    source_rates: Dict[str, float],
+) -> List[Node]:
+    if limit <= 0 or len(nodes) <= limit:
+        return nodes
+    base_quota = max(limit // 5, 1)
+    sampled = sample_for_real_test(nodes, tcp_latency, min(base_quota, limit))
+    used = {n.fingerprint() for n in sampled}
+
+    def score(n: Node) -> Tuple[float, float, int]:
+        fp = n.fingerprint()
+        src = node_source_map.get(fp, "")
+        source_rate = source_rates.get(src, 0.5)
+        protocol_rate = protocol_rates.get(n.type, 0.5)
+        latency = tcp_latency.get(fp, float("inf"))
+        return (-(source_rate * 0.7 + protocol_rate * 0.3), latency, protocol_priority(n.type))
+
+    remaining = [n for n in nodes if n.fingerprint() not in used]
+    remaining.sort(key=score)
+    sampled.extend(remaining[:max(limit - len(sampled), 0)])
+    return sampled[:limit]
+
+
 def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int) -> List[Node]:
     output_nodes: List[Node] = []
     for i, (n, lat, jit) in enumerate(valid[:top_n], 1):
@@ -182,7 +237,10 @@ async def run(args):
 
     # 1) 加载订阅源
     sources = load_sources(args.sources)
+    protocol_rates, source_rates = load_historical_pass_rates(args.output_dir)
     print(f"[1/6] 加载 {len(sources)} 个订阅源")
+    if protocol_rates or source_rates:
+        print(f"      历史通过率: {len(source_rates)} 个源, {len(protocol_rates)} 个协议")
 
     # 2) 抓取
     print(f"[2/6] 异步抓取（并发 {args.fetch_concurrency}）...")
@@ -249,8 +307,8 @@ async def run(args):
     # 限制送入真实测试的数量（控制时间）
     if args.test_limit > 0 and len(nodes) > args.test_limit:
         before_sample = len(nodes)
-        nodes = sample_for_real_test(nodes, tcp_latency, args.test_limit)
-        print(f"      下采样: {before_sample} -> {len(nodes)}（协议基础配额 + TCP 延迟补齐）")
+        nodes = sample_for_real_test_weighted(nodes, tcp_latency, args.test_limit, node_source_map, protocol_rates, source_rates)
+        print(f"      下采样: {before_sample} -> {len(nodes)}（协议基础探索 + 历史通过率加权）")
 
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
