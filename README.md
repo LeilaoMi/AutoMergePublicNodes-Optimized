@@ -130,6 +130,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
   - `real_test_error_details` 错误明细 Top 10
   - `output_guard` 输出缩水守门结果
   - `all_output_mode`
+- `trend_history.json` 保存最近 30 轮核心趋势：verified/global 数量、TCP/真测通过数、失败原因、缩水守门状态。用于判断改动是否真的改善，避免只看单轮波动。
 
 ### 仓库体积控制准备
 

@@ -149,6 +149,7 @@ jobs:
             output/stats.json
             output/source_audit.json
             output/health_report.json
+            output/trend_history.json
             output/*.converter.md
 
       - name: Purge jsDelivr cache
@@ -156,7 +157,7 @@ jobs:
           set -euo pipefail
           REPO="${{ github.repository }}"
           failed=0
-          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json geo_cache.json; do
+          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json trend_history.json geo_cache.json; do
             code=$(curl -s -o /tmp/jsdelivr-purge.json -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@main/output/${f}" || true)
             if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then
               echo "::warning::jsDelivr purge failed for output/${f} HTTP ${code}"

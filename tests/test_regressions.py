@@ -482,6 +482,28 @@ class RegressionTests(unittest.TestCase):
         )
         self.assertIn("good", [n.tag for n in sampled])
 
+    def test_update_trend_history_keeps_recent_runs(self):
+        import main as m
+        with tempfile.TemporaryDirectory() as d:
+            for i in range(32):
+                payload = m.update_trend_history(d, {
+                    "timestamp": f"run-{i}",
+                    "duration_sec": i,
+                    "nodes_tcp_ok": 100 + i,
+                    "nodes_real_ok": 10 + i,
+                    "nodes_verified_output": i,
+                    "nodes_global_output": i + 1,
+                    "nodes_global_extra_from_cn_block": 1,
+                    "real_test_errors": {"204": i},
+                    "output_guard": {"verified": {"preserved": False}},
+                })
+            path = Path(d) / "trend_history.json"
+            saved = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(payload["updated_at"], "run-31")
+        self.assertEqual(len(saved["runs"]), 30)
+        self.assertEqual(saved["runs"][0]["timestamp"], "run-2")
+        self.assertEqual(saved["runs"][-1]["nodes_global_output"], 32)
+
     def test_output_shrink_guard_helpers(self):
         import main as m
         with tempfile.TemporaryDirectory() as d:

@@ -190,6 +190,45 @@ def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int)
     return output_nodes
 
 
+
+def build_trend_entry(stats: Dict[str, object]) -> Dict[str, object]:
+    return {
+        "timestamp": stats.get("timestamp"),
+        "duration_sec": stats.get("duration_sec"),
+        "nodes_raw": stats.get("nodes_raw"),
+        "nodes_dedup": stats.get("nodes_dedup"),
+        "nodes_tcp_ok": stats.get("nodes_tcp_ok"),
+        "nodes_real_ok": stats.get("nodes_real_ok"),
+        "nodes_verified_output": stats.get("nodes_verified_output"),
+        "nodes_global_output": stats.get("nodes_global_output"),
+        "nodes_global_extra_from_cn_block": stats.get("nodes_global_extra_from_cn_block"),
+        "real_test_errors": stats.get("real_test_errors", {}),
+        "output_guard": stats.get("output_guard", {}),
+    }
+
+
+def update_trend_history(output_dir: str, stats: Dict[str, object], keep: int = 30) -> Dict[str, object]:
+    path = Path(output_dir) / "trend_history.json"
+    runs: List[Dict[str, object]] = []
+    if path.exists():
+        try:
+            previous = json.loads(path.read_text(encoding="utf-8"))
+            previous_runs = previous.get("runs", []) if isinstance(previous, dict) else previous
+            if isinstance(previous_runs, list):
+                runs = [r for r in previous_runs if isinstance(r, dict)]
+        except Exception:
+            runs = []
+    runs.append(build_trend_entry(stats))
+    if keep > 0:
+        runs = runs[-keep:]
+    payload = {
+        "updated_at": stats.get("timestamp"),
+        "keep": keep,
+        "runs": runs,
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload
+
 def count_existing_urls(output_dir: str, prefix: str) -> int:
     path = Path(output_dir) / f"{prefix}.urls"
     if not path.exists():
@@ -542,6 +581,7 @@ async def run(args):
     os.makedirs(args.output_dir, exist_ok=True)
     with open(f"{args.output_dir}/stats.json", "w", encoding="utf-8") as f:
         json.dump(stats, f, ensure_ascii=False, indent=2)
+    update_trend_history(args.output_dir, stats)
 
 
 def main():
