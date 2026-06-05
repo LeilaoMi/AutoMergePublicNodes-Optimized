@@ -15,13 +15,13 @@ on:
   workflow_dispatch:
     inputs:
       top_n:
-        description: 'verified.* 输出节点数(默认 200)'
+        description: 'verified.* 输出节点数(默认 300)'
         required: false
-        default: '200'
+        default: '300'
       test_limit:
-        description: '送入真测的最大节点数(默认 1000)'
+        description: '送入真测的最大节点数(默认 1500)'
         required: false
-        default: '1000'
+        default: '1500'
       audit:
         description: '同时跑订阅源审计'
         type: boolean
@@ -96,8 +96,8 @@ jobs:
           AUTONODES_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
-          TOP_N="${{ github.event.inputs.top_n || '200' }}"
-          TEST_LIMIT="${{ github.event.inputs.test_limit || '1000' }}"
+          TOP_N="${{ github.event.inputs.top_n || '300' }}"
+          TEST_LIMIT="${{ github.event.inputs.test_limit || '1500' }}"
           [[ "$TOP_N" =~ ^[0-9]+$ ]] || { echo "::error::top_n must be a non-negative integer"; exit 1; }
           [[ "$TEST_LIMIT" =~ ^[0-9]+$ ]] || { echo "::error::test_limit must be a non-negative integer"; exit 1; }
           [ "$TOP_N" -le 1000 ] || { echo "::error::top_n must be <= 1000"; exit 1; }
