@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)]()
 [![Update Nodes](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
-> 37 个社区源 · sing-box 真实代理测试 · 自动优选 · 多格式订阅输出 · CI 安全发布
+> 44 个社区源 · sing-box 真实代理测试 · 自动优选 · 多格式订阅输出 · CI 安全发布
 
 ⚠️ **声明：仅供学习研究。公开节点稳定性差，请自行甄别可用性与合规风险。**
 
@@ -66,7 +66,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 ## 🔧 工作流程
 
 ```text
-37 个社区订阅源
+44 个社区订阅源
     ↓ 异步抓取（并发 30，重试 + CDN 回退）
     ↓ 多协议解析（vless / vmess / trojan / ss / ssr / hy2 / tuic / anytls / socks / http）
     ↓ 指纹去重（type | server | port | key）
@@ -156,7 +156,7 @@ light 模式下 `all.*` 只生成：
 
 ## 🧭 订阅源策略
 
-当前 `config/sources.yaml` 维护 37 个社区源。新增源进入仓库前至少要通过以下本地检查：
+当前 `config/sources.yaml` 维护 44 个社区源。新增源进入仓库前至少要通过以下本地检查：
 
 1. URL 可访问，源审计工具能正常抓取。
 2. 解析后能产出有效节点，不加入 0 节点源。
@@ -261,7 +261,7 @@ AutoMergePublicNodes-Optimized/
 
 - [docs/audit-2026-06-04.md](docs/audit-2026-06-04.md) — 项目审计与改进建议
 - [docs/staged-improvement-plan-2026-06-04.md](docs/staged-improvement-plan-2026-06-04.md) — 阶段推进记录
-- [docs/source-expansion-2026-06-06.md](docs/source-expansion-2026-06-06.md) — 37 源扩容、本地验证结果与后续观察点
+- [docs/source-expansion-2026-06-06.md](docs/source-expansion-2026-06-06.md) — 44 源扩容、本地验证结果与后续观察点
 
 ---
 
