@@ -159,7 +159,7 @@ def sample_for_real_test_weighted(
 ) -> List[Node]:
     if limit <= 0 or len(nodes) <= limit:
         return nodes
-    base_quota = max(limit // 10, 1)
+    base_quota = max(limit // 5, 1)
     sampled = sample_for_real_test(nodes, tcp_latency, min(base_quota, limit))
     used = {n.fingerprint() for n in sampled}
 

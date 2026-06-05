@@ -457,7 +457,7 @@ class RegressionTests(unittest.TestCase):
         self.assertAlmostEqual(protocol_rates["trojan"], 9 / 12)
         self.assertAlmostEqual(source_rates["good"], 10 / 12)
 
-    def test_weighted_sample_prefers_historical_success_after_small_exploration_quota(self):
+    def test_weighted_sample_prefers_historical_success_after_exploration_quota(self):
         import main as m
         good = Node("trojan", "good", "1.1.1.1", 443, {"password": "p"})
         bad_fast = Node("vmess", "bad-fast", "1.1.1.2", 443, {"uuid": "u"})
