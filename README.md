@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)]()
 [![Update Nodes](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
-> 29 个社区源 · sing-box 真实代理测试 · 自动优选 · 多格式订阅输出 · CI 安全发布
+> 37 个社区源 · sing-box 真实代理测试 · 自动优选 · 多格式订阅输出 · CI 安全发布
 
 ⚠️ **声明：仅供学习研究。公开节点稳定性差，请自行甄别可用性与合规风险。**
 
@@ -66,7 +66,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 ## 🔧 工作流程
 
 ```text
-29 个社区订阅源
+37 个社区订阅源
     ↓ 异步抓取（并发 30，重试 + CDN 回退）
     ↓ 多协议解析（vless / vmess / trojan / ss / ssr / hy2 / tuic / anytls / socks / http）
     ↓ 指纹去重（type | server | port | key）
@@ -151,6 +151,20 @@ light 模式下 `all.*` 只生成：
 - `all.converter.md`
 
 另有 `tools/prepare_artifact_output.py` 可把适合发布的 output 文件复制到独立目录，为后续 artifact/data 分支发布做准备；该脚本不执行 git 命令、不 push。
+
+---
+
+## 🧭 订阅源策略
+
+当前 `config/sources.yaml` 维护 37 个社区源。新增源进入仓库前至少要通过以下本地检查：
+
+1. URL 可访问，源审计工具能正常抓取。
+2. 解析后能产出有效节点，不加入 0 节点源。
+3. 与现有源相比有实际新增去重贡献。
+4. 大体量聚合源按需设置 `max_nodes`，避免单源拖慢 CI。
+5. 本地通过语法检查、回归测试、`git diff --check`；真实可用性最终以 GitHub Actions 的 sing-box 真测为准。
+
+本次 2026-06-06 扩容记录见 [docs/source-expansion-2026-06-06.md](docs/source-expansion-2026-06-06.md)。
 
 ---
 
@@ -246,6 +260,7 @@ AutoMergePublicNodes-Optimized/
 
 - [docs/audit-2026-06-04.md](docs/audit-2026-06-04.md) — 项目审计与改进建议
 - [docs/staged-improvement-plan-2026-06-04.md](docs/staged-improvement-plan-2026-06-04.md) — 阶段推进记录
+- [docs/source-expansion-2026-06-06.md](docs/source-expansion-2026-06-06.md) — 37 源扩容、本地验证结果与后续观察点
 
 ---
 
