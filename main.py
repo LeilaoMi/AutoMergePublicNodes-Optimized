@@ -190,6 +190,22 @@ def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int)
     return output_nodes
 
 
+def count_existing_urls(output_dir: str, prefix: str) -> int:
+    path = Path(output_dir) / f"{prefix}.urls"
+    if not path.exists():
+        return 0
+    try:
+        return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
+    except Exception:
+        return 0
+
+
+def should_preserve_previous_output(new_count: int, previous_count: int, min_retain_ratio: float) -> bool:
+    if previous_count <= 0 or min_retain_ratio <= 0:
+        return False
+    return new_count < int(previous_count * min_retain_ratio)
+
+
 async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: float = 3.0) -> List[Tuple[Node, float]]:
     """快速 TCP 预筛选：返回 [(node, tcp_latency_ms)]，按延迟升序"""
     queue: asyncio.Queue[Node] = asyncio.Queue()
@@ -421,8 +437,40 @@ async def run(args):
     print(f"[6/6] 生成订阅文件...")
     from core.generator import write_outputs
 
-    n_top = write_outputs(final_nodes, args.output_dir, prefix="verified", repo_path=args.repo, branch=args.branch)
-    n_global = write_outputs(global_nodes, args.output_dir, prefix="global", repo_path=args.repo, branch=args.branch) if args.global_output else 0
+    output_guard: Dict[str, Dict[str, object]] = {}
+
+    previous_verified = count_existing_urls(args.output_dir, "verified")
+    proposed_verified = len([n for n in final_nodes if n])
+    if should_preserve_previous_output(proposed_verified, previous_verified, args.min_retain_ratio):
+        n_top = previous_verified
+        output_guard["verified"] = {
+            "preserved": True,
+            "previous_count": previous_verified,
+            "proposed_count": proposed_verified,
+            "min_retain_ratio": args.min_retain_ratio,
+        }
+        print(f"      verified.* 保留上一轮: {previous_verified}（本轮 {proposed_verified} 低于阈值）")
+    else:
+        n_top = write_outputs(final_nodes, args.output_dir, prefix="verified", repo_path=args.repo, branch=args.branch)
+        output_guard["verified"] = {"preserved": False, "previous_count": previous_verified, "proposed_count": n_top}
+
+    if args.global_output:
+        previous_global = count_existing_urls(args.output_dir, "global")
+        proposed_global = len([n for n in global_nodes if n])
+        if should_preserve_previous_output(proposed_global, previous_global, args.min_retain_ratio):
+            n_global = previous_global
+            output_guard["global"] = {
+                "preserved": True,
+                "previous_count": previous_global,
+                "proposed_count": proposed_global,
+                "min_retain_ratio": args.min_retain_ratio,
+            }
+            print(f"      global.* 保留上一轮: {previous_global}（本轮 {proposed_global} 低于阈值）")
+        else:
+            n_global = write_outputs(global_nodes, args.output_dir, prefix="global", repo_path=args.repo, branch=args.branch)
+            output_guard["global"] = {"preserved": False, "previous_count": previous_global, "proposed_count": n_global}
+    else:
+        n_global = 0
     # 同时生成全量备份(未测速,供客户端再测)
     # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
     all_valid = dedup_pool
@@ -478,6 +526,7 @@ async def run(args):
         "nodes_real_ok": len(valid),
         "nodes_verified_output": n_top,
         "nodes_global_output": n_global,
+        "output_guard": output_guard,
         "nodes_global_extra_from_cn_block": len(cn_block_retry_valid),
         "global_skip_target_kinds": ["cn-block"] if args.global_output else [],
         "nodes_all_output": n_all,
@@ -521,7 +570,9 @@ def main():
     p.add_argument("--min-latency", type=float, default=30.0,
                    help="真实测试最低延迟阈值(ms)，低于此值视为可疑；设为 0 可关闭")
     p.add_argument("--global-output", action=argparse.BooleanOptionalAction, default=True,
-                   help="生成 global.* 兼顾输出：严格 verified 之外，复测并纳入仅因百度连通失败的节点")
+                   help="额外生成 global.*：严格 verified + 仅跳过 cn-block 复测通过的节点")
+    p.add_argument("--min-retain-ratio", type=float, default=0.7,
+                   help="verified/global 本轮数量低于上一轮该比例时保留上一轮输出；设为 0 可关闭")
     p.add_argument("--all-output-mode", choices=("full", "light"), default=os.environ.get("AUTONODES_ALL_OUTPUT_MODE", "full"),
                    help="all.* 输出模式: full=全格式兼容旧 URL; light=只保留 txt/urls/converter, 降低大文件成本")
     p.add_argument("--repo", default="LeilaoMi/AutoMergePublicNodes-Optimized",
@@ -544,6 +595,8 @@ def main():
         p.error("--test-limit 必须 >= 0")
     if args.min_latency < 0:
         p.error("--min-latency 必须 >= 0")
+    if args.min_retain_ratio < 0:
+        p.error("--min-retain-ratio 必须 >= 0")
     
     # 环境变量覆盖（CI 或容器场景常用）
     if os.environ.get("AUTONODES_TOP_N"):
