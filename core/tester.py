@@ -20,7 +20,7 @@ import socket
 import tempfile
 import time
 from dataclasses import dataclass
-from typing import List
+from typing import List, Iterable
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -100,7 +100,8 @@ def build_singbox_config(node: Node, socks_port: int) -> dict:
 class SingBoxTester:
     def __init__(self, sb_path: str = "./sing-box", concurrency: int = 30,
                  startup_wait: float = 0.6, request_timeout: float = 6.0,
-                 min_latency_ms: float = DEFAULT_MIN_LATENCY_MS):
+                 min_latency_ms: float = DEFAULT_MIN_LATENCY_MS,
+                 skip_target_kinds: Iterable[str] | None = None):
         if not os.path.exists(sb_path):
             raise FileNotFoundError(f"sing-box binary not found: {sb_path}")
         self.sb_path = os.path.abspath(sb_path)
@@ -108,6 +109,7 @@ class SingBoxTester:
         self.startup_wait = startup_wait
         self.request_timeout = request_timeout
         self.min_latency_ms = min_latency_ms
+        self.skip_target_kinds = set(skip_target_kinds or [])
         self._port_counter = 30000
 
     def _alloc_port(self) -> int:
@@ -189,6 +191,8 @@ class SingBoxTester:
                 latencies = []
                 failed_target = None
                 for target_url, target_kind in TEST_TARGETS:
+                    if target_kind in self.skip_target_kinds:
+                        continue
                     tstart = time.monotonic()
                     try:
                         timeout = aiohttp.ClientTimeout(total=SPEED_TIMEOUT_SEC if target_kind == "speed" else self.request_timeout)
@@ -232,15 +236,15 @@ class SingBoxTester:
                                 if total < SPEED_REQUIRED_BYTES:
                                     failed_target = f"{target_kind}:only-{total}B"
                                     break
-                        latencies.append((time.monotonic() - tstart) * 1000)
+                        latencies.append((target_kind, (time.monotonic() - tstart) * 1000))
                     except Exception as e:
                         failed_target = f"{target_kind}:{type(e).__name__}"
                         break
 
                 if failed_target is None and latencies:
-                    # 取前 3 个目标的平均延迟（不算下载耗时）
-                    latency_targets = [l for l, (_, k) in zip(latencies, TEST_TARGETS) if k != "speed"]
-                    avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0]
+                    # 取非下载目标的平均延迟（不算下载耗时）
+                    latency_targets = [lat for kind, lat in latencies if kind != "speed"]
+                    avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0][1]
                     jitter = max(abs(l - avg_latency) for l in latency_targets) if len(latency_targets) >= 2 else 0.0
                     if self.min_latency_ms > 0 and avg_latency < self.min_latency_ms:
                         result.error = f"latency-too-low:{avg_latency:.1f}ms"

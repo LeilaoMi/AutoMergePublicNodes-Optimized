@@ -15,6 +15,7 @@
 | 场景 | 推荐文件 | 说明 |
 |---|---|---|
 | Clash / Mihomo / Clash Meta | `output/verified.yaml` | 最推荐，真测通过后输出 |
+| 想兼顾数量 | `output/global.yaml` / `output/global.txt` | 在严格真测基础上，额外纳入仅因百度连通失败、但海外 204 / 非 CN 出口 / 100KB 下载仍通过的节点 |
 | v2rayN / 通用订阅 | `output/verified.txt` / `output/verified.urls` | base64 或 URL 列表 |
 | Karing / sing-box | `output/verified.json` | sing-box JSON，已兼容新版 inbound 配置 |
 | 自己客户端再测速 | `output/all.txt` / `output/all.urls` / `output/all.yaml` | 全量去重候选池，数量多、质量未保证 |
@@ -32,6 +33,9 @@
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.txt
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.yaml
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.json
+https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.txt
+https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.yaml
+https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.json
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.txt
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.yaml
 ```
@@ -42,6 +46,9 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/o
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.txt
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.yaml
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.json
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.txt
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.yaml
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.json
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.txt
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.yaml
 ```
@@ -49,6 +56,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 ### 转换链接
 
 - `output/verified.converter.md`
+- `output/global.converter.md`
 - `output/all.converter.md`
 
 内置多个第三方订阅转换服务，可转换为 Clash / sing-box / V2Ray / Surge / Quantumult X / Loon / Shadowrocket 等格式。第三方转换服务可能不可用或记录 URL，优先使用本仓库直接生成的 `verified.yaml/json/txt`。
@@ -73,7 +81,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
        - 小文件下载测速
        - 可疑低延迟过滤
     ↓ 按真实延迟排序，取 Top N
-    ↓ 输出 verified.*、all.*、converter、stats、health report
+    ↓ 输出 verified.*、global.*、all.*、converter、stats、health report
 ```
 
 ---
@@ -90,10 +98,10 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 
 ### 输出格式
 
-- Clash / Mihomo YAML：`verified.yaml`、`all.yaml`
-- sing-box / Karing JSON：`verified.json`、`all.json`
-- V2Ray base64：`verified.txt`、`all.txt`
-- URL 列表：`verified.urls`、`all.urls`
+- Clash / Mihomo YAML：`verified.yaml`、`global.yaml`、`all.yaml`
+- sing-box / Karing JSON：`verified.json`、`global.json`、`all.json`
+- V2Ray base64：`verified.txt`、`global.txt`、`all.txt`
+- URL 列表：`verified.urls`、`global.urls`、`all.urls`
 - 转换链接：`*.converter.md`
 
 ### 发布安全
@@ -115,7 +123,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
   - low pass 协议报警
   - real test 错误聚合
 - `stats.json` 包含：
-  - raw / dedup / tcp / real / verified 数量
+  - raw / dedup / tcp / real / verified / global 数量
   - protocol/source pass rate
   - `stage_durations` 阶段耗时
   - `real_test_error_details` 错误明细 Top 10
@@ -150,10 +158,11 @@ light 模式下 `all.*` 只生成：
 1. 公共节点波动极大，很多源只是“能解析”，不代表能代理。
 2. GitHub Actions 在美国机房测试，通过结果不等于你本地一定可用。
 3. 本项目筛选比较严格：TCP 可达后还要经过 sing-box 真测。
-4. 会拒绝可疑低延迟节点，避免 Cloudflare 反代、假代理或异常链路混入。
-5. 某些协议字段在不同客户端版本差异很大，配置不兼容会被剔除。
+4. `verified.*` 会要求百度连通；`global.*` 会额外纳入仅因百度连通失败、但海外 204、非 CN 出口和 100KB 下载仍通过的节点。
+5. 会拒绝可疑低延迟节点，避免 Cloudflare 反代、假代理或异常链路混入。
+6. 某些协议字段在不同客户端版本差异很大，配置不兼容会被剔除。
 
-建议：优先导入 `verified.yaml/txt/json`，再在自己的客户端里重新测速。
+建议：质量优先导入 `verified.yaml/txt/json`；想兼顾数量可导入 `global.yaml/txt/json`；再在自己的客户端里重新测速。
 
 ---
 
