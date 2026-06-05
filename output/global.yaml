@@ -2,6 +2,20 @@ mixed-port: 7890
 allow-lan: false
 mode: rule
 proxies:
+- name: 🇺🇸 [ 58.2ms +/-31ms] 🇺🇸US-108.181.0.177-0114
+  server: 108.181.0.177
+  port: 8388
+  type: ss
+  cipher: chacha20-ietf-poly1305
+  password: G5p6ww4o67HB
+  udp: true
+- name: 🇺🇸 [ 61.1ms +/-30ms] 🇨🇦CA-108.181.118.10-0115
+  server: 108.181.118.10
+  port: 8388
+  type: ss
+  cipher: chacha20-ietf-poly1305
+  password: G5p6ww4o67HB
+  udp: true
 - name: 🇺🇸 [237.3ms +/-470ms] 🇺🇸US-173.244.56.9-0124
   server: 173.244.56.9
   port: 443
@@ -135,6 +149,20 @@ proxies:
   cipher: chacha20-ietf-poly1305
   password: RSo52SbxW40r
   udp: true
+- name: 🇨🇦 [808.3ms +/-271ms] 🔵@chillguy_vpn
+  server: 108.162.195.193
+  port: 443
+  type: vless
+  uuid: e277ac9b-3225-4381-a9fb-3585419f7142
+  udp: true
+  tls: true
+  servername: 35cdnws.frnstatic.info
+  skip-cert-verify: true
+  network: ws
+  ws-opts:
+    path: /35cdnws
+    headers:
+      Host: 35cdnws.frnstatic.info
 - name: '[905.4ms +/-804ms] 🕊️Tel:'
   server: 104.18.152.219
   port: 443
@@ -354,6 +382,19 @@ proxies:
     path: /
     headers:
       Host: main.boobie.eu.cc
+- name: '[1084.0ms +/-270ms] 🇨🇦49661'
+  server: 104.18.115.61
+  port: 443
+  type: trojan
+  password: humanity
+  sni: www.gossipglove.com
+  skip-cert-verify: true
+  udp: true
+  network: ws
+  ws-opts:
+    path: /assignment
+    headers:
+      Host: www.gossipglove.com
 - name: 🇪🇸 [1085.8ms +/-707ms] 2https://t.me/ConfigX2ray
   server: 185.18.250.252
   port: 443
@@ -497,6 +538,22 @@ proxies:
   cipher: chacha20-ietf-poly1305
   password: hCCWOcIsK5wrFz4OX70rWf
   udp: true
+- name: '[1489.9ms +/-132ms] NN_821aa_0021'
+  server: 4b41083b-tea5c0-tequ5b-dnss.fourtwo.cdnbytescm.com
+  port: 3233
+  type: http
+  username: 16955d72-1794-11f0-a035-f23c95b6f51d
+  password: 16955d72-1794-11f0-a035-f23c95b6f51d
+  tls: true
+  skip-cert-verify: true
+- name: '[1507.3ms +/-165ms] NN_821aa_0022'
+  server: b5eb2edf-te8ao0-tfnl0i-au6.fourtwo.cdnbytescm.com
+  port: 3233
+  type: http
+  username: 1b609740-eec2-11ef-8543-f23c93136cb3
+  password: 1b609740-eec2-11ef-8543-f23c93136cb3
+  tls: true
+  skip-cert-verify: true
 - name: '[1684.5ms +/-2086ms] @HajmVPN_Config'
   server: 104.17.121.9
   port: 443
@@ -626,6 +683,8 @@ proxy-groups:
   - 🇨🇦 加拿大
   - 🇯🇵 日本
   - 🇺🇸 美国
+  - 🇺🇸 [ 58.2ms +/-31ms] 🇺🇸US-108.181.0.177-0114
+  - 🇺🇸 [ 61.1ms +/-30ms] 🇨🇦CA-108.181.118.10-0115
   - 🇺🇸 [237.3ms +/-470ms] 🇺🇸US-173.244.56.9-0124
   - 🇨🇦 [290.4ms +/-478ms] 🇨🇦CA-149.22.95.183-4005
   - 🇺🇸 [290.5ms +/-600ms] 🇺🇸US-173.244.56.6-3876
@@ -645,6 +704,7 @@ proxy-groups:
   - 🇺🇸 [472.5ms +/-667ms] 🇺🇸US-37.19.198.236-4101
   - '[483.6ms +/-767ms] 4Nika-1090'
   - 🇺🇸 [489.6ms +/-753ms] 4Nika-497
+  - 🇨🇦 [808.3ms +/-271ms] 🔵@chillguy_vpn
   - '[905.4ms +/-804ms] 🕊️Tel:'
   - '[907.8ms +/-802ms] 🇨🇦49672'
   - '[917.8ms +/-792ms] 🕊️Tel:'
@@ -662,6 +722,7 @@ proxy-groups:
   - '[1001.4ms +/-521ms] 🖲️99@oneclickvpnkeys'
   - '[1053.4ms +/-719ms] 2🖲️@oneclickvpnkeys'
   - '[1070.4ms +/-707ms] kurdconfig'
+  - '[1084.0ms +/-270ms] 🇨🇦49661'
   - 🇪🇸 [1085.8ms +/-707ms] 2https://t.me/ConfigX2ray
   - '[1105.5ms +/-817ms] kurdconfig'
   - 🇨🇦 [1126.5ms +/-924ms] [71376]
@@ -677,6 +738,8 @@ proxy-groups:
   - '[1410.2ms +/-658ms] RO_821aa_0036'
   - 🇨🇦 [1448.6ms +/-1109ms] [71375]
   - 🇺🇸 [1459.3ms +/-1680ms] 4Nika-641
+  - '[1489.9ms +/-132ms] NN_821aa_0021'
+  - '[1507.3ms +/-165ms] NN_821aa_0022'
   - '[1684.5ms +/-2086ms] @HajmVPN_Config'
   - '[1702.8ms +/-890ms] [71373]'
   - '[1739.7ms +/-2142ms] 韩国(yudou789.top 玉豆免费节点)'
@@ -690,6 +753,8 @@ proxy-groups:
 - name: ♻️ Auto
   type: url-test
   proxies:
+  - 🇺🇸 [ 58.2ms +/-31ms] 🇺🇸US-108.181.0.177-0114
+  - 🇺🇸 [ 61.1ms +/-30ms] 🇨🇦CA-108.181.118.10-0115
   - 🇺🇸 [237.3ms +/-470ms] 🇺🇸US-173.244.56.9-0124
   - 🇨🇦 [290.4ms +/-478ms] 🇨🇦CA-149.22.95.183-4005
   - 🇺🇸 [290.5ms +/-600ms] 🇺🇸US-173.244.56.6-3876
@@ -709,6 +774,7 @@ proxy-groups:
   - 🇺🇸 [472.5ms +/-667ms] 🇺🇸US-37.19.198.236-4101
   - '[483.6ms +/-767ms] 4Nika-1090'
   - 🇺🇸 [489.6ms +/-753ms] 4Nika-497
+  - 🇨🇦 [808.3ms +/-271ms] 🔵@chillguy_vpn
   - '[905.4ms +/-804ms] 🕊️Tel:'
   - '[907.8ms +/-802ms] 🇨🇦49672'
   - '[917.8ms +/-792ms] 🕊️Tel:'
@@ -726,6 +792,7 @@ proxy-groups:
   - '[1001.4ms +/-521ms] 🖲️99@oneclickvpnkeys'
   - '[1053.4ms +/-719ms] 2🖲️@oneclickvpnkeys'
   - '[1070.4ms +/-707ms] kurdconfig'
+  - '[1084.0ms +/-270ms] 🇨🇦49661'
   - 🇪🇸 [1085.8ms +/-707ms] 2https://t.me/ConfigX2ray
   - '[1105.5ms +/-817ms] kurdconfig'
   - 🇨🇦 [1126.5ms +/-924ms] [71376]
@@ -741,6 +808,8 @@ proxy-groups:
   - '[1410.2ms +/-658ms] RO_821aa_0036'
   - 🇨🇦 [1448.6ms +/-1109ms] [71375]
   - 🇺🇸 [1459.3ms +/-1680ms] 4Nika-641
+  - '[1489.9ms +/-132ms] NN_821aa_0021'
+  - '[1507.3ms +/-165ms] NN_821aa_0022'
   - '[1684.5ms +/-2086ms] @HajmVPN_Config'
   - '[1702.8ms +/-890ms] [71373]'
   - '[1739.7ms +/-2142ms] 韩国(yudou789.top 玉豆免费节点)'
@@ -774,6 +843,7 @@ proxy-groups:
   - '[1001.4ms +/-521ms] 🖲️99@oneclickvpnkeys'
   - '[1053.4ms +/-719ms] 2🖲️@oneclickvpnkeys'
   - '[1070.4ms +/-707ms] kurdconfig'
+  - '[1084.0ms +/-270ms] 🇨🇦49661'
   - '[1105.5ms +/-817ms] kurdconfig'
   - '[1127.2ms +/-721ms] @HiByeVPNN'
   - '[1152.5ms +/-715ms] [71380]'
@@ -784,6 +854,8 @@ proxy-groups:
   - '[1393.4ms +/-825ms] RO_821aa_0034'
   - '[1402.8ms +/-851ms] RO_821aa_0037'
   - '[1410.2ms +/-658ms] RO_821aa_0036'
+  - '[1489.9ms +/-132ms] NN_821aa_0021'
+  - '[1507.3ms +/-165ms] NN_821aa_0022'
   - '[1684.5ms +/-2086ms] @HajmVPN_Config'
   - '[1702.8ms +/-890ms] [71373]'
   - '[1739.7ms +/-2142ms] 韩国(yudou789.top 玉豆免费节点)'
@@ -799,6 +871,7 @@ proxy-groups:
   - 🇨🇦 [290.4ms +/-478ms] 🇨🇦CA-149.22.95.183-4005
   - 🇨🇦 [462.2ms +/-713ms] 🇨🇦CA-15.223.63.40-1610
   - 🇨🇦 [472.4ms +/-642ms] 🇨🇦CA-137.184.174.93-0095
+  - 🇨🇦 [808.3ms +/-271ms] 🔵@chillguy_vpn
   - 🇨🇦 [1126.5ms +/-924ms] [71376]
   - 🇨🇦 [1354.9ms +/-638ms] 🇨🇦49710
   - 🇨🇦 [1448.6ms +/-1109ms] [71375]
@@ -817,6 +890,8 @@ proxy-groups:
 - name: 🇺🇸 美国
   type: url-test
   proxies:
+  - 🇺🇸 [ 58.2ms +/-31ms] 🇺🇸US-108.181.0.177-0114
+  - 🇺🇸 [ 61.1ms +/-30ms] 🇨🇦CA-108.181.118.10-0115
   - 🇺🇸 [237.3ms +/-470ms] 🇺🇸US-173.244.56.9-0124
   - 🇺🇸 [290.5ms +/-600ms] 🇺🇸US-173.244.56.6-3876
   - 🇺🇸 [344.0ms +/-577ms] 🇺🇸US-156.146.38.170-4074
