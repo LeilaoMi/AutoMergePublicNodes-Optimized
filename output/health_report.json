@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-06 13:51:15",
+  "generated_at": "2026-06-06 19:30:33",
   "ok": true,
   "status": "warning",
   "prefixes": {
@@ -8,41 +8,42 @@
       "missing_files": [],
       "ok": true,
       "files": {
-        "json": 108948,
-        "yaml": 80517,
-        "urls": 45501,
-        "txt": 60668,
+        "json": 121894,
+        "yaml": 88445,
+        "urls": 48341,
+        "txt": 64456,
         "converter.md": 5599
       },
-      "url_count": 203,
-      "txt_url_count": 203,
-      "json_node_count": 203,
-      "yaml_proxy_count": 203,
+      "url_count": 218,
+      "txt_url_count": 218,
+      "json_node_count": 218,
+      "yaml_proxy_count": 218,
       "protocol_dist": {
-        "shadowsocks": 99,
-        "vless": 45,
-        "vmess": 46,
-        "trojan": 6,
-        "http": 7
+        "shadowsocks": 77,
+        "vless": 83,
+        "vmess": 30,
+        "trojan": 19,
+        "http": 7,
+        "hysteria2": 2
       },
       "region_group_count": 18,
       "region_groups": [
         "其他",
         "🇨🇦 加拿大",
+        "🇨🇳 其他",
         "🇩🇪 德国",
+        "🇪🇪 其他",
         "🇪🇸 其他",
+        "🇫🇮 其他",
         "🇫🇷 法国",
         "🇬🇧 英国",
-        "🇮🇪 其他",
         "🇮🇳 印度",
         "🇮🇹 其他",
         "🇯🇵 日本",
         "🇰🇷 韩国",
-        "🇲🇩 其他",
         "🇳🇱 荷兰",
         "🇷🇴 其他",
-        "🇸🇬 新加坡",
-        "🇹🇼 台湾",
+        "🇹🇷 土耳其",
         "🇺🇸 美国",
         "🇿🇦 其他"
       ],
@@ -55,25 +56,25 @@
       "missing_files": [],
       "ok": true,
       "files": {
-        "json": 7020457,
-        "yaml": 4895861,
-        "urls": 2720972,
-        "txt": 3627964,
+        "json": 7089875,
+        "yaml": 4953092,
+        "urls": 2740301,
+        "txt": 3653736,
         "converter.md": 5434
       },
-      "url_count": 15291,
-      "txt_url_count": 15291,
-      "json_node_count": 15291,
-      "yaml_proxy_count": 15291,
+      "url_count": 15392,
+      "txt_url_count": 15392,
+      "json_node_count": 15392,
+      "yaml_proxy_count": 15392,
       "protocol_dist": {
-        "shadowsocks": 3398,
-        "vmess": 2311,
-        "trojan": 3032,
-        "vless": 6363,
-        "hysteria2": 89,
+        "shadowsocks": 3421,
+        "vmess": 2294,
+        "trojan": 3042,
+        "vless": 6444,
+        "hysteria2": 94,
         "hysteria": 5,
         "tuic": 1,
-        "socks": 6,
+        "socks": 5,
         "http": 31,
         "shadowsocksr": 54,
         "anytls": 1
@@ -172,15 +173,15 @@
     }
   },
   "strategy": {
-    "all_json_nodes": 15291,
-    "verified_json_nodes": 203,
+    "all_json_nodes": 15392,
+    "verified_json_nodes": 218,
     "all_contains_at_least_verified_count": true,
     "note": "all.* 来自去重池；verified.* 来自质量过滤/TCP/真测后的 Top N。"
   },
   "stats_summary": {
-    "nodes_raw": 39261,
-    "nodes_dedup": 15291,
-    "nodes_real_ok": 203
+    "nodes_raw": 39679,
+    "nodes_dedup": 15392,
+    "nodes_real_ok": 218
   },
   "source_cleanup": {
     "dead_2_plus_count": 0,
@@ -189,15 +190,7 @@
   "alerts": {
     "low_pass_protocols": [
       {
-        "protocol": "vless",
-        "pass_rate": 0.056
-      },
-      {
-        "protocol": "trojan",
-        "pass_rate": 0.086
-      },
-      {
-        "protocol": "hysteria2",
+        "protocol": "anytls",
         "pass_rate": 0.0
       },
       {
@@ -214,11 +207,11 @@
       }
     ],
     "real_test_errors": {
-      "204": 1072,
-      "geo": 58,
-      "sing-box exited 1": 31,
-      "cn-block": 31,
-      "speed": 105
+      "204": 1091,
+      "sing-box exited 1": 42,
+      "geo": 90,
+      "speed": 22,
+      "cn-block": 37
     }
   }
 }
