@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-07 14:00:06",
+  "updated_at": "2026-06-07 19:28:39",
   "keep": 30,
   "runs": [
     {
@@ -453,7 +453,48 @@
           "proposed_count": 259
         }
       }
+    },
+    {
+      "timestamp": "2026-06-07 19:28:39",
+      "duration_sec": 221.9,
+      "nodes_raw": 39691,
+      "nodes_dedup": 15325,
+      "nodes_tcp_ok": 1500,
+      "nodes_real_ok": 159,
+      "nodes_verified_output": 159,
+      "nodes_global_output": 167,
+      "nodes_global_extra_from_cn_block": 8,
+      "real_test_errors": {
+        "204": 1134,
+        "sing-box exited 1": 51,
+        "geo": 84,
+        "speed": 54,
+        "cn-block": 18
+      },
+      "output_guard": {
+        "verified": {
+          "preserved": false,
+          "previous_count": 240,
+          "proposed_count": 159
+        },
+        "global": {
+          "preserved": false,
+          "previous_count": 259,
+          "proposed_count": 167
+        }
+      }
     }
   ],
-  "alerts": []
+  "alerts": [
+    {
+      "type": "verified_downtrend_4_runs",
+      "message": "verified output decreased for 4 consecutive runs",
+      "values": [
+        300,
+        245,
+        240,
+        159
+      ]
+    }
+  ]
 }
