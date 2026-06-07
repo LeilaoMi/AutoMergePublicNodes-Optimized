@@ -50,41 +50,56 @@ def _duplicate_items(items: List[str]) -> List[str]:
 
 def _audit_prefix(output_dir: Path, prefix: str) -> Dict[str, Any]:
     paths = {ext: output_dir / f"{prefix}.{ext}" for ext in ("json", "yaml", "urls", "txt", "converter.md")}
-    missing = [str(p.name) for p in paths.values() if not p.exists()]
+    full_required = ("json", "yaml", "urls", "txt", "converter.md")
+    light_required = ("urls", "txt", "converter.md")
+    full_missing = [str(paths[ext].name) for ext in full_required if not paths[ext].exists()]
+    light_missing = [str(paths[ext].name) for ext in light_required if not paths[ext].exists()]
+    mode = "full" if not full_missing else "light" if not light_missing else "missing"
     report: Dict[str, Any] = {
         "prefix": prefix,
-        "missing_files": missing,
-        "ok": not missing,
+        "mode": mode,
+        "missing_files": full_missing if mode == "full" else light_missing,
+        "ok": mode != "missing",
     }
-    if missing:
+    if mode == "missing":
         return report
 
-    singbox = _load_json(paths["json"])
-    clash = _load_yaml(paths["yaml"])
     urls = _read_urls(paths["urls"])
     txt_urls = _read_txt_urls(paths["txt"])
-
-    outbounds = [ob for ob in singbox.get("outbounds", []) if isinstance(ob, dict)]
-    node_outbounds = [ob for ob in outbounds if ob.get("type") not in {"selector", "url-test", "direct"}]
-    tags = [str(ob.get("tag", "")) for ob in node_outbounds]
-    proxies = [p for p in clash.get("proxies", []) if isinstance(p, dict)]
-    proxy_names = [str(p.get("name", "")) for p in proxies]
-    groups = [g for g in clash.get("proxy-groups", []) if isinstance(g, dict)]
-    region_groups = [g.get("name") for g in groups if g.get("type") == "url-test" and g.get("name") != "♻️ Auto"]
-
     report.update({
-        "files": {ext: paths[ext].stat().st_size for ext in paths},
+        "files": {ext: paths[ext].stat().st_size for ext in paths if paths[ext].exists()},
         "url_count": len(urls),
         "txt_url_count": len(txt_urls),
-        "json_node_count": len(node_outbounds),
-        "yaml_proxy_count": len(proxies),
-        "protocol_dist": dict(Counter(str(ob.get("type", "")) for ob in node_outbounds)),
-        "region_group_count": len(region_groups),
-        "region_groups": sorted(str(g) for g in region_groups),
-        "duplicate_json_tags": _duplicate_items(tags),
-        "duplicate_yaml_names": _duplicate_items(proxy_names),
+        "json_node_count": 0,
+        "yaml_proxy_count": 0,
+        "protocol_dist": {},
+        "region_group_count": 0,
+        "region_groups": [],
+        "duplicate_json_tags": [],
+        "duplicate_yaml_names": [],
         "url_txt_mismatch": urls != txt_urls,
     })
+
+    if mode == "full":
+        singbox = _load_json(paths["json"])
+        clash = _load_yaml(paths["yaml"])
+        outbounds = [ob for ob in singbox.get("outbounds", []) if isinstance(ob, dict)]
+        node_outbounds = [ob for ob in outbounds if ob.get("type") not in {"selector", "url-test", "direct"}]
+        tags = [str(ob.get("tag", "")) for ob in node_outbounds]
+        proxies = [p for p in clash.get("proxies", []) if isinstance(p, dict)]
+        proxy_names = [str(p.get("name", "")) for p in proxies]
+        groups = [g for g in clash.get("proxy-groups", []) if isinstance(g, dict)]
+        region_groups = [g.get("name") for g in groups if g.get("type") == "url-test" and g.get("name") != "♻️ Auto"]
+        report.update({
+            "json_node_count": len(node_outbounds),
+            "yaml_proxy_count": len(proxies),
+            "protocol_dist": dict(Counter(str(ob.get("type", "")) for ob in node_outbounds)),
+            "region_group_count": len(region_groups),
+            "region_groups": sorted(str(g) for g in region_groups),
+            "duplicate_json_tags": _duplicate_items(tags),
+            "duplicate_yaml_names": _duplicate_items(proxy_names),
+        })
+
     report["ok"] = (
         report["ok"]
         and not report["duplicate_json_tags"]
@@ -95,22 +110,64 @@ def _audit_prefix(output_dir: Path, prefix: str) -> Dict[str, Any]:
     return report
 
 
+def _source_score_rows(mapping: Dict[str, Any], limit: int = 10, reverse: bool = True) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    if not isinstance(mapping, dict):
+        return rows
+    for name, data in mapping.items():
+        if not isinstance(data, dict):
+            continue
+        row = dict(data)
+        row["name"] = name
+        rows.append(row)
+    rows.sort(key=lambda r: (float(r.get("score", 0) or 0), int(r.get("tested", 0) or 0)), reverse=reverse)
+    return rows[:limit]
+
+
+def _pass_rate_rows(mapping: Dict[str, Any], limit: int = 10, reverse: bool = True) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    if not isinstance(mapping, dict):
+        return rows
+    for name, counts in mapping.items():
+        if not isinstance(counts, dict):
+            continue
+        passed = int(counts.get("pass", 0) or 0)
+        failed = int(counts.get("fail", 0) or 0)
+        total = passed + failed
+        if total <= 0:
+            continue
+        rows.append({
+            "name": name,
+            "pass": passed,
+            "fail": failed,
+            "total": total,
+            "pass_rate": round(passed / total, 3),
+        })
+    rows.sort(key=lambda r: (r["pass_rate"], r["total"]), reverse=reverse)
+    return rows[:limit]
+
+
 def build_health_report(output_dir: str = "output", verified_prefix: str = "verified") -> Dict[str, Any]:
     out = Path(output_dir)
     prefixes = [verified_prefix, "all"]
     prefix_reports = {prefix: _audit_prefix(out, prefix) for prefix in prefixes}
     stats_path = out / "stats.json"
     source_audit_path = out / "source_audit.json"
+    source_cleanup_path = out / "source_cleanup_suggestions.json"
     stats = _load_json(stats_path) if stats_path.exists() else {}
     source_audit_payload = _load_json(source_audit_path) if source_audit_path.exists() else []
+    source_cleanup_payload = _load_json(source_cleanup_path) if source_cleanup_path.exists() else {}
     source_rows = source_audit_payload.get("sources", []) if isinstance(source_audit_payload, dict) else source_audit_payload
     if not isinstance(source_rows, list):
         source_rows = []
     dead_sources = [r for r in source_rows if isinstance(r, dict) and r.get("consecutive_dead", 0) >= 2]
 
-    all_count = prefix_reports.get("all", {}).get("json_node_count", 0)
-    verified_count = prefix_reports.get(verified_prefix, {}).get("json_node_count", 0)
-    strategy_ok = all_count >= verified_count
+    all_report = prefix_reports.get("all", {})
+    verified_report = prefix_reports.get(verified_prefix, {})
+    all_count = all_report.get("json_node_count", 0)
+    verified_count = verified_report.get("json_node_count", 0)
+    all_compare_count = all_count if all_report.get("mode") == "full" else all_report.get("url_count", 0)
+    strategy_ok = all_compare_count >= verified_count
 
     # §4.1 — 加报警字段, 让 CI 报警有明确根因
     # protocol_pass_rate 任何协议 pass 率 < 10% 算异常
@@ -123,8 +180,31 @@ def build_health_report(output_dir: str = "output", verified_prefix: str = "veri
                 low_pass_protocols.append({"protocol": proto, "pass_rate": round(rate, 3)})
 
     real_test_errors = stats.get("real_test_errors", {})
+    tcp_errors = stats.get("tcp_errors", {})
+    protocol_pass_rate = stats.get("protocol_pass_rate", {})
+    source_pass_rate = stats.get("source_pass_rate", {})
+    source_scores = stats.get("source_scores", {})
+    protocol_best = _pass_rate_rows(protocol_pass_rate, limit=10, reverse=True)
+    protocol_worst = _pass_rate_rows(protocol_pass_rate, limit=10, reverse=False)
+    source_best = _pass_rate_rows(source_pass_rate, limit=10, reverse=True)
+    source_worst = _pass_rate_rows(source_pass_rate, limit=10, reverse=False)
+    source_score_best = _source_score_rows(source_scores, limit=10, reverse=True)
+    source_score_worst = _source_score_rows(source_scores, limit=10, reverse=False)
+    cleanup_summary = source_cleanup_payload.get("summary", {}) if isinstance(source_cleanup_payload, dict) else {}
+    cleanup_suggestions = source_cleanup_payload.get("suggestions", {}) if isinstance(source_cleanup_payload, dict) else {}
+    if not isinstance(cleanup_summary, dict):
+        cleanup_summary = {}
+    if not isinstance(cleanup_suggestions, dict):
+        cleanup_suggestions = {}
+    source_disable_candidates = [
+        row for row in _source_score_rows(source_scores, limit=50, reverse=False)
+        if row.get("recommendation") == "disable-candidate"
+    ]
 
-    has_alerts = bool(low_pass_protocols or real_test_errors)
+    cleanup_disable = cleanup_suggestions.get("disable", []) if isinstance(cleanup_suggestions.get("disable", []), list) else []
+    cleanup_downweight = cleanup_suggestions.get("downweight", []) if isinstance(cleanup_suggestions.get("downweight", []), list) else []
+
+    has_alerts = bool(low_pass_protocols or real_test_errors or source_disable_candidates or cleanup_disable)
     ok = all(r.get("ok", False) for r in prefix_reports.values()) and strategy_ok
     if not ok or verified_count == 0:
         status = "critical"
@@ -140,22 +220,41 @@ def build_health_report(output_dir: str = "output", verified_prefix: str = "veri
         "prefixes": prefix_reports,
         "strategy": {
             "all_json_nodes": all_count,
+            "all_compare_nodes": all_compare_count,
             "verified_json_nodes": verified_count,
             "all_contains_at_least_verified_count": strategy_ok,
-            "note": "all.* 来自去重池；verified.* 来自质量过滤/TCP/真测后的 Top N。",
+            "note": "all.* 来自去重池；verified.* 来自质量过滤/TCP/真测后的 Top N。light 模式下 all_compare_nodes 使用 all.urls 数量。",
         },
         "stats_summary": {
             "nodes_raw": stats.get("nodes_raw"),
             "nodes_dedup": stats.get("nodes_dedup"),
             "nodes_real_ok": stats.get("nodes_real_ok"),
         },
+        "rankings": {
+            "protocol_best": protocol_best,
+            "protocol_worst": protocol_worst,
+            "source_best": source_best,
+            "source_worst": source_worst,
+            "source_score_best": source_score_best,
+            "source_score_worst": source_score_worst,
+        },
         "source_cleanup": {
             "dead_2_plus_count": len(dead_sources),
             "dead_2_plus": dead_sources,
+            "suggestion_summary": cleanup_summary,
+            "disable_count": int(cleanup_summary.get("disable", len(cleanup_disable)) or 0),
+            "downweight_count": int(cleanup_summary.get("downweight", len(cleanup_downweight)) or 0),
+            "prefer_count": int(cleanup_summary.get("prefer", 0) or 0),
+            "observe_count": int(cleanup_summary.get("observe", 0) or 0),
+            "disable_suggestions": cleanup_disable[:20],
+            "downweight_suggestions": cleanup_downweight[:20],
         },
         "alerts": {
             "low_pass_protocols": low_pass_protocols,
             "real_test_errors": real_test_errors,
+            "tcp_errors": tcp_errors,
+            "source_disable_candidates": source_disable_candidates,
+            "source_cleanup_disable_suggestions": cleanup_disable,
         },
     }
     return report

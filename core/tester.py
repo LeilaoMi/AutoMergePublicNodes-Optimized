@@ -19,8 +19,8 @@ import shutil
 import socket
 import tempfile
 import time
-from dataclasses import dataclass
-from typing import List, Iterable
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Iterable
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
@@ -57,6 +57,33 @@ class TestResult:
     latency_ms: float = 0.0
     jitter_ms: float = 0.0  # 延迟抖动（max deviation from avg）
     error: str = ""
+    error_detail: Dict[str, Any] = field(default_factory=dict)
+
+
+def build_error_detail(error: str) -> Dict[str, Any]:
+    """Parse tester error strings into a stable diagnostic shape."""
+    if not error:
+        return {"target": "unknown", "reason": "unknown", "raw": ""}
+    if ":" not in error:
+        return {"target": "general", "reason": error, "raw": error}
+    target, rest = error.split(":", 1)
+    detail: Dict[str, Any] = {"target": target, "raw": error}
+    if "=" in rest:
+        reason, value = rest.split("=", 1)
+        detail["reason"] = reason
+        detail["value"] = value
+        if reason == "status":
+            try:
+                detail["status"] = int(value)
+            except ValueError:
+                pass
+        elif reason in {"only", "only-bytes"}:
+            digits = "".join(ch for ch in value if ch.isdigit())
+            if digits:
+                detail["bytes"] = int(digits)
+    else:
+        detail["reason"] = rest
+    return detail
 
 
 def _find_free_port(start: int, end: int) -> int:
@@ -276,6 +303,8 @@ class SingBoxTester:
                     pass
             shutil.rmtree(tmpdir, ignore_errors=True)
 
+        if result.error and not result.error_detail:
+            result.error_detail = build_error_detail(result.error)
         return result
 
     async def test_all(self, nodes: List[Node], progress_every: int = 50) -> List[TestResult]:
