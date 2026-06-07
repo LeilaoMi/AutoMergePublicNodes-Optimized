@@ -2,30 +2,30 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)]()
-[![Update Nodes](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
+[![节点更新](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
-> 44 个社区源 · sing-box 真实代理测试 · 自动优选 · 多格式订阅输出 · CI 安全发布
+> 自动聚合公开代理订阅源，使用 sing-box 真实代理测试，输出可直接导入主流客户端的订阅文件，并生成健康报告、源评分与清理建议。
 
-⚠️ **声明：仅供学习研究。公开节点稳定性差，请自行甄别可用性与合规风险。**
+> 仅供学习研究。公开节点稳定性不可控，请自行评估可用性与合规风险。
 
 ---
 
-## ✅ 普通用户怎么选
+## 快速选择
 
-| 场景 | 推荐文件 | 说明 |
+| 使用场景 | 推荐文件 | 说明 |
 |---|---|---|
-| Clash / Mihomo / Clash Meta | `output/verified.yaml` | 最推荐，真测通过后输出 |
-| 想兼顾数量 | `output/global.yaml` / `output/global.txt` | 在严格真测基础上，额外纳入仅因百度连通失败、但海外 204 / 非 CN 出口 / 100KB 下载仍通过的节点 |
-| v2rayN / 通用订阅 | `output/verified.txt` / `output/verified.urls` | base64 或 URL 列表 |
-| Karing / sing-box | `output/verified.json` | sing-box JSON，已兼容新版 inbound 配置 |
-| 自己客户端再测速 | `output/all.txt` / `output/all.urls` / `output/all.yaml` | 全量去重候选池，数量多、质量未保证 |
-| 排障 / 看状态 | `output/daily_report.md` / `output/source_scores.md` / `output/source_cleanup_suggestions.md` / `output/source_cleanup_suggestions.json` / `output/health_report.json` / `output/stats.json` | 人类可读日报、源质量评分、源清理建议、机器可读状态、报警、阶段耗时、错误明细 |
+| Clash / Mihomo | `output/verified.yaml` | 首选，真测通过后输出 |
+| v2rayN / v2rayNG | `output/verified.txt` | base64 通用订阅 |
+| Karing / sing-box | `output/verified.json` | sing-box JSON 配置 |
+| 兼顾数量 | `output/global.yaml` / `output/global.txt` / `output/global.json` | 海外测试通过，但国内站点连通不一定稳定 |
+| 自行测速 | `output/all.urls` / `output/all.txt` / `output/all.yaml` | 全量去重候选池，不保证可用 |
+| 查看状态 | `output/daily_report.md` / `output/health_report.json` / `output/source_scores.md` / `output/source_cleanup_suggestions.md` | 日报、健康报告、源评分、清理建议 |
 
-当前 verified 数量不是固定 100：`--top-n` 是上限；如果真测通过不足 100，只输出实际通过数量。
+`verified.*` 数量不是固定值。`--top-n` 只是上限，实际数量取决于本轮真测结果。
 
-更多客户端导入说明见 [`docs/client-guide.md`](docs/client-guide.md)，订阅转换、测速工具和泄漏检测资源见 [`docs/resources.md`](docs/resources.md)。
 ---
-## 📦 订阅地址
+
+## 订阅地址
 
 ### GitHub Raw
 
@@ -40,7 +40,7 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/o
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.yaml
 ```
 
-### jsDelivr CDN
+### jsDelivr
 
 ```text
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.txt
@@ -53,175 +53,88 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.yaml
 ```
 
-### 转换链接
-
-- `output/verified.converter.md`
-- `output/global.converter.md`
-- `output/all.converter.md`
-
-内置多个第三方订阅转换服务，可转换为 Clash / sing-box / V2Ray / Surge / Quantumult X / Loon / Shadowrocket 等格式。第三方转换服务可能不可用或记录 URL，优先使用本仓库直接生成的 `verified.yaml/json/txt`。
+转换链接见 `output/*.converter.md`。第三方转换服务可能不可用或记录订阅地址，优先使用本仓库直接生成的订阅文件。
 
 ---
 
-## 🔧 工作流程
+## 流程概览
 
 ```text
-44 个社区订阅源
-    ↓ 异步抓取（并发 30，重试 + CDN 回退）
-    ↓ 多协议解析（vless / vmess / trojan / ss / ssr / hy2 / tuic / anytls / socks / http）
-    ↓ 指纹去重（type | server | port | key）
-    ↓ GeoIP 国旗映射（带缓存）
-    ↓ 质量预过滤（端口黑名单 + server/protocol 降噪）
-    ↓ TCP 预筛选（固定 worker 队列，避免海量协程）
-    ↓ 协议基础探索 + 历史源/协议通过率加权下采样
-    ↓ sing-box 真实代理测试
-       - Google / YouTube 204
-       - 出口地理检测
-       - 中国站点连通性检测
-       - 小文件下载测速
-       - 可疑低延迟过滤
-    ↓ 按真实延迟排序，取 Top N
-    ↓ 输出 verified.*、global.*、all.*、converter、stats、health report
+订阅源配置
+  → 异步抓取与重试
+  → 多协议解析
+  → 指纹去重
+  → GeoIP 标记
+  → 质量预过滤
+  → TCP 预筛选
+  → 历史权重下采样
+  → sing-box 真实代理测试
+  → 按延迟排序输出
+  → 生成健康报告、日报、源评分与清理建议
 ```
+
+真实测试包含：海外 204 检测、出口地理检测、中国站点连通检测、小文件下载测速、可疑低延迟过滤。
 
 ---
 
-## ✨ 功能特性
+## 输出文件
 
-### 节点测试
+| 文件 | 用途 |
+|---|---|
+| `verified.txt/yaml/json/urls` | 严格真测通过节点 |
+| `global.txt/yaml/json/urls` | 海外可用的扩展节点 |
+| `all.txt/yaml/json/urls` | 全量去重候选节点 |
+| `stats.json` | 数量、耗时、协议通过率、错误明细、缩水守门结果 |
+| `health_report.json` | 输出完整性、重复项、报警、源清理摘要 |
+| `daily_report.md` | 面向人工阅读的每日摘要 |
+| `source_scores.md` | 订阅源质量评分 |
+| `source_cleanup_suggestions.md/json` | 订阅源清理建议 |
+| `trend_history.json` | 最近 30 轮核心趋势 |
 
-- **sing-box 真测**：不是只测 TCP 握手，而是实际通过节点访问测试目标。
-- **多层验证**：204、geo、cn-block、speed 多维度判断。
-- **可疑低延迟过滤**：默认拒绝 `<30ms` 的可疑节点，可用 `--min-latency 0` 关闭。
-- **延迟 + 抖动**：verified tag 中标注延迟和 jitter。
-- **失败原因聚合**：`stats.json` 输出 `real_test_errors` 与 `real_test_error_details`。
+健康状态说明：
 
-### 输出格式
+- `ok`：输出结构正常，未发现关键报警。
+- `warning`：输出可用，但存在低通过率协议、真测错误或源质量问题。
+- `critical`：输出缺失、解析异常、`verified` 为 0 或核心结构不满足要求。
 
-- Clash / Mihomo YAML：`verified.yaml`、`global.yaml`、`all.yaml`
-- sing-box / Karing JSON：`verified.json`、`global.json`、`all.json`
-- V2Ray base64：`verified.txt`、`global.txt`、`all.txt`
-- URL 列表：`verified.urls`、`global.urls`、`all.urls`
-- 转换链接：`*.converter.md`
+---
 
-### 发布安全
+## 源维护
 
-- workflow 不再自动 fallback force push。
-- `force_push` 手动输入已移除。
-- rebase 冲突时直接失败，避免覆盖人工修改。
-- `top_n` / `test_limit` 在 workflow 层有限制，避免误填导致 CI 超时。
-- GitHub Actions 默认关闭输出缩水守门：`verified.*` / `global.*` 会写入本轮真测结果，避免仓库真测文件停留在上一轮。手动运行 workflow 时可设置 `min_retain_ratio`，例如 `0.7` 表示本轮数量低于上一轮 70% 时保留上一轮。
-- CI 失败时上传 debug artifact：`stats.json`、`source_audit.json`、`health_report.json`、converter 文件。
-- jsDelivr purge 会记录 HTTP 状态，不再完全静默。
+`config/sources.yaml` 维护公开订阅源。建议新增源前检查：
 
-### 可观测性
+1. URL 可访问。
+2. 能解析出有效节点。
+3. 与现有源相比有去重贡献。
+4. 大体量源设置 `max_nodes`。
+5. 通过配置校验和回归测试。
 
-- `daily_report.md` 包含面向人工阅读的每日摘要：源健康、节点数量、阶段耗时、协议通过率、主要错误和报警。
-- `source_scores.md` 单独汇总源质量评分、prefer/downweight/disable-candidate 建议清单，方便人工维护订阅源。
-- `source_cleanup_suggestions.md` 进一步给出只读清理建议：disable/downweight/prefer/observe；默认不修改 `config/sources.yaml`。
-- `source_cleanup_suggestions.json` 提供同一建议的机器可读 JSON，便于后续 PR bot 或人工审批流程使用。
-- `suggest_source_cleanup.py` 支持安全 apply：只有同时传 `--apply --confirm-disable` 才会原子写入 `config/sources.yaml`，默认仍只读；可用 `--only name1,name2` / `--exclude name3` 限定本次 patch/apply 的源名单。
-- `health_report.json` 包含：
-  - `ok`: 结构是否可用
-  - `status`: `ok` / `warning` / `critical`
-  - 输出文件完整性
-  - 重复 tag/name
-  - low pass 协议报警
-  - real test 错误聚合
-- `stats.json` 包含：
-  - raw / dedup / tcp / real / verified / global 数量
-  - protocol/source pass rate
-  - `stage_durations` 阶段耗时
-  - `real_test_error_details` 错误明细 Top 10
-  - `output_guard` 输出缩水守门结果
-  - `all_output_mode`
-- `trend_history.json` 保存最近 30 轮核心趋势：verified/global 数量、TCP/真测通过数、失败原因、缩水守门状态。用于判断改动是否真的改善，避免只看单轮波动。
-
-### 仓库体积控制准备
-
-默认仍保持 `all.*` 全格式输出，兼容旧订阅 URL。
-
-如果后续要减少 `all.json/all.yaml` 大文件成本，可启用：
+清理建议默认只读：
 
 ```bash
-python main.py --all-output-mode light
-# 或
-AUTONODES_ALL_OUTPUT_MODE=light python main.py
+python tools/suggest_source_cleanup.py   --output-dir output   --sources config/sources.yaml   --output output/source_cleanup_suggestions.md   --json-output output/source_cleanup_suggestions.json
 ```
 
-light 模式下 `all.*` 只生成：
+如需应用禁用建议，必须显式确认：
 
-- `all.txt`
-- `all.urls`
-- `all.converter.md`
-
-另有 `tools/prepare_artifact_output.py` 可把适合发布的 output 文件复制到独立目录，为后续 artifact/data 分支发布做准备；该脚本不执行 git 命令、不 push。
+```bash
+python tools/suggest_source_cleanup.py   --output-dir output   --sources config/sources.yaml   --apply   --confirm-disable   --only source-a,source-b   --exclude source-b
+```
 
 ---
 
-## 🧭 订阅源策略
-
-当前 `config/sources.yaml` 维护 44 个社区源。新增源进入仓库前至少要通过以下本地检查：
-
-1. URL 可访问，源审计工具能正常抓取。
-2. 解析后能产出有效节点，不加入 0 节点源。
-3. 与现有源相比有实际新增去重贡献。
-4. 大体量聚合源按需设置 `max_nodes`，避免单源拖慢 CI。
-5. 本地通过语法检查、回归测试、`git diff --check`；真实可用性最终以 GitHub Actions 的 sing-box 真测为准。
-
-本次 2026-06-06 扩容记录见 [docs/source-expansion-2026-06-06.md](docs/source-expansion-2026-06-06.md)。
-
----
-
-## ⚠️ 为什么 verified 有时很少
-
-这是正常现象，不代表项目坏了：
-
-1. 公共节点波动极大，很多源只是“能解析”，不代表能代理。
-2. GitHub Actions 在美国机房测试，通过结果不等于你本地一定可用。
-3. 本项目筛选比较严格：TCP 可达后还要经过 sing-box 真测。
-4. `verified.*` 会要求百度连通；`global.*` 会额外纳入仅因百度连通失败、但海外 204、非 CN 出口和 100KB 下载仍通过的节点。
-5. 会拒绝可疑低延迟节点，避免 Cloudflare 反代、假代理或异常链路混入。
-6. 某些协议字段在不同客户端版本差异很大，配置不兼容会被剔除。
-
-建议：质量优先导入 `verified.yaml/txt/json`；想兼顾数量可导入 `global.yaml/txt/json`；再在自己的客户端里重新测速。
-
----
-
-## 🔄 触发更新
-
-- 自动：GitHub Actions 每 6 小时运行。
-- 手动：`Actions → Update Nodes → Run workflow`
-  - `top_n`：verified 输出节点数上限，默认 300，workflow 限制最大 1000。
-  - `test_limit`：送入真测的最大节点数，默认 1500，workflow 限制最大 3000。
-  - `min_retain_ratio`：缩水守门比例，默认 0（关闭，仓库输出始终更新为本轮真测结果）；可手动设为 0.7 来保留上一轮防止订阅突然缩水。
-  - `audit`：是否同时跑源审计。
-
----
-
-## 🧪 本地运行
+## 本地运行
 
 ```bash
 git clone https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized.git
 cd AutoMergePublicNodes-Optimized
 pip install -r requirements.txt
 
-# 下载 sing-box
-VERSION=$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
-VER_NUM="${VERSION#v}"
-curl -fsSL -L -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VER_NUM}-linux-amd64.tar.gz"
-tar -xzf sb.tar.gz
-mv "sing-box-${VER_NUM}-linux-amd64/sing-box" ./sing-box
-chmod +x ./sing-box
-
-# 运行完整流水线
+# 下载 sing-box 后运行
 python main.py --top-n 100 --test-limit 500
-
-# 只生成轻量 all 输出
-python main.py --all-output-mode light
 ```
 
-### 常用检查
+常用检查：
 
 ```bash
 python -m compileall -q main.py core tools tests
@@ -232,60 +145,66 @@ python tools/health_report.py --output-dir output --verified-prefix verified --o
 python tools/daily_report.py --output-dir output --output output/daily_report.md
 python tools/source_scores_report.py --output-dir output --output output/source_scores.md
 python tools/suggest_source_cleanup.py --output-dir output --sources config/sources.yaml --output output/source_cleanup_suggestions.md --json-output output/source_cleanup_suggestions.json
+```
 
-# 本地二次筛选：更贴近你的网络环境
+本地二次筛选：
+
+```bash
 python tools/local_filter.py --input output/global.urls --output-prefix local_verified --top-n 100
 ```
-当前回归测试覆盖：fetch timeout、测试不污染 output、workflow 安全逻辑、health status、sing-box 兼容、TCP worker 队列、下采样策略、配置化质量过滤、local_filter 本地筛选入口、light 输出模式、artifact 准备脚本、协议 fixture corpus。
 
 ---
 
-## 📁 项目结构
+## GitHub Actions
+
+- 自动运行：每 6 小时一次。
+- 手动运行：`Actions → 节点更新 → Run workflow`。
+- `top_n`：`verified.*` 输出上限，默认 300，最大 1000。
+- `test_limit`：进入真测的节点上限，默认 1500，最大 3000。
+- `min_retain_ratio`：缩水守门比例，默认 0 表示关闭。
+
+CI 会自动生成并上传调试产物：`stats.json`、`health_report.json`、`daily_report.md`、`source_scores.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
+
+---
+
+## 项目结构
 
 ```text
 AutoMergePublicNodes-Optimized/
-├── main.py                         # 主流水线 + CLI
+├── main.py                         # 主流水线与 CLI
 ├── core/
 │   ├── fetcher.py                  # 异步抓取、重试、CDN 回退
 │   ├── parser.py                   # 多协议解析
 │   ├── tester.py                   # sing-box 真实代理测试
-│   ├── filtering.py                # 质量预过滤规则与同源降噪
+│   ├── filtering.py                # 质量预过滤与同源降噪
 │   ├── sampling.py                 # 真测下采样与历史权重排序
-│   ├── generator.py                # Clash / sing-box / V2Ray / converter 输出
-│   ├── stats.py                    # 源评分、历史权重、趋势报警统计
-│   └── geo.py                      # GeoIP 国旗映射与缓存
+│   ├── generator.py                # 多格式订阅输出
+│   ├── stats.py                    # 源评分、趋势与报警统计
+│   └── geo.py                      # GeoIP 标记与缓存
 ├── tools/
 │   ├── audit_sources.py            # 源健康审计
 │   ├── health_report.py            # 输出健康报告
 │   ├── daily_report.py             # Markdown 日报
 │   ├── source_scores_report.py     # 源质量评分报告
-│   ├── suggest_source_cleanup.py   # 源清理建议/patch 预览
+│   ├── suggest_source_cleanup.py   # 源清理建议与安全应用
 │   ├── validate_config.py          # 配置静态校验
 │   ├── doctor.py                   # 本地环境诊断
 │   ├── local_filter.py             # 本地二次筛选
-│   └── prepare_artifact_output.py  # artifact/data 分支输出准备
-├── config/
-│   ├── sources.yaml                # 订阅源配置
-│   └── filter_rules.yaml           # 质量过滤规则
-├── tests/
-│   ├── test_regressions.py         # 回归测试
-│   └── fixtures/protocols/         # 协议 fixture corpus
-├── output/                         # CI 生成输出
-├── docs/
-│   ├── audit-2026-06-04.md
-│   └── staged-improvement-plan-2026-06-04.md
-└── .github/workflows/update.yml
+│   └── prepare_artifact_output.py  # 发布产物整理
+├── config/                         # 源配置与过滤规则
+├── tests/                          # 回归测试与协议样例
+├── output/                         # CI 输出文件
+├── docs/                           # 使用指南、资源与历史报告
+└── .github/workflows/update.yml    # 自动更新流程
 ```
 
 ---
 
-## 📖 文档
+## 文档
 
-- [docs/audit-2026-06-04.md](docs/audit-2026-06-04.md) — 项目审计与改进建议
-- [docs/staged-improvement-plan-2026-06-04.md](docs/staged-improvement-plan-2026-06-04.md) — 阶段推进记录
-- [docs/source-expansion-2026-06-06.md](docs/source-expansion-2026-06-06.md) — 44 源扩容、本地验证结果与后续观察点
-
----
+- [`docs/client-guide.md`](docs/client-guide.md)：客户端导入指南。
+- [`docs/resources.md`](docs/resources.md)：测速、转换和排障资源。
+- [`docs/reports/`](docs/reports/)：历史审查与复核报告。
 
 ## License
 

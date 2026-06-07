@@ -37,7 +37,7 @@ def main() -> None:
     source = Path(args.output_dir)
     dest = Path(args.dest_dir)
     if not source.exists():
-        raise SystemExit(f"missing output dir: {source}")
+        raise SystemExit(f"缺少输出目录：{source}")
 
     if dest.exists():
         shutil.rmtree(dest)

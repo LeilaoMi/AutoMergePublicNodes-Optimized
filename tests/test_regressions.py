@@ -637,8 +637,8 @@ class RegressionTests(unittest.TestCase):
             self.assertEqual(payload["summary"]["disable"], 1)
             self.assertEqual(payload["suggestions"]["disable"][0]["name"], "dead")
             report = build_cleanup_report(d)
-            self.assertIn("# Source Cleanup Suggestions", report)
-            self.assertIn("## Disable Candidates", report)
+            self.assertIn("# 订阅源清理建议", report)
+            self.assertIn("## 建议禁用", report)
             self.assertIn("dead", report)
 
     def test_source_scores_report_generates_markdown(self):
@@ -652,9 +652,9 @@ class RegressionTests(unittest.TestCase):
             }
             Path(d, "stats.json").write_text(json.dumps(stats), encoding="utf-8")
             report = build_source_scores_report(d)
-            self.assertIn("# Source Quality Scores", report)
-            self.assertIn("## Prefer", report)
-            self.assertIn("## Disable Candidates", report)
+            self.assertIn("# 订阅源质量评分", report)
+            self.assertIn("## 建议优先", report)
+            self.assertIn("## 建议禁用", report)
             self.assertIn("good", report)
             self.assertIn("dead", report)
 
@@ -695,15 +695,15 @@ class RegressionTests(unittest.TestCase):
             health["source_cleanup"] = {"disable_count": 1, "downweight_count": 2, "prefer_count": 3, "observe_count": 4, "disable_suggestions": [{"name": "dead", "score": 0.0, "tested": 0, "pass_rate": None, "consecutive_dead": 2, "reason": "consecutive_dead >= 2"}], "downweight_suggestions": []}
             (out / "health_report.json").write_text(json.dumps(health), encoding="utf-8")
             report = build_daily_report(d)
-            self.assertIn("# AutoNodes Daily Report", report)
-            self.assertIn("Verified output", report)
+            self.assertIn("# AutoNodes 每日报告", report)
+            self.assertIn("verified 输出数", report)
             self.assertIn("204:TimeoutError", report)
-            self.assertIn("TCP Precheck Errors", report)
-            self.assertIn("Worst Sources By Real-Test Pass Rate", report)
-            self.assertIn("Best Sources By Score", report)
-            self.assertIn("Sources Needing Attention", report)
-            self.assertIn("Cleanup disable/downweight", report)
-            self.assertIn("Source Cleanup Suggestions", report)
+            self.assertIn("TCP 预筛选错误", report)
+            self.assertIn("真测通过率较低的订阅源", report)
+            self.assertIn("高评分订阅源", report)
+            self.assertIn("需关注订阅源", report)
+            self.assertIn("清理建议：禁用/降权", report)
+            self.assertIn("订阅源清理建议", report)
             self.assertIn("dead", report)
             self.assertIn("verified output dropped", report)
 
@@ -776,8 +776,8 @@ class RegressionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             ok, report = build_doctor_report("config/sources.yaml", "config/filter_rules.yaml", "./missing-sing-box", d)
             self.assertFalse(ok)
-            self.assertIn("AutoNodes Doctor", report)
-            self.assertIn("sing-box binary", report)
+            self.assertIn("AutoNodes 环境诊断", report)
+            self.assertIn("sing-box 可执行文件", report)
 
     def test_protocol_fixture_corpus_parse_and_generate(self):
         fixture_dir = Path(__file__).parent / "fixtures" / "protocols"
