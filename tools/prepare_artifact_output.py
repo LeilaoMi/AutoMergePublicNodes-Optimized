@@ -19,6 +19,10 @@ DEFAULT_PATTERNS = (
     "all.converter.md",
     "stats.json",
     "health_report.json",
+    "daily_report.md",
+    "source_scores.md",
+    "source_cleanup_suggestions.md",
+    "source_cleanup_suggestions.json",
     "source_audit.json",
     "geo_cache.json",
 )

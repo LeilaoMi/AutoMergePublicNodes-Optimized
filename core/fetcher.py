@@ -138,11 +138,17 @@ async def fetch_source(session: aiohttp.ClientSession, src: Source, timeout: int
             line = line.strip()
             if line and "://" in line and not line.startswith("#"):
                 sub_urls.append(line)
-        # 递归抓取（限制深度为 1）
-        for sub_url in sub_urls[:50]:  # 防止失控
-            ok, content, _ = await _fetch_one(session, sub_url, timeout)
-            if ok:
-                result.nodes.extend(parse_content(content))
+        # 递归抓取（限制深度为 1），并发限制避免 list 源被慢 URL 串行拖垮。
+        list_sem = asyncio.Semaphore(10)
+
+        async def _fetch_sub(sub_url: str) -> List[Node]:
+            async with list_sem:
+                ok, content, _ = await _fetch_one(session, sub_url, timeout)
+                return parse_content(content) if ok else []
+
+        sub_results = await asyncio.gather(*[_fetch_sub(u) for u in sub_urls[:50]])
+        for sub_nodes in sub_results:
+            result.nodes.extend(sub_nodes)
     else:
         result.nodes = parse_content(text)
 

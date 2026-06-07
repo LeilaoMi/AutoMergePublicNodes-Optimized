@@ -19,7 +19,7 @@ import sys
 import time
 from pathlib import Path
 from dataclasses import replace
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -29,6 +29,9 @@ __version__ = "2.1.0"  # §4.5 — 加版本号, 写进 stats.json / health_repo
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
 from core.parser import Node
+from core.filtering import load_filter_rules, quality_prefilter
+from core.sampling import protocol_priority, sample_for_real_test, sample_for_real_test_weighted
+from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history
 
 
 def dedupe(nodes: List[Node]) -> List[Node]:
@@ -42,139 +45,6 @@ def dedupe(nodes: List[Node]) -> List[Node]:
         out.append(n)
     return out
 
-
-# 协议优先级（数字越小越好；reality > hy2 > tuic > trojan > vmess > ss）
-_PROTO_PRIORITY = {
-    "vless": 0, "hysteria2": 1, "tuic": 2, "trojan": 3,
-    "vmess": 4, "anytls": 4,
-    "shadowsocks": 5, "shadowsocksr": 6,
-    "socks": 7, "http": 7,
-}
-
-
-def protocol_priority(t: str) -> int:
-    return _PROTO_PRIORITY.get(t, 9)
-
-
-def _smoothed_pass_rate(stats: Dict[str, int]) -> float:
-    passed = int(stats.get("pass", 0) or 0)
-    failed = int(stats.get("fail", 0) or 0)
-    return (passed + 1) / (passed + failed + 2)
-
-
-def load_historical_pass_rates(output_dir: str) -> Tuple[Dict[str, float], Dict[str, float]]:
-    stats_path = Path(output_dir) / "stats.json"
-    if not stats_path.exists():
-        return {}, {}
-    try:
-        stats = json.loads(stats_path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}, {}
-    protocol_rates = {
-        name: _smoothed_pass_rate(values)
-        for name, values in (stats.get("protocol_pass_rate") or {}).items()
-        if isinstance(values, dict)
-    }
-    source_rates = {
-        name: _smoothed_pass_rate(values)
-        for name, values in (stats.get("source_pass_rate") or {}).items()
-        if isinstance(values, dict)
-    }
-    return protocol_rates, source_rates
-
-
-# 端口黑名单。80/8080 可能是合法 WS/TLS/HTTP 伪装端口，不再硬删除。
-_PORT_BLOCKLIST = {0}
-
-
-def quality_prefilter(nodes: List[Node], max_per_server: int = 0) -> List[Node]:
-    """质量预过滤：剔除无效端口、按 server+protocol 强去重、同 server 限 max_per_server 个
-
-    §2.2 — 把"同 server 限 2"改为 CLI 参数, 默认 0 = 不限
-    原因: 大型 VPS (AWS Lightsail / Azure / Hetzner) 上可能跑多个不同用户不同协议的节点,
-    盲目限 2 会误杀一批本应保留的节点。如果限流, 建议在真测通过后做。
-    """
-    # 1) 端口黑名单
-    nodes = [n for n in nodes if n.server_port not in _PORT_BLOCKLIST]
-
-    # 2) 同 server+protocol+port 已经被 dedupe 处理；这里按 (server, type) 再去重
-    by_st: Dict[tuple, Node] = {}
-    for n in nodes:
-        key = (n.server, n.type)
-        if key not in by_st:
-            by_st[key] = n
-    step2 = list(by_st.values())
-
-    # 3) 同 server IP 最多保留 max_per_server 个 (按协议优先级排)
-    if max_per_server <= 0:
-        return step2
-    by_server: Dict[str, List[Node]] = {}
-    for n in step2:
-        by_server.setdefault(n.server, []).append(n)
-    out: List[Node] = []
-    for server, lst in by_server.items():
-        lst.sort(key=lambda n: protocol_priority(n.type))
-        out.extend(lst[:max_per_server])
-    return out
-
-
-def sample_for_real_test(nodes: List[Node], tcp_latency: Dict[str, float], limit: int) -> List[Node]:
-    if limit <= 0 or len(nodes) <= limit:
-        return nodes
-
-    by_type: Dict[str, List[Node]] = {}
-    for n in nodes:
-        by_type.setdefault(n.type, []).append(n)
-    for lst in by_type.values():
-        lst.sort(key=lambda n: tcp_latency.get(n.fingerprint(), float("inf")))
-
-    sampled: List[Node] = []
-    used = set()
-    per = max(limit // max(len(by_type), 1), 1)
-    for t in sorted(by_type, key=protocol_priority):
-        for n in by_type[t][:per]:
-            if len(sampled) >= limit:
-                return sampled
-            fp = n.fingerprint()
-            if fp not in used:
-                sampled.append(n)
-                used.add(fp)
-
-    remaining = [
-        n for n in nodes
-        if n.fingerprint() not in used
-    ]
-    remaining.sort(key=lambda n: (tcp_latency.get(n.fingerprint(), float("inf")), protocol_priority(n.type)))
-    sampled.extend(remaining[:max(limit - len(sampled), 0)])
-    return sampled[:limit]
-
-
-def sample_for_real_test_weighted(
-    nodes: List[Node],
-    tcp_latency: Dict[str, float],
-    limit: int,
-    node_source_map: Dict[str, str],
-    protocol_rates: Dict[str, float],
-    source_rates: Dict[str, float],
-) -> List[Node]:
-    if limit <= 0 or len(nodes) <= limit:
-        return nodes
-    base_quota = max(limit // 5, 1)
-    sampled = sample_for_real_test(nodes, tcp_latency, min(base_quota, limit))
-    used = {n.fingerprint() for n in sampled}
-
-    def score(n: Node) -> Tuple[float, float, int]:
-        fp = n.fingerprint()
-        src = node_source_map.get(fp, "")
-        source_rate = source_rates.get(src, 0.5)
-        protocol_rate = protocol_rates.get(n.type, 0.5)
-        latency = tcp_latency.get(fp, float("inf"))
-        return (-(source_rate * 0.7 + protocol_rate * 0.3), latency, protocol_priority(n.type))
-
-    remaining = [n for n in nodes if n.fingerprint() not in used]
-    remaining.sort(key=score)
-    sampled.extend(remaining[:max(limit - len(sampled), 0)])
-    return sampled[:limit]
 
 
 def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int) -> List[Node]:
@@ -191,43 +61,6 @@ def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int)
 
 
 
-def build_trend_entry(stats: Dict[str, object]) -> Dict[str, object]:
-    return {
-        "timestamp": stats.get("timestamp"),
-        "duration_sec": stats.get("duration_sec"),
-        "nodes_raw": stats.get("nodes_raw"),
-        "nodes_dedup": stats.get("nodes_dedup"),
-        "nodes_tcp_ok": stats.get("nodes_tcp_ok"),
-        "nodes_real_ok": stats.get("nodes_real_ok"),
-        "nodes_verified_output": stats.get("nodes_verified_output"),
-        "nodes_global_output": stats.get("nodes_global_output"),
-        "nodes_global_extra_from_cn_block": stats.get("nodes_global_extra_from_cn_block"),
-        "real_test_errors": stats.get("real_test_errors", {}),
-        "output_guard": stats.get("output_guard", {}),
-    }
-
-
-def update_trend_history(output_dir: str, stats: Dict[str, object], keep: int = 30) -> Dict[str, object]:
-    path = Path(output_dir) / "trend_history.json"
-    runs: List[Dict[str, object]] = []
-    if path.exists():
-        try:
-            previous = json.loads(path.read_text(encoding="utf-8"))
-            previous_runs = previous.get("runs", []) if isinstance(previous, dict) else previous
-            if isinstance(previous_runs, list):
-                runs = [r for r in previous_runs if isinstance(r, dict)]
-        except Exception:
-            runs = []
-    runs.append(build_trend_entry(stats))
-    if keep > 0:
-        runs = runs[-keep:]
-    payload = {
-        "updated_at": stats.get("timestamp"),
-        "keep": keep,
-        "runs": runs,
-    }
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return payload
 
 def count_existing_urls(output_dir: str, prefix: str) -> int:
     path = Path(output_dir) / f"{prefix}.urls"
@@ -245,13 +78,22 @@ def should_preserve_previous_output(new_count: int, previous_count: int, min_ret
     return new_count < int(previous_count * min_retain_ratio)
 
 
-async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: float = 3.0) -> List[Tuple[Node, float]]:
-    """快速 TCP 预筛选：返回 [(node, tcp_latency_ms)]，按延迟升序"""
+async def tcp_check_batch(
+    nodes: List[Node],
+    concurrency: int = 200,
+    timeout: float = 3.0,
+    error_counts: Dict[str, int] | None = None,
+) -> List[Tuple[Node, float]]:
+    """快速 TCP 预筛选：返回 [(node, tcp_latency_ms)]，按延迟升序。
+
+    可选 error_counts 用于记录失败异常类型，便于 stats/health report 定位网络问题。
+    """
     queue: asyncio.Queue[Node] = asyncio.Queue()
     for n in nodes:
         queue.put_nowait(n)
 
     ok: List[Tuple[Node, float]] = []
+    errors = error_counts if error_counts is not None else {}
 
     async def _worker():
         while True:
@@ -260,19 +102,22 @@ async def tcp_check_batch(nodes: List[Node], concurrency: int = 200, timeout: fl
             except asyncio.QueueEmpty:
                 return
             t0 = time.perf_counter()
+            writer = None
             try:
                 fut = asyncio.open_connection(n.server, n.server_port)
-                reader, writer = await asyncio.wait_for(fut, timeout=timeout)
+                _, writer = await asyncio.wait_for(fut, timeout=timeout)
                 lat_ms = (time.perf_counter() - t0) * 1000
-                writer.close()
-                try:
-                    await writer.wait_closed()
-                except Exception:
-                    pass
                 ok.append((n, lat_ms))
-            except Exception:
-                pass
+            except Exception as exc:
+                key = type(exc).__name__
+                errors[key] = errors.get(key, 0) + 1
             finally:
+                if writer:
+                    writer.close()
+                    try:
+                        await writer.wait_closed()
+                    except Exception:
+                        pass
                 queue.task_done()
 
     worker_count = min(max(concurrency, 1), len(nodes))
@@ -298,8 +143,13 @@ async def run(args):
         print(f"      历史通过率: {len(source_rates)} 个源, {len(protocol_rates)} 个协议")
 
     # 2) 抓取
-    print(f"[2/6] 异步抓取（并发 {args.fetch_concurrency}）...")
-    fr_list = await fetch_all(sources, concurrency=args.fetch_concurrency, timeout=args.fetch_timeout)
+    print(f"[2/6] 异步抓取（并发 {args.fetch_concurrency}，总超时 {args.fetch_overall_timeout}s）...")
+    fr_list = await fetch_all(
+        sources,
+        concurrency=args.fetch_concurrency,
+        timeout=args.fetch_timeout,
+        overall_timeout=args.fetch_overall_timeout,
+    )
     stage_durations["fetch"] = round(time.time() - stage_start, 1)
     stage_start = time.time()
 
@@ -309,10 +159,15 @@ async def run(args):
 
     all_nodes: List[Node] = []
     proto_count: Dict[str, int] = {}
+    source_nodes: Dict[str, int] = {}
+    source_dead_counts: Dict[str, int] = {}
     # 跟踪每个节点来自哪个 source（用于 per-source 通过率统计）
     node_source_map: Dict[str, str] = {}  # fingerprint -> source_name
     for r in fr_list:
         src_name = r.source.name or r.source.url[:80]
+        source_nodes[src_name] = source_nodes.get(src_name, 0) + len(r.nodes)
+        if not r.success or len(r.nodes) == 0:
+            source_dead_counts[src_name] = 1
         for n in r.nodes:
             all_nodes.append(n)
             proto_count[n.type] = proto_count.get(n.type, 0) + 1
@@ -333,21 +188,27 @@ async def run(args):
     for k, v in sorted(proto_count.items(), key=lambda x: -x[1]):
         print(f"        {k:14s}: {v}")
 
+    filter_rule_hits: Dict[str, int] = {}
     # 3.5) 质量预过滤 (可选)
     if args.quality_filter:
         before = len(nodes)
-        nodes = quality_prefilter(nodes, max_per_server=args.max_per_server)
+        filter_rules = load_filter_rules(args.filter_rules)
+        nodes, filter_rule_hits = quality_prefilter(nodes, max_per_server=args.max_per_server, rules=filter_rules, protocol_priority=protocol_priority)
+        mode = str(filter_rules.get("mode", "block"))
+        hit_summary = ", ".join(f"{k}={v}" for k, v in sorted(filter_rule_hits.items(), key=lambda x: -x[1])[:5])
+        suffix = f"；规则命中: {hit_summary}" if hit_summary else ""
         if args.max_per_server > 0:
-            print(f"[3.5] 质量过滤（端口黑名单 + 同 server 限 {args.max_per_server}）: {before} -> {len(nodes)}")
+            print(f"[3.5] 质量过滤（配置规则 mode={mode} + 同 server 限 {args.max_per_server}）: {before} -> {len(nodes)}{suffix}")
         else:
-            print(f"[3.5] 质量过滤（端口黑名单, 同 server 不限）: {before} -> {len(nodes)}")
+            print(f"[3.5] 质量过滤（配置规则 mode={mode}, 同 server 不限）: {before} -> {len(nodes)}{suffix}")
     else:
         print(f"[3.5] 跳过质量过滤（输出全部去重节点）")
 
     # 4) TCP 预筛选
+    tcp_errors: Dict[str, int] = {}
     if args.tcp_check:
         print(f"[4/6] TCP 预筛选（并发 {args.tcp_concurrency}, 超时 {args.tcp_timeout}s）...")
-        tcp_results = await tcp_check_batch(nodes, args.tcp_concurrency, args.tcp_timeout)
+        tcp_results = await tcp_check_batch(nodes, args.tcp_concurrency, args.tcp_timeout, tcp_errors)
         stage_durations["tcp"] = round(time.time() - stage_start, 1)
         stage_start = time.time()
         print(f"      TCP 可达: {len(tcp_results)}")
@@ -450,20 +311,38 @@ async def run(args):
         valid = []
 
     # 真实测试失败原因统计 — 让 stats.json 自带诊断
+    from core.tester import build_error_detail
     real_test_errors: Dict[str, int] = {}
     real_test_error_details_counter: Dict[str, int] = {}
+    real_test_error_structured_counter: Dict[tuple, Dict[str, object]] = {}
     for r in results if args.real_test else []:
         if r.success:
             continue
         error = r.error or "unknown"
-        err_key = error.split(":", 1)[0]
+        detail = r.error_detail or build_error_detail(error)
+        target = str(detail.get("target", error.split(":", 1)[0]))
+        reason = str(detail.get("reason", "unknown"))
+        err_key = target
         real_test_errors[err_key] = real_test_errors.get(err_key, 0) + 1
         detail_key = error[:120]
         real_test_error_details_counter[detail_key] = real_test_error_details_counter.get(detail_key, 0) + 1
+        struct_key = (target, reason, str(detail.get("status", detail.get("value", ""))))
+        row = real_test_error_structured_counter.setdefault(struct_key, {
+            "target": target,
+            "reason": reason,
+            "status": detail.get("status"),
+            "value": detail.get("value"),
+            "count": 0,
+        })
+        row["count"] = int(row["count"]) + 1
     real_test_error_details = [
         {"error": error, "count": count}
         for error, count in sorted(real_test_error_details_counter.items(), key=lambda x: -x[1])[:10]
     ]
+    real_test_error_structured = sorted(
+        real_test_error_structured_counter.values(),
+        key=lambda row: -int(row.get("count", 0)),
+    )[:20]
 
     # 取 Top N 并改名加入延迟。构造新 Node，避免污染 all.* 的原始去重池。
     # §2.1 tag 不再在 main.py 截断 30 字符, 留给 generator._clamp_tag 统一处理
@@ -551,6 +430,7 @@ async def run(args):
         if src_name not in src_pass:
             src_pass[src_name] = {"pass": 0, "fail": 0}
         src_pass[src_name]["pass" if r.success else "fail"] += 1
+    source_scores = build_source_scores(source_nodes, src_pass, source_dead_counts)
 
     stats = {
         "version": __version__,
@@ -571,10 +451,15 @@ async def run(args):
         "nodes_all_output": n_all,
         "all_output_mode": args.all_output_mode,
         "protocol_dist": proto_count,
+        "filter_rule_hits": filter_rule_hits,
         "protocol_pass_rate": proto_pass,
         "source_pass_rate": src_pass,
+        "source_nodes": source_nodes,
+        "source_scores": source_scores,
+        "tcp_errors": tcp_errors,
         "real_test_errors": real_test_errors,
         "real_test_error_details": real_test_error_details,
+        "real_test_error_structured": real_test_error_structured,
         "top_latencies_ms": [round(lat, 1) for _, lat, _ in top if lat > 0][:20],
         "top_jitters_ms": [round(jit, 1) for _, _, jit in top if jit > 0][:20],
     }
@@ -593,6 +478,8 @@ def main():
 
     p.add_argument("--fetch-concurrency", type=int, default=30)
     p.add_argument("--fetch-timeout", type=int, default=15)
+    p.add_argument("--fetch-overall-timeout", type=int, default=120,
+                   help="整批订阅抓取总超时秒数，超时后返回已完成源的部分结果")
 
     p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--tcp-concurrency", type=int, default=200)
@@ -604,7 +491,9 @@ def main():
     p.add_argument("--startup-wait", type=float, default=0.6)
     p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
     p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=True,
-                   help="启用质量预过滤（端口黑名单）")
+                   help="启用质量预过滤（配置规则 + 同 server/type 降噪）")
+    p.add_argument("--filter-rules", default="config/filter_rules.yaml",
+                   help="质量过滤规则配置文件；不存在时使用保守默认规则")
     p.add_argument("--max-per-server", type=int, default=0,
                    help="§2.2 同 server IP 最多保留的节点数 (0=不限, 默认; 1/2=严格, 但可能误杀 AWS/Hetzner 上不同用户的节点)")
     p.add_argument("--min-latency", type=float, default=30.0,
@@ -621,12 +510,14 @@ def main():
                    help="用于生成 jsDelivr 订阅转换链接的分支名 (默认 main; CI 传入 ${{ github.event.repository.default_branch }})")
 
     args = p.parse_args()
-    
+
     # 参数验证
     if args.top_n < 0:
         p.error("--top-n 必须 >= 0")
     if args.fetch_concurrency <= 0:
         p.error("--fetch-concurrency 必须 > 0")
+    if args.fetch_overall_timeout <= 0:
+        p.error("--fetch-overall-timeout 必须 > 0")
     if args.tcp_concurrency <= 0:
         p.error("--tcp-concurrency 必须 > 0")
     if args.test_concurrency <= 0:
@@ -637,7 +528,7 @@ def main():
         p.error("--min-latency 必须 >= 0")
     if args.min_retain_ratio < 0:
         p.error("--min-retain-ratio 必须 >= 0")
-    
+
     # 环境变量覆盖（CI 或容器场景常用）
     if os.environ.get("AUTONODES_TOP_N"):
         args.top_n = int(os.environ["AUTONODES_TOP_N"])

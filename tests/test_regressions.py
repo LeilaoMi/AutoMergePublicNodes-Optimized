@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 import os
 import subprocess
+import yaml
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -15,9 +16,18 @@ from core.fetcher import Source, fetch_all
 from core.generator import node_to_clash, node_to_url, write_outputs
 from core.geo import _is_public_ip, geo_flag_map
 from core.parser import Node, parse_content
+from core.filtering import filter_rule_reasons, load_filter_rules, quality_prefilter
+from core.sampling import sample_for_real_test, sample_for_real_test_weighted
 from tools.audit_sources import load_previous_audit
 from tools.health_report import build_health_report
-from core.tester import SingBoxTester
+from tools.daily_report import build_daily_report
+from tools.source_scores_report import build_source_scores_report
+from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanup_payload, build_cleanup_report, build_cleanup_suggestions, build_disable_patch_preview, filter_names
+from tools.validate_config import validate_filter_rules, validate_sources
+from tools.doctor import build_doctor_report
+from core.stats import build_source_scores, build_trend_alerts, load_historical_pass_rates, update_trend_history
+from core.tester import SingBoxTester, build_error_detail
+import main as m
 
 
 class RegressionTests(unittest.TestCase):
@@ -172,7 +182,6 @@ class RegressionTests(unittest.TestCase):
         9 个同 server 不同 type: (server,type) 强去重后剩 3 个, 不再额外限流
         对比
         """
-        from main import quality_prefilter
         nodes = [
             Node("vless", f"n{i}", "1.1.1.1", 443, {"uuid": f"u{i}"}) for i in range(3)
         ] + [
@@ -180,32 +189,66 @@ class RegressionTests(unittest.TestCase):
         ] + [
             Node("vmess", f"v{i}", "1.1.1.1", 443, {"uuid": f"u{i}"}) for i in range(3)
         ]
-        out = quality_prefilter(nodes, max_per_server=0)
+        out, hits = quality_prefilter(nodes, max_per_server=0)
         self.assertEqual(len(out), 3)  # 3 type x 3 节点, 不限数量全部保留
+        self.assertEqual(hits, {})
 
     def test_max_per_server_two_keeps_top_two_per_type(self):
         """§2.2 — max_per_server=2 时同 server 保留 2 个
         5 vless + 5 trojan 同 server, (server,type) 去重后剩 2 个, max_per_server=2 留 2
         """
-        from main import quality_prefilter
         nodes = [
             Node("vless", f"n{i}", "1.1.1.1", 443, {"uuid": f"u{i}"}) for i in range(5)
         ] + [
             Node("trojan", f"t{i}", "1.1.1.1", 443, {"password": f"p{i}"}) for i in range(5)
         ]
-        out = quality_prefilter(nodes, max_per_server=2)
+        out, hits = quality_prefilter(nodes, max_per_server=2)
         self.assertEqual(len(out), 2)
+        self.assertEqual(hits, {})
 
     def test_quality_prefilter_dedupes_same_server_type(self):
         """§2.2 — 同一个 (server, type) 组合已经在 quality_prefilter 内去重
         所以 max_per_server=5 也不应该出现 5 个 vless@1.1.1.1
         """
-        from main import quality_prefilter
         nodes = [
             Node("vless", f"n{i}", "1.1.1.1", 443, {"uuid": f"u{i}"}) for i in range(5)
         ]
-        out = quality_prefilter(nodes, max_per_server=10)
+        out, hits = quality_prefilter(nodes, max_per_server=10)
         self.assertEqual(len(out), 1)  # 5 个同 (server, type) 被去重成 1
+        self.assertEqual(hits, {})
+
+    def test_quality_prefilter_blocks_configured_weak_protocol_options(self):
+        """SubCrawler 经验配置化：旧 SS/SSR 加密、VMess auto/grpc 可按规则剔除并统计。"""
+        rules = {
+            "enabled": True,
+            "mode": "block",
+            "blocked": {
+                "ss_methods": ["aes-128-cfb"],
+                "ssr_methods": ["rc4-md5"],
+                "vmess_security": ["auto"],
+                "vmess_network": ["grpc"],
+            },
+        }
+        nodes = [
+            Node("shadowsocks", "bad-ss", "1.1.1.1", 8388, {"method": "aes-128-cfb", "password": "p"}),
+            Node("shadowsocksr", "bad-ssr", "2.2.2.2", 8388, {"method": "rc4-md5", "password": "p"}),
+            Node("vmess", "bad-vmess-auto", "3.3.3.3", 443, {"uuid": "u", "security": "auto"}),
+            Node("vmess", "bad-vmess-grpc", "4.4.4.4", 443, {"uuid": "u", "security": "chacha20-poly1305", "transport": {"type": "grpc"}}),
+            Node("trojan", "good", "5.5.5.5", 443, {"password": "p"}),
+        ]
+        out, hits = quality_prefilter(nodes, rules=rules)
+        self.assertEqual([n.tag for n in out], ["good"])
+        self.assertEqual(hits["ss_method:aes-128-cfb"], 1)
+        self.assertEqual(hits["ssr_method:rc4-md5"], 1)
+        self.assertEqual(hits["vmess_security:auto"], 1)
+        self.assertEqual(hits["vmess_network:grpc"], 1)
+
+    def test_quality_prefilter_annotate_mode_keeps_nodes(self):
+        rules = {"enabled": True, "mode": "annotate", "blocked": {"protocols": ["http"]}}
+        node = Node("http", "http", "example.com", 8080, {})
+        out, hits = quality_prefilter([node], rules=rules)
+        self.assertEqual(out, [node])
+        self.assertEqual(hits["protocol:http"], 1)
 
     def test_test_targets_include_cn_block(self):
         """§1.2 — TEST_TARGETS 必须包含 baidu 和 ipinfo, 不再只用 1.1.1.1/cdn-cgi/trace"""
@@ -278,6 +321,11 @@ class RegressionTests(unittest.TestCase):
         self.assertNotIn("sniff", inb)
         self.assertNotIn("sniff_override_destination", inb)
 
+    def test_tester_error_detail_parser(self):
+        self.assertEqual(build_error_detail("204:status=403")["status"], 403)
+        self.assertEqual(build_error_detail("geo:exit-country=CN")["reason"], "exit-country")
+        self.assertEqual(build_error_detail("latency-too-low:12.3ms")["target"], "latency-too-low")
+
     def test_tcp_check_batch_uses_worker_queue_and_sorts_results(self):
         import main as m
 
@@ -299,9 +347,11 @@ class RegressionTests(unittest.TestCase):
             Node("http", "bad", "bad.example", 80, {}),
             Node("http", "fast", "fast.example", 80, {}),
         ]
+        errors = {}
         with patch("asyncio.open_connection", fake_open_connection):
-            results = asyncio.run(m.tcp_check_batch(nodes, concurrency=2, timeout=1))
+            results = asyncio.run(m.tcp_check_batch(nodes, concurrency=2, timeout=1, error_counts=errors))
         self.assertEqual([n.tag for n, _ in results], ["fast", "slow"])
+        self.assertEqual(errors.get("OSError"), 1)
 
     def test_main_stats_include_stage_durations_and_error_details(self):
         import main as m
@@ -313,6 +363,7 @@ class RegressionTests(unittest.TestCase):
             branch = "main"
             fetch_concurrency = 1
             fetch_timeout = 1
+            fetch_overall_timeout = 2
             quality_filter = False
             max_per_server = 0
             tcp_check = False
@@ -333,7 +384,7 @@ class RegressionTests(unittest.TestCase):
             "nodes": [node],
         })()
 
-        async def fake_fetch_all(sources, concurrency=30, timeout=15):
+        async def fake_fetch_all(sources, concurrency=30, timeout=15, overall_timeout=120):
             return [fetch_result]
 
         async def fake_geo_flag_map(nodes):
@@ -365,6 +416,7 @@ class RegressionTests(unittest.TestCase):
             branch = "main"
             fetch_concurrency = 1
             fetch_timeout = 1
+            fetch_overall_timeout = 2
             quality_filter = False
             max_per_server = 0
             tcp_check = False
@@ -391,7 +443,7 @@ class RegressionTests(unittest.TestCase):
             "nodes": [strict_node, global_node],
         })()
 
-        async def fake_fetch_all(sources, concurrency=30, timeout=15):
+        async def fake_fetch_all(sources, concurrency=30, timeout=15, overall_timeout=120):
             return [fetch_result]
 
         async def fake_geo_flag_map(nodes):
@@ -434,8 +486,17 @@ class RegressionTests(unittest.TestCase):
             tester = SingBoxTester(sb_path=f.name, skip_target_kinds={"cn-block"})
         self.assertEqual(tester.skip_target_kinds, {"cn-block"})
 
+    def test_build_source_scores_recommends_actions(self):
+        scores = build_source_scores(
+            {"good": 100, "bad": 100, "dead": 0},
+            {"good": {"pass": 18, "fail": 2}, "bad": {"pass": 0, "fail": 10}},
+            {"dead": 2},
+        )
+        self.assertEqual(scores["good"]["recommendation"], "prefer")
+        self.assertEqual(scores["bad"]["recommendation"], "downweight")
+        self.assertEqual(scores["dead"]["recommendation"], "disable-candidate")
+
     def test_sample_for_real_test_balances_protocols_and_fills_by_latency(self):
-        import main as m
         nodes = [
             Node("vless", "v1", "1.1.1.1", 443, {"uuid": "1"}),
             Node("vless", "v2", "1.1.1.2", 443, {"uuid": "2"}),
@@ -443,19 +504,18 @@ class RegressionTests(unittest.TestCase):
             Node("vmess", "m1", "1.1.1.4", 443, {"uuid": "3"}),
         ]
         lat = {nodes[0].fingerprint(): 40, nodes[1].fingerprint(): 10, nodes[2].fingerprint(): 20, nodes[3].fingerprint(): 30}
-        sampled = m.sample_for_real_test(nodes, lat, 3)
+        sampled = sample_for_real_test(nodes, lat, 3)
         self.assertEqual(len(sampled), 3)
         self.assertEqual({n.type for n in sampled}, {"vless", "trojan", "vmess"})
         self.assertIn("v2", [n.tag for n in sampled])
 
     def test_load_historical_pass_rates_uses_smoothed_rates(self):
-        import main as m
         with tempfile.TemporaryDirectory() as d:
             Path(d, "stats.json").write_text(json.dumps({
                 "protocol_pass_rate": {"trojan": {"pass": 8, "fail": 2}},
                 "source_pass_rate": {"good": {"pass": 9, "fail": 1}},
             }), encoding="utf-8")
-            protocol_rates, source_rates = m.load_historical_pass_rates(d)
+            protocol_rates, source_rates = load_historical_pass_rates(d)
         self.assertAlmostEqual(protocol_rates["trojan"], 9 / 12)
         self.assertAlmostEqual(source_rates["good"], 10 / 12)
 
@@ -475,7 +535,7 @@ class RegressionTests(unittest.TestCase):
             bad_fast.fingerprint(): "bad-source",
             bad_slow.fingerprint(): "bad-source",
         }
-        sampled = m.sample_for_real_test_weighted(
+        sampled = sample_for_real_test_weighted(
             nodes, lat, 2, source_map,
             protocol_rates={"trojan": 0.8, "vmess": 0.1},
             source_rates={"good-source": 0.9, "bad-source": 0.1},
@@ -483,10 +543,9 @@ class RegressionTests(unittest.TestCase):
         self.assertIn("good", [n.tag for n in sampled])
 
     def test_update_trend_history_keeps_recent_runs(self):
-        import main as m
         with tempfile.TemporaryDirectory() as d:
             for i in range(32):
-                payload = m.update_trend_history(d, {
+                payload = update_trend_history(d, {
                     "timestamp": f"run-{i}",
                     "duration_sec": i,
                     "nodes_tcp_ok": 100 + i,
@@ -505,7 +564,6 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(saved["runs"][-1]["nodes_global_output"], 32)
 
     def test_output_shrink_guard_helpers(self):
-        import main as m
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "verified.urls"
             path.write_text("a\n\n b \n", encoding="utf-8")
@@ -526,6 +584,200 @@ class RegressionTests(unittest.TestCase):
             self.assertTrue((out / "all.converter.md").exists())
             self.assertFalse((out / "all.json").exists())
             self.assertFalse((out / "all.yaml").exists())
+
+    def test_health_report_accepts_light_mode_all_outputs(self):
+        n = Node("http", "http-test", "example.com", 8080, {})
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            write_outputs([n], d, prefix="verified", repo_path="o/r")
+            write_outputs([n], d, prefix="all", repo_path="o/r", mode="light")
+            (out / "stats.json").write_text("{}", encoding="utf-8")
+            report = build_health_report(d, "verified")
+            self.assertTrue(report["ok"])
+            self.assertEqual(report["prefixes"]["all"]["mode"], "light")
+            self.assertEqual(report["prefixes"]["all"]["url_count"], 1)
+
+    def test_suggest_source_cleanup_groups_and_patch_preview(self):
+        stats = {
+            "source_scores": {
+                "good": {"score": 0.8, "recommendation": "prefer", "tested": 20, "pass_rate": 0.9, "parsed_nodes": 100, "consecutive_dead": 0},
+                "bad": {"score": 0.1, "recommendation": "downweight", "tested": 10, "pass_rate": 0.0, "parsed_nodes": 100, "consecutive_dead": 0},
+                "dead": {"score": 0.0, "recommendation": "disable-candidate", "tested": 0, "pass_rate": None, "parsed_nodes": 0, "consecutive_dead": 2},
+            }
+        }
+        audit = {"sources": [
+            {"name": "good", "url": "https://good", "consecutive_dead": 0, "nodes": 100},
+            {"name": "bad", "url": "https://bad", "consecutive_dead": 0, "nodes": 100},
+            {"name": "dead", "url": "https://dead", "consecutive_dead": 2, "nodes": 0},
+        ]}
+        suggestions = build_cleanup_suggestions(stats, audit)
+        self.assertEqual(suggestions["prefer"][0]["name"], "good")
+        self.assertEqual(suggestions["downweight"][0]["name"], "bad")
+        self.assertEqual(suggestions["disable"][0]["name"], "dead")
+        with tempfile.TemporaryDirectory() as d:
+            src = Path(d) / "sources.yaml"
+            src.write_text("sources:\n  - name: dead\n    url: https://dead\n    enabled: true\n  - name: good\n    url: https://good\n    enabled: true\n", encoding="utf-8")
+            preview = build_disable_patch_preview(str(src), {"dead"})
+            self.assertIn("changed: 1", preview)
+            self.assertIn("enabled: false", preview)
+            changed = apply_disable_suggestions(str(src), {"dead"})
+            self.assertEqual(changed, 1)
+            data = yaml.safe_load(src.read_text(encoding="utf-8"))
+            self.assertFalse(data["sources"][0]["enabled"])
+            self.assertTrue(data["sources"][1]["enabled"])
+            self.assertEqual(filter_names({"dead", "bad", "good"}, only={"dead", "bad"}, exclude={"bad"}), {"dead"})
+
+    def test_cleanup_report_generates_markdown(self):
+        with tempfile.TemporaryDirectory() as d:
+            stats = {"source_scores": {"dead": {"score": 0.0, "recommendation": "disable-candidate", "tested": 0, "consecutive_dead": 2}}}
+            audit = {"sources": [{"name": "dead", "url": "https://dead", "consecutive_dead": 2, "nodes": 0}]}
+            Path(d, "stats.json").write_text(json.dumps(stats), encoding="utf-8")
+            Path(d, "source_audit.json").write_text(json.dumps(audit), encoding="utf-8")
+            payload = build_cleanup_payload(d)
+            self.assertEqual(payload["summary"]["disable"], 1)
+            self.assertEqual(payload["suggestions"]["disable"][0]["name"], "dead")
+            report = build_cleanup_report(d)
+            self.assertIn("# Source Cleanup Suggestions", report)
+            self.assertIn("## Disable Candidates", report)
+            self.assertIn("dead", report)
+
+    def test_source_scores_report_generates_markdown(self):
+        with tempfile.TemporaryDirectory() as d:
+            stats = {
+                "source_scores": {
+                    "good": {"score": 0.8, "recommendation": "prefer", "tested": 20, "pass": 18, "fail": 2, "pass_rate": 0.9, "parsed_nodes": 100, "consecutive_dead": 0},
+                    "bad": {"score": 0.1, "recommendation": "downweight", "tested": 10, "pass": 0, "fail": 10, "pass_rate": 0.0, "parsed_nodes": 100, "consecutive_dead": 0},
+                    "dead": {"score": 0.0, "recommendation": "disable-candidate", "tested": 0, "pass": 0, "fail": 0, "pass_rate": None, "parsed_nodes": 0, "consecutive_dead": 2},
+                }
+            }
+            Path(d, "stats.json").write_text(json.dumps(stats), encoding="utf-8")
+            report = build_source_scores_report(d)
+            self.assertIn("# Source Quality Scores", report)
+            self.assertIn("## Prefer", report)
+            self.assertIn("## Disable Candidates", report)
+            self.assertIn("good", report)
+            self.assertIn("dead", report)
+
+    def test_daily_report_generates_markdown_summary(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            stats = {
+                "nodes_raw": 10,
+                "nodes_dedup": 8,
+                "nodes_tcp_ok": 6,
+                "nodes_real_ok": 2,
+                "nodes_verified_output": 1,
+                "nodes_global_output": 2,
+                "nodes_all_output": 8,
+                "all_output_mode": "light",
+                "stage_durations": {"fetch": 1.2},
+                "protocol_pass_rate": {"vless": {"pass": 1, "fail": 3}},
+                "tcp_errors": {"TimeoutError": 2},
+                "real_test_error_structured": [{"target": "204", "reason": "TimeoutError", "count": 3}],
+                "real_test_errors": {"204": 3},
+            }
+            health = {
+                "ok": True,
+                "status": "warning",
+                "alerts": {"low_pass_protocols": [], "real_test_errors": {}},
+                "rankings": {
+                    "source_worst": [{"name": "s", "pass_rate": 0.1, "pass": 1, "fail": 9, "total": 10}],
+                    "source_score_best": [{"name": "good", "score": 0.8, "recommendation": "prefer", "tested": 10, "pass_rate": 0.9, "parsed_nodes": 100}],
+                    "source_score_worst": [{"name": "bad", "score": 0.1, "recommendation": "downweight", "tested": 10, "pass_rate": 0.0, "consecutive_dead": 0, "parsed_nodes": 100}],
+                },
+            }
+            source_audit = {"sources_total": 1, "healthy": 1, "sources": [{"name": "s", "nodes": 10, "ok": True, "duration": 0.1, "consecutive_dead": 0}]}
+            trend = {"alerts": [{"type": "verified_drop_50pct", "message": "verified output dropped"}]}
+            (out / "stats.json").write_text(json.dumps(stats), encoding="utf-8")
+            (out / "health_report.json").write_text(json.dumps(health), encoding="utf-8")
+            (out / "source_audit.json").write_text(json.dumps(source_audit), encoding="utf-8")
+            (out / "trend_history.json").write_text(json.dumps(trend), encoding="utf-8")
+            health["source_cleanup"] = {"disable_count": 1, "downweight_count": 2, "prefer_count": 3, "observe_count": 4, "disable_suggestions": [{"name": "dead", "score": 0.0, "tested": 0, "pass_rate": None, "consecutive_dead": 2, "reason": "consecutive_dead >= 2"}], "downweight_suggestions": []}
+            (out / "health_report.json").write_text(json.dumps(health), encoding="utf-8")
+            report = build_daily_report(d)
+            self.assertIn("# AutoNodes Daily Report", report)
+            self.assertIn("Verified output", report)
+            self.assertIn("204:TimeoutError", report)
+            self.assertIn("TCP Precheck Errors", report)
+            self.assertIn("Worst Sources By Real-Test Pass Rate", report)
+            self.assertIn("Best Sources By Score", report)
+            self.assertIn("Sources Needing Attention", report)
+            self.assertIn("Cleanup disable/downweight", report)
+            self.assertIn("Source Cleanup Suggestions", report)
+            self.assertIn("dead", report)
+            self.assertIn("verified output dropped", report)
+
+    def test_health_report_includes_cleanup_suggestion_summary(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            n = Node("vless", "n", "1.2.3.4", 443, {"uuid": "u"})
+            write_outputs([n], d, prefix="verified", repo_path="o/r")
+            write_outputs([n], d, prefix="all", repo_path="o/r")
+            (out / "stats.json").write_text("{}", encoding="utf-8")
+            cleanup = {
+                "summary": {"disable": 1, "downweight": 1, "prefer": 2, "observe": 3},
+                "suggestions": {
+                    "disable": [{"name": "dead", "score": 0.0}],
+                    "downweight": [{"name": "bad", "score": 0.1}],
+                    "prefer": [],
+                    "observe": [],
+                },
+            }
+            (out / "source_cleanup_suggestions.json").write_text(json.dumps(cleanup), encoding="utf-8")
+            report = build_health_report(d, "verified")
+            self.assertEqual(report["source_cleanup"]["disable_count"], 1)
+            self.assertEqual(report["source_cleanup"]["downweight_count"], 1)
+            self.assertEqual(report["source_cleanup"]["prefer_count"], 2)
+            self.assertEqual(report["source_cleanup"]["observe_count"], 3)
+            self.assertEqual(report["source_cleanup"]["disable_suggestions"][0]["name"], "dead")
+            self.assertEqual(report["status"], "warning")
+            self.assertIn("source_cleanup_disable_suggestions", report["alerts"])
+
+    def test_health_report_includes_rankings(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            n = Node("vless", "n", "1.2.3.4", 443, {"uuid": "u"})
+            write_outputs([n], d, prefix="verified", repo_path="o/r")
+            write_outputs([n], d, prefix="all", repo_path="o/r")
+            stats = {
+                "protocol_pass_rate": {"vless": {"pass": 1, "fail": 1}},
+                "source_pass_rate": {"src": {"pass": 1, "fail": 3}},
+                "source_scores": {
+                    "src": {"score": 0.2, "recommendation": "downweight", "tested": 4, "pass_rate": 0.25, "parsed_nodes": 20},
+                    "dead": {"score": 0.0, "recommendation": "disable-candidate", "tested": 0, "pass_rate": None, "parsed_nodes": 0, "consecutive_dead": 2},
+                },
+            }
+            (out / "stats.json").write_text(json.dumps(stats), encoding="utf-8")
+            report = build_health_report(d, "verified")
+            self.assertIn("rankings", report)
+            self.assertEqual(report["rankings"]["source_worst"][0]["name"], "src")
+            self.assertEqual(report["rankings"]["source_score_worst"][0]["name"], "dead")
+            self.assertEqual(report["alerts"]["source_disable_candidates"][0]["name"], "dead")
+
+    def test_build_trend_alerts_detects_drop_and_downtrend(self):
+        runs = [
+            {"nodes_verified_output": 100, "nodes_real_ok": 100},
+            {"nodes_verified_output": 80, "nodes_real_ok": 90},
+            {"nodes_verified_output": 60, "nodes_real_ok": 80},
+            {"nodes_verified_output": 20, "nodes_real_ok": 20, "output_guard": {"verified": {"preserved": True}}},
+        ]
+        alerts = build_trend_alerts(runs)
+        types = {a["type"] for a in alerts}
+        self.assertIn("verified_drop_50pct", types)
+        self.assertIn("real_ok_drop_50pct", types)
+        self.assertIn("verified_downtrend_4_runs", types)
+        self.assertIn("output_guard_preserved", types)
+
+    def test_validate_config_accepts_current_config(self):
+        self.assertEqual(validate_sources("config/sources.yaml"), [])
+        self.assertEqual(validate_filter_rules("config/filter_rules.yaml"), [])
+
+    def test_doctor_report_runs_without_strict_requirements(self):
+        with tempfile.TemporaryDirectory() as d:
+            ok, report = build_doctor_report("config/sources.yaml", "config/filter_rules.yaml", "./missing-sing-box", d)
+            self.assertFalse(ok)
+            self.assertIn("AutoNodes Doctor", report)
+            self.assertIn("sing-box binary", report)
 
     def test_protocol_fixture_corpus_parse_and_generate(self):
         fixture_dir = Path(__file__).parent / "fixtures" / "protocols"

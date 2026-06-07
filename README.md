@@ -19,12 +19,12 @@
 | v2rayN / 通用订阅 | `output/verified.txt` / `output/verified.urls` | base64 或 URL 列表 |
 | Karing / sing-box | `output/verified.json` | sing-box JSON，已兼容新版 inbound 配置 |
 | 自己客户端再测速 | `output/all.txt` / `output/all.urls` / `output/all.yaml` | 全量去重候选池，数量多、质量未保证 |
-| 排障 / 看状态 | `output/health_report.json` / `output/stats.json` | 机器可读状态、报警、阶段耗时、错误明细 |
+| 排障 / 看状态 | `output/daily_report.md` / `output/source_scores.md` / `output/source_cleanup_suggestions.md` / `output/source_cleanup_suggestions.json` / `output/health_report.json` / `output/stats.json` | 人类可读日报、源质量评分、源清理建议、机器可读状态、报警、阶段耗时、错误明细 |
 
 当前 verified 数量不是固定 100：`--top-n` 是上限；如果真测通过不足 100，只输出实际通过数量。
 
+更多客户端导入说明见 [`docs/client-guide.md`](docs/client-guide.md)，订阅转换、测速工具和泄漏检测资源见 [`docs/resources.md`](docs/resources.md)。
 ---
-
 ## 📦 订阅地址
 
 ### GitHub Raw
@@ -116,6 +116,11 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 
 ### 可观测性
 
+- `daily_report.md` 包含面向人工阅读的每日摘要：源健康、节点数量、阶段耗时、协议通过率、主要错误和报警。
+- `source_scores.md` 单独汇总源质量评分、prefer/downweight/disable-candidate 建议清单，方便人工维护订阅源。
+- `source_cleanup_suggestions.md` 进一步给出只读清理建议：disable/downweight/prefer/observe；默认不修改 `config/sources.yaml`。
+- `source_cleanup_suggestions.json` 提供同一建议的机器可读 JSON，便于后续 PR bot 或人工审批流程使用。
+- `suggest_source_cleanup.py` 支持安全 apply：只有同时传 `--apply --confirm-disable` 才会原子写入 `config/sources.yaml`，默认仍只读；可用 `--only name1,name2` / `--exclude name3` 限定本次 patch/apply 的源名单。
 - `health_report.json` 包含：
   - `ok`: 结构是否可用
   - `status`: `ok` / `warning` / `critical`
@@ -220,11 +225,18 @@ python main.py --all-output-mode light
 
 ```bash
 python -m compileall -q main.py core tools tests
+python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml
+python tools/doctor.py
 python -m unittest -v tests.test_regressions
 python tools/health_report.py --output-dir output --verified-prefix verified --output output/health_report.json
-```
+python tools/daily_report.py --output-dir output --output output/daily_report.md
+python tools/source_scores_report.py --output-dir output --output output/source_scores.md
+python tools/suggest_source_cleanup.py --output-dir output --sources config/sources.yaml --output output/source_cleanup_suggestions.md --json-output output/source_cleanup_suggestions.json
 
-当前回归测试覆盖：fetch timeout、测试不污染 output、workflow 安全逻辑、health status、sing-box 兼容、TCP worker 队列、下采样策略、light 输出模式、artifact 准备脚本、协议 fixture corpus。
+# 本地二次筛选：更贴近你的网络环境
+python tools/local_filter.py --input output/global.urls --output-prefix local_verified --top-n 100
+```
+当前回归测试覆盖：fetch timeout、测试不污染 output、workflow 安全逻辑、health status、sing-box 兼容、TCP worker 队列、下采样策略、配置化质量过滤、local_filter 本地筛选入口、light 输出模式、artifact 准备脚本、协议 fixture corpus。
 
 ---
 
@@ -237,14 +249,24 @@ AutoMergePublicNodes-Optimized/
 │   ├── fetcher.py                  # 异步抓取、重试、CDN 回退
 │   ├── parser.py                   # 多协议解析
 │   ├── tester.py                   # sing-box 真实代理测试
+│   ├── filtering.py                # 质量预过滤规则与同源降噪
+│   ├── sampling.py                 # 真测下采样与历史权重排序
 │   ├── generator.py                # Clash / sing-box / V2Ray / converter 输出
+│   ├── stats.py                    # 源评分、历史权重、趋势报警统计
 │   └── geo.py                      # GeoIP 国旗映射与缓存
 ├── tools/
 │   ├── audit_sources.py            # 源健康审计
 │   ├── health_report.py            # 输出健康报告
+│   ├── daily_report.py             # Markdown 日报
+│   ├── source_scores_report.py     # 源质量评分报告
+│   ├── suggest_source_cleanup.py   # 源清理建议/patch 预览
+│   ├── validate_config.py          # 配置静态校验
+│   ├── doctor.py                   # 本地环境诊断
+│   ├── local_filter.py             # 本地二次筛选
 │   └── prepare_artifact_output.py  # artifact/data 分支输出准备
 ├── config/
-│   └── sources.yaml                # 订阅源配置
+│   ├── sources.yaml                # 订阅源配置
+│   └── filter_rules.yaml           # 质量过滤规则
 ├── tests/
 │   ├── test_regressions.py         # 回归测试
 │   └── fixtures/protocols/         # 协议 fixture corpus
