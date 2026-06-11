@@ -1,0 +1,20 @@
+# Node scoring configuration
+# The real proxy test decides whether a node is usable. These weights only rank usable nodes.
+
+weights:
+  latency: 35
+  jitter: 15
+  tcp: 10
+  protocol_history: 20
+  source_history: 20
+
+thresholds:
+  excellent_latency_ms: 120
+  bad_latency_ms: 1200
+  bad_jitter_ms: 400
+  excellent_tcp_latency_ms: 100
+  bad_tcp_latency_ms: 1000
+
+defaults:
+  missing_tcp_score: 0.5
+  missing_history_score: 0.5
