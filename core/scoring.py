@@ -133,14 +133,34 @@ def historical_rate_score(name: str, rates: Dict[str, float], default: float = 0
         return default
 
 
+def calculate_score_breakdown(data: ScoreInput, config: ScoringConfig | None = None) -> Dict[str, Dict[str, float]]:
+    """Return normalized factor scores and weighted contributions.
+
+    Each item contains:
+    - `score`: normalized 0..1 factor score
+    - `weight`: configured factor weight
+    - `points`: factor contribution to final score
+    """
+    cfg = config or ScoringConfig()
+    factors = {
+        "latency": latency_score(data.latency_ms, cfg),
+        "jitter": jitter_score(data.jitter_ms, cfg),
+        "tcp": tcp_score(data.tcp_latency_ms, cfg),
+        "protocol_history": historical_rate_score(data.protocol, data.protocol_rates, cfg.missing_history_score),
+        "source_history": historical_rate_score(data.source, data.source_rates, cfg.missing_history_score),
+    }
+    breakdown: Dict[str, Dict[str, float]] = {}
+    for key, factor_score in factors.items():
+        weight = cfg.weights.get(key, 0.0)
+        breakdown[key] = {
+            "score": round(factor_score, 4),
+            "weight": round(weight, 4),
+            "points": round(factor_score * weight, 2),
+        }
+    return breakdown
+
+
 def calculate_score(data: ScoreInput, config: ScoringConfig | None = None) -> float:
     """Return a 0..100 quality score for a node."""
-    cfg = config or ScoringConfig()
-    score = (
-        latency_score(data.latency_ms, cfg) * cfg.weights.get("latency", 0.0)
-        + jitter_score(data.jitter_ms, cfg) * cfg.weights.get("jitter", 0.0)
-        + tcp_score(data.tcp_latency_ms, cfg) * cfg.weights.get("tcp", 0.0)
-        + historical_rate_score(data.protocol, data.protocol_rates, cfg.missing_history_score) * cfg.weights.get("protocol_history", 0.0)
-        + historical_rate_score(data.source, data.source_rates, cfg.missing_history_score) * cfg.weights.get("source_history", 0.0)
-    )
-    return round(score, 2)
+    breakdown = calculate_score_breakdown(data, config)
+    return round(sum(item["points"] for item in breakdown.values()), 2)
