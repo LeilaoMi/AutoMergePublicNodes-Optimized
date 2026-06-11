@@ -75,6 +75,12 @@ def write_health_report(output_dir: str, stats: Dict[str, Any]) -> str:
         if isinstance(item, dict)
     ]
 
+    scoring = stats.get("scoring") or {}
+    weights = scoring.get("weights") if isinstance(scoring, dict) else {}
+    scoring_rows = []
+    if isinstance(weights, dict):
+        scoring_rows = [[key, value] for key, value in weights.items()]
+
     score_rows = [
         [
             item.get("score", "-"),
@@ -114,6 +120,10 @@ def write_health_report(output_dir: str, stats: Dict[str, Any]) -> str:
 ## 协议分布
 
 {_table(["协议", "数量"], protocol_rows)}
+
+## 评分权重
+
+{_table(["因子", "权重"], scoring_rows)}
 
 ## Top 节点评分
 
