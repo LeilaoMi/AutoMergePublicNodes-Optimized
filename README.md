@@ -214,3 +214,45 @@ MIT
 
 - [sing-box](https://github.com/SagerNet/sing-box)
 - 所有公开订阅源维护者与社区贡献者
+
+<!-- AUTONODES_STATS_START -->
+## 当前运行状态
+
+| 指标 | 数值 |
+| --- | --- |
+| 更新时间 | 2026-06-11 23:42:36 |
+| 版本 | 2.2.0 |
+| 订阅源 | 44/44 |
+| 原始节点 | 39955 |
+| 去重后 | 15027 |
+| TCP 可达 | 1500 |
+| 真实可用 | 301 |
+| 真测通过率 | 20.1% |
+| Verified 输出 | 300 |
+| Global 输出 | 300 |
+| All 输出 | 15027 |
+
+> 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
+
+### Top 节点评分
+
+| 评分 | 协议 | 延迟(ms) | 来源 |
+| --- | --- | --- | --- |
+| 57.93 | shadowsocks | 270.5 | Au1rxx-base64 |
+| 57.93 | shadowsocks | 270.6 | Au1rxx-base64 |
+| 57.89 | shadowsocks | 271.7 | Au1rxx-base64 |
+| 56.57 | shadowsocks | 312.6 | Au1rxx-base64 |
+| 55.9 | shadowsocks | 333.0 | Au1rxx-base64 |
+
+### Top 来源质量
+
+| 来源 | 评分 | 测试数 | 建议 |
+| --- | --- | --- | --- |
+| snakem982 | 0.958 | 43 | prefer |
+| Au1rxx-base64 | 0.524 | 71 | observe |
+| roosterkid-openproxylist-v2ray | 0.329 | 29 | observe |
+| Surfboard-tg-mixed | 0.298 | 741 | observe |
+| mheidari-all | 0.269 | 93 | observe |
+
+<!-- AUTONODES_STATS_END -->
+
