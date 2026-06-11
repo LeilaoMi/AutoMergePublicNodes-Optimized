@@ -483,11 +483,25 @@ async def run(args):
         "real_test_error_structured": real_test_error_structured,
         "top_latencies_ms": [round(lat, 1) for _, lat, _ in top if lat > 0][:20],
         "top_jitters_ms": [round(jit, 1) for _, _, jit in top if jit > 0][:20],
+        "top_scores": [
+            {
+                "tag": n.tag,
+                "server": n.server,
+                "type": n.type,
+                "source": source,
+                "latency_ms": round(lat, 1),
+                "jitter_ms": round(jit, 1),
+                "score": score,
+            }
+            for n, lat, jit, score, source in scored_valid[:20]
+        ],
     }
     os.makedirs(args.output_dir, exist_ok=True)
     with open(f"{args.output_dir}/stats.json", "w", encoding="utf-8") as f:
         json.dump(stats, f, ensure_ascii=False, indent=2)
     update_trend_history(args.output_dir, stats)
+    report_path = write_health_report(args.output_dir, stats)
+    print(f"      健康报告: {report_path}")
 
 
 def main():
