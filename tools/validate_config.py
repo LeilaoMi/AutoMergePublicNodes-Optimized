@@ -99,6 +99,98 @@ def _as_list(value: Any, label: str, errors: List[str]) -> List[Any]:
     return value
 
 
+def _as_number(value: Any, label: str, errors: List[str], *, min_value: float | None = None) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        _add(errors, f"{label} 必须是数字")
+        return None
+    if min_value is not None and number < min_value:
+        _add(errors, f"{label} 必须 >= {min_value:g}")
+    return number
+
+
+def validate_scoring_rules(path: str) -> List[str]:
+    errors: List[str] = []
+    p = Path(path)
+    if not p.exists():
+        return []
+    try:
+        data = _load_yaml(p) or {}
+    except Exception as exc:
+        return [f"scoring.yaml 解析失败：{exc}"]
+    if not isinstance(data, dict):
+        return ["scoring.yaml 必须是映射"]
+
+    allowed_top = {"weights", "thresholds", "defaults"}
+    for key in data:
+        if key not in allowed_top:
+            _add(errors, f"scoring.yaml 包含未知字段：{key}")
+
+    weights = data.get("weights", {})
+    if weights is None:
+        weights = {}
+    if not isinstance(weights, dict):
+        _add(errors, "scoring.weights 必须是映射")
+    else:
+        required_weights = {"latency", "jitter", "tcp", "protocol_history", "source_history"}
+        for key in weights:
+            if key not in required_weights:
+                _add(errors, f"scoring.weights 包含未知字段：{key}")
+        for key in required_weights:
+            if key in weights:
+                _as_number(weights[key], f"scoring.weights.{key}", errors, min_value=0)
+
+    thresholds = data.get("thresholds", {})
+    if thresholds is None:
+        thresholds = {}
+    if not isinstance(thresholds, dict):
+        _add(errors, "scoring.thresholds 必须是映射")
+    else:
+        allowed_thresholds = {
+            "excellent_latency_ms", "bad_latency_ms", "bad_jitter_ms",
+            "excellent_tcp_latency_ms", "bad_tcp_latency_ms",
+        }
+        for key in thresholds:
+            if key not in allowed_thresholds:
+                _add(errors, f"scoring.thresholds 包含未知字段：{key}")
+            else:
+                _as_number(thresholds[key], f"scoring.thresholds.{key}", errors, min_value=1)
+        excellent_latency = thresholds.get("excellent_latency_ms")
+        bad_latency = thresholds.get("bad_latency_ms")
+        if excellent_latency is not None and bad_latency is not None:
+            try:
+                if float(bad_latency) <= float(excellent_latency):
+                    _add(errors, "scoring.thresholds.bad_latency_ms 必须大于 excellent_latency_ms")
+            except (TypeError, ValueError):
+                pass
+        excellent_tcp = thresholds.get("excellent_tcp_latency_ms")
+        bad_tcp = thresholds.get("bad_tcp_latency_ms")
+        if excellent_tcp is not None and bad_tcp is not None:
+            try:
+                if float(bad_tcp) <= float(excellent_tcp):
+                    _add(errors, "scoring.thresholds.bad_tcp_latency_ms 必须大于 excellent_tcp_latency_ms")
+            except (TypeError, ValueError):
+                pass
+
+    defaults = data.get("defaults", {})
+    if defaults is None:
+        defaults = {}
+    if not isinstance(defaults, dict):
+        _add(errors, "scoring.defaults 必须是映射")
+    else:
+        allowed_defaults = {"missing_tcp_score", "missing_history_score"}
+        for key in defaults:
+            if key not in allowed_defaults:
+                _add(errors, f"scoring.defaults 包含未知字段：{key}")
+                continue
+            value = _as_number(defaults[key], f"scoring.defaults.{key}", errors, min_value=0)
+            if value is not None and value > 1:
+                _add(errors, f"scoring.defaults.{key} 必须 <= 1")
+
+    return errors
+
+
 def validate_filter_rules(path: str) -> List[str]:
     errors: List[str] = []
     p = Path(path)
@@ -144,9 +236,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sources", default="config/sources.yaml")
     parser.add_argument("--filter-rules", default="config/filter_rules.yaml")
+    parser.add_argument("--scoring-rules", default="config/scoring.yaml")
     args = parser.parse_args()
 
-    errors = validate_sources(args.sources) + validate_filter_rules(args.filter_rules)
+    errors = (
+        validate_sources(args.sources)
+        + validate_filter_rules(args.filter_rules)
+        + validate_scoring_rules(args.scoring_rules)
+    )
     if errors:
         print("配置校验失败：", file=sys.stderr)
         for err in errors:
