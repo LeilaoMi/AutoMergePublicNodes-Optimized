@@ -32,6 +32,8 @@ from core.parser import Node
 from core.filtering import load_filter_rules, quality_prefilter
 from core.sampling import protocol_priority, sample_for_real_test, sample_for_real_test_weighted
 from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history
+from core.scoring import ScoreInput, calculate_score
+from core.report import write_health_report
 
 
 def dedupe(nodes: List[Node]) -> List[Node]:
@@ -228,6 +230,7 @@ async def run(args):
 
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
+    scored_valid: List[tuple] = []  # [(node, latency_ms, jitter_ms, score, source)]
     results = []  # 保存全部测试结果（含失败），供统计使用
     cn_block_retry_results = []
     cn_block_retry_valid: List[tuple] = []
@@ -245,10 +248,28 @@ async def run(args):
         results = await tester.test_all(nodes)
         stage_durations["real_test"] = round(time.time() - stage_start, 1)
         stage_start = time.time()
-        valid = sorted(
-            [(r.node, r.latency_ms, r.jitter_ms) for r in results if r.success],
-            key=lambda x: x[1],
-        )
+        scored_valid = []
+        for r in results:
+            if not r.success:
+                continue
+
+            fp = r.node.fingerprint()
+            src_name = node_source_map.get(fp, "unknown")
+            score = calculate_score(
+                ScoreInput(
+                    latency_ms=r.latency_ms,
+                    jitter_ms=r.jitter_ms,
+                    tcp_latency_ms=tcp_latency.get(fp, 0),
+                    protocol=r.node.type,
+                    source=src_name,
+                    protocol_rates=protocol_rates,
+                    source_rates=source_rates,
+                )
+            )
+            scored_valid.append((r.node, r.latency_ms, r.jitter_ms, score, src_name))
+
+        scored_valid.sort(key=lambda x: (-x[3], x[1]))
+        valid = [(n, lat, jit) for n, lat, jit, _, _ in scored_valid]
         real_test_passed = bool(valid)
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
         if valid:
