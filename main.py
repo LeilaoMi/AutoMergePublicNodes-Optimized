@@ -140,7 +140,8 @@ async def run(args):
 
     # 1) 加载订阅源
     sources = load_sources(args.sources)
-    scoring_config = load_scoring_config(args.scoring_rules)
+    scoring_rules_path = getattr(args, "scoring_rules", "config/scoring.yaml")
+    scoring_config = load_scoring_config(scoring_rules_path)
     protocol_rates, source_rates = load_historical_pass_rates(args.output_dir)
     print(f"[1/6] 加载 {len(sources)} 个订阅源")
     if protocol_rates or source_rates:
