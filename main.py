@@ -32,7 +32,7 @@ from core.parser import Node
 from core.filtering import load_filter_rules, quality_prefilter
 from core.sampling import protocol_priority, sample_for_real_test, sample_for_real_test_weighted
 from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history
-from core.scoring import ScoreInput, calculate_score
+from core.scoring import ScoreInput, calculate_score, load_scoring_config
 from core.report import write_health_report
 from core.readme_updater import update_readme_stats
 
@@ -140,6 +140,7 @@ async def run(args):
 
     # 1) 加载订阅源
     sources = load_sources(args.sources)
+    scoring_config = load_scoring_config(args.scoring_rules)
     protocol_rates, source_rates = load_historical_pass_rates(args.output_dir)
     print(f"[1/6] 加载 {len(sources)} 个订阅源")
     if protocol_rates or source_rates:
@@ -265,7 +266,8 @@ async def run(args):
                     source=src_name,
                     protocol_rates=protocol_rates,
                     source_rates=source_rates,
-                )
+                ),
+                scoring_config,
             )
             scored_valid.append((r.node, r.latency_ms, r.jitter_ms, score, src_name))
 
@@ -484,6 +486,16 @@ async def run(args):
         "real_test_error_structured": real_test_error_structured,
         "top_latencies_ms": [round(lat, 1) for _, lat, _ in top if lat > 0][:20],
         "top_jitters_ms": [round(jit, 1) for _, _, jit in top if jit > 0][:20],
+        "scoring": {
+            "weights": scoring_config.weights,
+            "excellent_latency_ms": scoring_config.excellent_latency_ms,
+            "bad_latency_ms": scoring_config.bad_latency_ms,
+            "bad_jitter_ms": scoring_config.bad_jitter_ms,
+            "excellent_tcp_latency_ms": scoring_config.excellent_tcp_latency_ms,
+            "bad_tcp_latency_ms": scoring_config.bad_tcp_latency_ms,
+            "missing_tcp_score": scoring_config.missing_tcp_score,
+            "missing_history_score": scoring_config.missing_history_score,
+        },
         "top_scores": [
             {
                 "tag": n.tag,
@@ -532,6 +544,8 @@ def main():
                    help="启用质量预过滤（配置规则 + 同 server/type 降噪）")
     p.add_argument("--filter-rules", default="config/filter_rules.yaml",
                    help="质量过滤规则配置文件；不存在时使用保守默认规则")
+    p.add_argument("--scoring-rules", default="config/scoring.yaml",
+                   help="节点评分权重配置文件；不存在时使用内置默认权重")
     p.add_argument("--max-per-server", type=int, default=0,
                    help="§2.2 同 server IP 最多保留的节点数 (0=不限, 默认; 1/2=严格, 但可能误杀 AWS/Hetzner 上不同用户的节点)")
     p.add_argument("--min-latency", type=float, default=30.0,
