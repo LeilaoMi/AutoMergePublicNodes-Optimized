@@ -34,6 +34,7 @@ from core.sampling import protocol_priority, sample_for_real_test, sample_for_re
 from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history
 from core.scoring import ScoreInput, calculate_score
 from core.report import write_health_report
+from core.readme_updater import update_readme_stats
 
 
 def dedupe(nodes: List[Node]) -> List[Node]:
@@ -502,6 +503,8 @@ async def run(args):
     update_trend_history(args.output_dir, stats)
     report_path = write_health_report(args.output_dir, stats)
     print(f"      健康报告: {report_path}")
+    if update_readme_stats("README.md", stats):
+        print("      README 状态区已更新")
 
 
 def main():
