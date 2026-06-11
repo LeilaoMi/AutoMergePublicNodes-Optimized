@@ -131,7 +131,7 @@ jobs:
           # 显式 fetch 一次确保 origin/$BRANCH 是最新的, 避免 stale shallow ref
           git fetch --unshallow origin "$BRANCH" 2>/dev/null || git fetch origin "$BRANCH"
           git rm -f output/top.* 2>/dev/null || true
-          git add output/ 2>/dev/null || true
+          git add output/ README.md 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "no changes"
           else
@@ -161,6 +161,7 @@ jobs:
             output/stats.json
             output/source_audit.json
             output/health_report.json
+            output/health_report.md
             output/daily_report.md
             output/source_scores.md
             output/source_cleanup_suggestions.md
@@ -174,7 +175,7 @@ jobs:
           REPO="${{ github.repository }}"
           BRANCH="${{ github.event.repository.default_branch }}"
           failed=0
-          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json daily_report.md source_scores.md source_cleanup_suggestions.md source_cleanup_suggestions.json trend_history.json geo_cache.json; do
+          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json health_report.md daily_report.md source_scores.md source_cleanup_suggestions.md source_cleanup_suggestions.json trend_history.json geo_cache.json; do
             code=$(curl -s -o /tmp/jsdelivr-purge.json -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@${BRANCH}/output/${f}" || true)
             if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then
               echo "::warning::jsDelivr purge failed for output/${f} HTTP ${code}"
