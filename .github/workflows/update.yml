@@ -93,7 +93,7 @@ jobs:
       - name: Validate code
         run: |
           python -m compileall -q main.py core tools tests
-          python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml
+          python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules config/scoring.yaml
           python -m unittest -v tests.test_regressions
 
       - name: Run pipeline
