@@ -24,7 +24,7 @@ from typing import Dict, List, Tuple, Any
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-__version__ = "2.1.0"  # §4.5 — 加版本号, 写进 stats.json / health_report
+__version__ = "2.2.0"  # weighted scoring + health_report
 
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
