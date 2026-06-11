@@ -23,9 +23,10 @@ from tools.health_report import build_health_report
 from tools.daily_report import build_daily_report
 from tools.source_scores_report import build_source_scores_report
 from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanup_payload, build_cleanup_report, build_cleanup_suggestions, build_disable_patch_preview, filter_names
-from tools.validate_config import validate_filter_rules, validate_sources
+from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_sources
 from tools.doctor import build_doctor_report
 from core.stats import build_source_scores, build_trend_alerts, load_historical_pass_rates, update_trend_history
+from core.scoring import ScoreInput, calculate_score, load_scoring_config
 from core.tester import SingBoxTester, build_error_detail
 import main as m
 
@@ -771,6 +772,54 @@ class RegressionTests(unittest.TestCase):
     def test_validate_config_accepts_current_config(self):
         self.assertEqual(validate_sources("config/sources.yaml"), [])
         self.assertEqual(validate_filter_rules("config/filter_rules.yaml"), [])
+        self.assertEqual(validate_scoring_rules("config/scoring.yaml"), [])
+
+    def test_scoring_config_loads_yaml_and_changes_score(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "scoring.yaml"
+            path.write_text(
+                """
+weights:
+  latency: 100
+  jitter: 0
+  tcp: 0
+  protocol_history: 0
+  source_history: 0
+thresholds:
+  excellent_latency_ms: 100
+  bad_latency_ms: 1100
+defaults:
+  missing_tcp_score: 0.5
+  missing_history_score: 0.5
+""",
+                encoding="utf-8",
+            )
+            cfg = load_scoring_config(str(path))
+        fast = calculate_score(ScoreInput(50, 0, 0, "vless", "src", {}, {}), cfg)
+        slow = calculate_score(ScoreInput(1000, 0, 0, "vless", "src", {}, {}), cfg)
+        self.assertGreater(fast, slow)
+        self.assertEqual(cfg.weights["latency"], 100.0)
+
+    def test_validate_scoring_rules_rejects_invalid_ranges(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "bad_scoring.yaml"
+            path.write_text(
+                """
+weights:
+  latency: -1
+thresholds:
+  excellent_latency_ms: 1000
+  bad_latency_ms: 100
+defaults:
+  missing_tcp_score: 2
+""",
+                encoding="utf-8",
+            )
+            errors = validate_scoring_rules(str(path))
+        joined = "\n".join(errors)
+        self.assertIn("scoring.weights.latency", joined)
+        self.assertIn("bad_latency_ms", joined)
+        self.assertIn("missing_tcp_score", joined)
 
     def test_doctor_report_runs_without_strict_requirements(self):
         with tempfile.TemporaryDirectory() as d:
