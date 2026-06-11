@@ -123,6 +123,20 @@ jobs:
           python tools/health_report.py --output-dir output --verified-prefix verified --output output/health_report.json
           python tools/daily_report.py --output-dir output --output output/daily_report.md
 
+      - name: Write job summary
+        if: always()
+        run: |
+          if [ -f output/stats.json ]; then
+            python tools/actions_summary.py \
+              --stats output/stats.json \
+              --repo "${{ github.repository }}" \
+              --branch "${{ github.event.repository.default_branch }}"
+          else
+            echo "# AutoNodes Run Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "stats.json was not generated. Check previous steps." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Commit & push
         run: |
           git config user.email "actions@github.com"
