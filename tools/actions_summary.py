@@ -71,6 +71,12 @@ def build_summary(stats: Dict[str, Any], repo: str = "", branch: str = "main") -
 
     stage_rows = [[k, v] for k, v in (stats.get("stage_durations") or {}).items()]
 
+    scoring = stats.get("scoring") or {}
+    weights = scoring.get("weights") if isinstance(scoring, dict) else {}
+    weight_rows = []
+    if isinstance(weights, dict):
+        weight_rows = [[key, value] for key, value in weights.items()]
+
     score_rows = [
         [
             item.get("score", "-"),
@@ -126,6 +132,10 @@ def build_summary(stats: Dict[str, Any], repo: str = "", branch: str = "main") -
 ## Stage Durations
 
 {table(["Stage", "Seconds"], stage_rows)}
+
+## Scoring Weights
+
+{table(["Factor", "Weight"], weight_rows)}
 
 ## Top Node Scores
 
