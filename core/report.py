@@ -81,18 +81,29 @@ def write_health_report(output_dir: str, stats: Dict[str, Any]) -> str:
     if isinstance(weights, dict):
         scoring_rows = [[key, value] for key, value in weights.items()]
 
-    score_rows = [
-        [
+    score_rows = []
+    for item in (stats.get("top_scores") or [])[:20]:
+        if not isinstance(item, dict):
+            continue
+        breakdown = item.get("score_breakdown") or {}
+
+        def _points(name: str) -> object:
+            value = breakdown.get(name) if isinstance(breakdown, dict) else None
+            return value.get("points", "-") if isinstance(value, dict) else "-"
+
+        score_rows.append([
             item.get("score", "-"),
             item.get("type", "-"),
             item.get("latency_ms", "-"),
             item.get("jitter_ms", "-"),
+            _points("latency"),
+            _points("jitter"),
+            _points("tcp"),
+            _points("protocol_history"),
+            _points("source_history"),
             item.get("source", "-"),
             item.get("server", "-"),
-        ]
-        for item in (stats.get("top_scores") or [])[:20]
-        if isinstance(item, dict)
-    ]
+        ])
 
     guard_rows = []
     output_guard = stats.get("output_guard") or {}
@@ -127,7 +138,7 @@ def write_health_report(output_dir: str, stats: Dict[str, Any]) -> str:
 
 ## Top 节点评分
 
-{_table(["评分", "协议", "延迟(ms)", "抖动(ms)", "来源", "服务器"], score_rows)}
+{_table(["评分", "协议", "延迟(ms)", "抖动(ms)", "延迟分", "抖动分", "TCP分", "协议历史分", "来源历史分", "来源", "服务器"], score_rows)}
 
 ## 来源质量排行
 
