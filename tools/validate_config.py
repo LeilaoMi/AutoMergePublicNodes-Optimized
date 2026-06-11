@@ -191,6 +191,39 @@ def validate_scoring_rules(path: str) -> List[str]:
     return errors
 
 
+def validate_scoring_warnings(path: str) -> List[str]:
+    warnings: List[str] = []
+    p = Path(path)
+    if not p.exists():
+        return []
+    try:
+        data = _load_yaml(p) or {}
+    except Exception:
+        return []
+    if not isinstance(data, dict):
+        return []
+
+    weights = data.get("weights", {})
+    if weights is None or not isinstance(weights, dict):
+        return []
+
+    required_weights = {"latency", "jitter", "tcp", "protocol_history", "source_history"}
+    total = 0.0
+    usable = False
+    for key in required_weights:
+        if key not in weights:
+            continue
+        try:
+            total += float(weights[key])
+            usable = True
+        except (TypeError, ValueError):
+            return []
+
+    if usable and abs(total - 100.0) > 1e-6:
+        warnings.append(f"scoring.weights 当前总和为 {total:g}，建议保持 100，便于分数解释和横向对比")
+    return warnings
+
+
 def validate_filter_rules(path: str) -> List[str]:
     errors: List[str] = []
     p = Path(path)
@@ -244,6 +277,10 @@ def main() -> None:
         + validate_filter_rules(args.filter_rules)
         + validate_scoring_rules(args.scoring_rules)
     )
+    warnings = validate_scoring_warnings(args.scoring_rules)
+    for warning in warnings:
+        print(f"配置警告：{warning}", file=sys.stderr)
+
     if errors:
         print("配置校验失败：", file=sys.stderr)
         for err in errors:
