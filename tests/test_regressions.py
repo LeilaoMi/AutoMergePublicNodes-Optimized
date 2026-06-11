@@ -23,7 +23,7 @@ from tools.health_report import build_health_report
 from tools.daily_report import build_daily_report
 from tools.source_scores_report import build_source_scores_report
 from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanup_payload, build_cleanup_report, build_cleanup_suggestions, build_disable_patch_preview, filter_names
-from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_sources
+from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_scoring_warnings, validate_sources
 from tools.doctor import build_doctor_report
 from core.stats import build_source_scores, build_trend_alerts, load_historical_pass_rates, update_trend_history
 from core.scoring import ScoreInput, calculate_score, load_scoring_config
@@ -820,6 +820,26 @@ defaults:
         self.assertIn("scoring.weights.latency", joined)
         self.assertIn("bad_latency_ms", joined)
         self.assertIn("missing_tcp_score", joined)
+
+    def test_validate_scoring_warnings_flags_non_100_weight_sum(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "scoring.yaml"
+            path.write_text(
+                """
+weights:
+  latency: 10
+  jitter: 10
+  tcp: 10
+  protocol_history: 10
+  source_history: 10
+""",
+                encoding="utf-8",
+            )
+            errors = validate_scoring_rules(str(path))
+            warnings = validate_scoring_warnings(str(path))
+        self.assertEqual(errors, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("总和为 50", warnings[0])
 
     def test_doctor_report_runs_without_strict_requirements(self):
         with tempfile.TemporaryDirectory() as d:
