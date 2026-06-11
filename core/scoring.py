@@ -5,8 +5,29 @@ nodes by combining current test metrics with historical protocol/source quality.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict
+
+import yaml
+
+
+@dataclass(frozen=True)
+class ScoringConfig:
+    weights: Dict[str, float] = field(default_factory=lambda: {
+        "latency": 35.0,
+        "jitter": 15.0,
+        "tcp": 10.0,
+        "protocol_history": 20.0,
+        "source_history": 20.0,
+    })
+    excellent_latency_ms: float = 120.0
+    bad_latency_ms: float = 1200.0
+    bad_jitter_ms: float = 400.0
+    excellent_tcp_latency_ms: float = 100.0
+    bad_tcp_latency_ms: float = 1000.0
+    missing_tcp_score: float = 0.5
+    missing_history_score: float = 0.5
 
 
 @dataclass(frozen=True)
@@ -24,32 +45,83 @@ def clamp(value: float, min_value: float = 0.0, max_value: float = 1.0) -> float
     return max(min_value, min(value, max_value))
 
 
-def latency_score(latency_ms: float) -> float:
+def _float_value(value: Any, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def load_scoring_config(path: str = "config/scoring.yaml") -> ScoringConfig:
+    config_path = Path(path)
+    default = ScoringConfig()
+    if not config_path.exists():
+        return default
+
+    try:
+        data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return default
+    if not isinstance(data, dict):
+        return default
+
+    weights_raw = data.get("weights") or {}
+    if not isinstance(weights_raw, dict):
+        weights_raw = {}
+    weights = dict(default.weights)
+    for key in weights:
+        weights[key] = max(0.0, _float_value(weights_raw.get(key), weights[key]))
+
+    thresholds = data.get("thresholds") or {}
+    if not isinstance(thresholds, dict):
+        thresholds = {}
+    defaults = data.get("defaults") or {}
+    if not isinstance(defaults, dict):
+        defaults = {}
+
+    return ScoringConfig(
+        weights=weights,
+        excellent_latency_ms=max(1.0, _float_value(thresholds.get("excellent_latency_ms"), default.excellent_latency_ms)),
+        bad_latency_ms=max(1.0, _float_value(thresholds.get("bad_latency_ms"), default.bad_latency_ms)),
+        bad_jitter_ms=max(1.0, _float_value(thresholds.get("bad_jitter_ms"), default.bad_jitter_ms)),
+        excellent_tcp_latency_ms=max(1.0, _float_value(thresholds.get("excellent_tcp_latency_ms"), default.excellent_tcp_latency_ms)),
+        bad_tcp_latency_ms=max(1.0, _float_value(thresholds.get("bad_tcp_latency_ms"), default.bad_tcp_latency_ms)),
+        missing_tcp_score=clamp(_float_value(defaults.get("missing_tcp_score"), default.missing_tcp_score)),
+        missing_history_score=clamp(_float_value(defaults.get("missing_history_score"), default.missing_history_score)),
+    )
+
+
+def latency_score(latency_ms: float, cfg: ScoringConfig | None = None) -> float:
+    cfg = cfg or ScoringConfig()
     if latency_ms <= 0:
         return 0.0
-    if latency_ms <= 120:
+    if latency_ms <= cfg.excellent_latency_ms:
         return 1.0
-    if latency_ms >= 1200:
+    if latency_ms >= cfg.bad_latency_ms:
         return 0.0
-    return clamp(1 - (latency_ms - 120) / 1080)
+    span = max(cfg.bad_latency_ms - cfg.excellent_latency_ms, 1.0)
+    return clamp(1 - (latency_ms - cfg.excellent_latency_ms) / span)
 
 
-def jitter_score(jitter_ms: float) -> float:
+def jitter_score(jitter_ms: float, cfg: ScoringConfig | None = None) -> float:
+    cfg = cfg or ScoringConfig()
     if jitter_ms <= 0:
         return 1.0
-    if jitter_ms >= 400:
+    if jitter_ms >= cfg.bad_jitter_ms:
         return 0.0
-    return clamp(1 - jitter_ms / 400)
+    return clamp(1 - jitter_ms / cfg.bad_jitter_ms)
 
 
-def tcp_score(tcp_latency_ms: float) -> float:
+def tcp_score(tcp_latency_ms: float, cfg: ScoringConfig | None = None) -> float:
+    cfg = cfg or ScoringConfig()
     if tcp_latency_ms <= 0:
-        return 0.5
-    if tcp_latency_ms <= 100:
+        return cfg.missing_tcp_score
+    if tcp_latency_ms <= cfg.excellent_tcp_latency_ms:
         return 1.0
-    if tcp_latency_ms >= 1000:
+    if tcp_latency_ms >= cfg.bad_tcp_latency_ms:
         return 0.0
-    return clamp(1 - (tcp_latency_ms - 100) / 900)
+    span = max(cfg.bad_tcp_latency_ms - cfg.excellent_tcp_latency_ms, 1.0)
+    return clamp(1 - (tcp_latency_ms - cfg.excellent_tcp_latency_ms) / span)
 
 
 def historical_rate_score(name: str, rates: Dict[str, float], default: float = 0.5) -> float:
@@ -61,21 +133,14 @@ def historical_rate_score(name: str, rates: Dict[str, float], default: float = 0
         return default
 
 
-def calculate_score(data: ScoreInput) -> float:
-    """Return a 0..100 quality score for a node.
-
-    Weights:
-    - real-test latency: 35
-    - real-test jitter: 15
-    - TCP latency: 10
-    - historical protocol quality: 20
-    - historical source quality: 20
-    """
+def calculate_score(data: ScoreInput, config: ScoringConfig | None = None) -> float:
+    """Return a 0..100 quality score for a node."""
+    cfg = config or ScoringConfig()
     score = (
-        latency_score(data.latency_ms) * 35
-        + jitter_score(data.jitter_ms) * 15
-        + tcp_score(data.tcp_latency_ms) * 10
-        + historical_rate_score(data.protocol, data.protocol_rates) * 20
-        + historical_rate_score(data.source, data.source_rates) * 20
+        latency_score(data.latency_ms, cfg) * cfg.weights.get("latency", 0.0)
+        + jitter_score(data.jitter_ms, cfg) * cfg.weights.get("jitter", 0.0)
+        + tcp_score(data.tcp_latency_ms, cfg) * cfg.weights.get("tcp", 0.0)
+        + historical_rate_score(data.protocol, data.protocol_rates, cfg.missing_history_score) * cfg.weights.get("protocol_history", 0.0)
+        + historical_rate_score(data.source, data.source_rates, cfg.missing_history_score) * cfg.weights.get("source_history", 0.0)
     )
     return round(score, 2)
