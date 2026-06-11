@@ -19,7 +19,7 @@
 | Karing / sing-box | `output/verified.json` | sing-box JSON 配置 |
 | 兼顾数量 | `output/global.yaml` / `output/global.txt` / `output/global.json` | 海外测试通过，但国内站点连通不一定稳定 |
 | 自行测速 | `output/all.urls` / `output/all.txt` / `output/all.yaml` | 全量去重候选池，不保证可用 |
-| 查看状态 | `output/daily_report.md` / `output/health_report.json` / `output/source_scores.md` / `output/source_cleanup_suggestions.md` | 日报、健康报告、源评分、清理建议 |
+| 查看状态 | `output/daily_report.md` / `output/health_report.md` / `output/health_report.json` / `output/source_scores.md` / `output/source_cleanup_suggestions.md` | 日报、健康报告、源评分、清理建议 |
 
 `verified.*` 数量不是固定值。`--top-n` 只是上限，实际数量取决于本轮真测结果。
 
@@ -69,11 +69,27 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
   → TCP 预筛选
   → 历史权重下采样
   → sing-box 真实代理测试
-  → 按延迟排序输出
+  → 综合评分排序输出
   → 生成健康报告、日报、源评分与清理建议
 ```
 
 真实测试包含：海外 204 检测、出口地理检测、中国站点连通检测、小文件下载测速、可疑低延迟过滤。
+
+---
+
+## 评分策略
+
+节点排序不再只看单次延迟，而是使用 `config/scoring.yaml` 的综合评分。默认权重：
+
+| 因子 | 默认权重 | 说明 |
+|---|---:|---|
+| `latency` | 35 | sing-box 真实代理测试延迟，越低越好 |
+| `jitter` | 15 | 多目标测试抖动，越低越稳定 |
+| `tcp` | 10 | TCP 预筛选延迟，用作基础可达性参考 |
+| `protocol_history` | 20 | 协议历史通过率，降低长期低质协议权重 |
+| `source_history` | 20 | 订阅源历史通过率，优先稳定来源 |
+
+配置校验会检查字段、阈值和默认值范围。权重总和不等于 100 时只给 warning，不阻断 CI；建议保持 100，便于分数解释和跨轮对比。
 
 ---
 
@@ -85,6 +101,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 | `global.txt/yaml/json/urls` | 海外可用的扩展节点 |
 | `all.txt/yaml/json/urls` | 全量去重候选节点 |
 | `stats.json` | 数量、耗时、协议通过率、错误明细、缩水守门结果 |
+| `health_report.md` | 当前流水线健康报告，包含评分、来源质量、失败原因与输出保护 |
 | `health_report.json` | 输出完整性、重复项、报警、源清理摘要 |
 | `daily_report.md` | 面向人工阅读的每日摘要 |
 | `source_scores.md` | 订阅源质量评分 |
@@ -138,7 +155,7 @@ python main.py --top-n 100 --test-limit 500
 
 ```bash
 python -m compileall -q main.py core tools tests
-python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml
+python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules config/scoring.yaml
 python tools/doctor.py
 python -m unittest -v tests.test_regressions
 python tools/health_report.py --output-dir output --verified-prefix verified --output output/health_report.json
@@ -163,7 +180,7 @@ python tools/local_filter.py --input output/global.urls --output-prefix local_ve
 - `test_limit`：进入真测的节点上限，默认 1500，最大 3000。
 - `min_retain_ratio`：缩水守门比例，默认 0 表示关闭。
 
-CI 会自动生成并上传调试产物：`stats.json`、`health_report.json`、`daily_report.md`、`source_scores.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
+CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`health_report.json`、`daily_report.md`、`source_scores.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
 
 ---
 
@@ -179,6 +196,9 @@ AutoMergePublicNodes-Optimized/
 │   ├── filtering.py                # 质量预过滤与同源降噪
 │   ├── sampling.py                 # 真测下采样与历史权重排序
 │   ├── generator.py                # 多格式订阅输出
+│   ├── scoring.py                  # 综合节点评分
+│   ├── report.py                   # Markdown 健康报告
+│   ├── readme_updater.py           # README 状态区更新
 │   ├── stats.py                    # 源评分、趋势与报警统计
 │   └── geo.py                      # GeoIP 标记与缓存
 ├── tools/
