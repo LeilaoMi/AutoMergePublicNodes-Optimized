@@ -824,6 +824,8 @@ class RegressionTests(unittest.TestCase):
         }
         summary = build_summary(stats, repo="owner/repo", branch="main")
         self.assertIn("scoring_profiles.md", summary)
+        self.assertIn("release notes", summary)
+        self.assertIn("docs/releases/README.md", summary)
         self.assertIn("Latency pts", summary)
         self.assertIn("Protocol hist pts", summary)
         self.assertIn("Source hist pts", summary)
