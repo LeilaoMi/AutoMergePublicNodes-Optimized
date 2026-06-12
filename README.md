@@ -19,7 +19,7 @@
 | Karing / sing-box | `output/verified.json` | sing-box JSON 配置 |
 | 兼顾数量 | `output/global.yaml` / `output/global.txt` / `output/global.json` | 海外测试通过，但国内站点连通不一定稳定 |
 | 自行测速 | `output/all.urls` / `output/all.txt` / `output/all.yaml` | 全量去重候选池，不保证可用 |
-| 查看状态 | `output/daily_report.md` / `output/health_report.md` / `output/health_report.json` / `output/source_scores.md` / `output/source_cleanup_suggestions.md` | 日报、健康报告、源评分、清理建议 |
+| 查看状态 | `output/daily_report.md` / `output/health_report.md` / `output/health_report.json` / `output/source_scores.md` / `output/scoring_profiles.md` / `output/source_cleanup_suggestions.md` | 日报、健康报告、评分模板、源评分、清理建议 |
 
 `verified.*` 数量不是固定值。`--top-n` 只是上限，实际数量取决于本轮真测结果。
 
@@ -122,6 +122,7 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 | `health_report.json` | 输出完整性、重复项、报警、源清理摘要 |
 | `daily_report.md` | 面向人工阅读的每日摘要 |
 | `source_scores.md` | 订阅源质量评分 |
+| `scoring_profiles.md` | 评分模板权重、阈值和默认值对比 |
 | `source_cleanup_suggestions.md/json` | 订阅源清理建议 |
 | `trend_history.json` | 最近 30 轮核心趋势 |
 
@@ -178,6 +179,7 @@ python -m unittest -v tests.test_regressions
 python tools/health_report.py --output-dir output --verified-prefix verified --output output/health_report.json
 python tools/daily_report.py --output-dir output --output output/daily_report.md
 python tools/source_scores_report.py --output-dir output --output output/source_scores.md
+python tools/scoring_profiles_report.py --profiles 'config/scoring*.yaml' --output output/scoring_profiles.md
 python tools/suggest_source_cleanup.py --output-dir output --sources config/sources.yaml --output output/source_cleanup_suggestions.md --json-output output/source_cleanup_suggestions.json
 ```
 
@@ -197,7 +199,7 @@ python tools/local_filter.py --input output/global.urls --output-prefix local_ve
 - `test_limit`：进入真测的节点上限，默认 1500，最大 3000。
 - `min_retain_ratio`：缩水守门比例，默认 0 表示关闭。
 
-CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`health_report.json`、`daily_report.md`、`source_scores.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
+CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`health_report.json`、`daily_report.md`、`source_scores.md`、`scoring_profiles.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
 
 ---
 
@@ -223,6 +225,7 @@ AutoMergePublicNodes-Optimized/
 │   ├── health_report.py            # 输出健康报告
 │   ├── daily_report.py             # Markdown 日报
 │   ├── source_scores_report.py     # 源质量评分报告
+│   ├── scoring_profiles_report.py  # 评分模板对比报告
 │   ├── suggest_source_cleanup.py   # 源清理建议与安全应用
 │   ├── validate_config.py          # 配置静态校验
 │   ├── doctor.py                   # 本地环境诊断
