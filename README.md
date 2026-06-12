@@ -263,14 +263,14 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-12 00:17:33 |
-| 版本 | 2.2.0 |
+| 更新时间 | 2026-06-12 00:22:08 |
+| 版本 | 2.3.0 |
 | 订阅源 | 44/44 |
 | 原始节点 | 39955 |
 | 去重后 | 15022 |
 | TCP 可达 | 1500 |
-| 真实可用 | 390 |
-| 真测通过率 | 26.0% |
+| 真实可用 | 410 |
+| 真测通过率 | 27.3% |
 | Verified 输出 | 300 |
 | Global 输出 | 300 |
 | All 输出 | 15022 |
@@ -281,21 +281,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 59.22 | shadowsocks | 270.3 | Au1rxx-base64 |
-| 59.1 | shadowsocks | 274.1 | Au1rxx-base64 |
-| 58.81 | shadowsocks | 282.9 | Au1rxx-base64 |
-| 57.49 | shadowsocks | 526.5 | Au1rxx-base64 |
-| 57.42 | shadowsocks | 325.7 | Au1rxx-base64 |
+| 61.2 | shadowsocks | 218.1 | Au1rxx-base64 |
+| 61.11 | shadowsocks | 220.9 | Au1rxx-base64 |
+| 60.67 | shadowsocks | 453.9 | Au1rxx-base64 |
+| 60.19 | shadowsocks | 458.3 | Au1rxx-base64 |
+| 59.94 | shadowsocks | 461.0 | Au1rxx-base64 |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
 | snakem982 | 0.958 | 43 | prefer |
-| Au1rxx-base64 | 0.634 | 71 | observe |
-| Surfboard-tg-mixed | 0.405 | 691 | observe |
-| mheidari-all | 0.364 | 93 | observe |
-| Epodonios-all | 0.287 | 2 | observe |
+| Au1rxx-base64 | 0.623 | 69 | observe |
+| Surfboard-tg-mixed | 0.405 | 719 | observe |
+| mheidari-all | 0.358 | 95 | observe |
+| roosterkid-openproxylist-v2ray | 0.306 | 28 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
