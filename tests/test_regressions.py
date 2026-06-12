@@ -22,6 +22,7 @@ from tools.audit_sources import load_previous_audit
 from tools.health_report import build_health_report
 from tools.daily_report import build_daily_report
 from tools.source_scores_report import build_source_scores_report
+from tools.scoring_profiles_report import build_scoring_profiles_report
 from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanup_payload, build_cleanup_report, build_cleanup_suggestions, build_disable_patch_preview, filter_names
 from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_scoring_warnings, validate_sources
 from tools.doctor import build_doctor_report
@@ -781,6 +782,24 @@ class RegressionTests(unittest.TestCase):
         for path in paths:
             with self.subTest(path=str(path)):
                 self.assertEqual(validate_scoring_rules(str(path)), [])
+
+    def test_scoring_profiles_report_includes_all_profiles_and_totals(self):
+        report = build_scoring_profiles_report(["config/scoring*.yaml"])
+        self.assertIn("# Scoring Profiles Report", report)
+        self.assertIn("scoring.yaml", report)
+        self.assertIn("scoring.low_latency.yaml", report)
+        self.assertIn("scoring.stability.yaml", report)
+        self.assertIn("scoring.source_quality.yaml", report)
+        self.assertIn("| Profile | latency | jitter | tcp | protocol_history | source_history | total |", report)
+        for name in (
+            "scoring.yaml",
+            "scoring.low_latency.yaml",
+            "scoring.stability.yaml",
+            "scoring.source_quality.yaml",
+        ):
+            lines = [line for line in report.splitlines() if line.startswith(f"| {name} |")]
+            self.assertTrue(lines, name)
+            self.assertTrue(lines[0].endswith("| 100 |"), lines[0])
 
     def test_scoring_config_loads_yaml_and_changes_score(self):
         with tempfile.TemporaryDirectory() as d:
