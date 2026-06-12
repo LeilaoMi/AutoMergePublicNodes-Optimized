@@ -125,14 +125,16 @@ def build_summary(stats: Dict[str, Any], repo: str = "", branch: str = "main") -
 
     links = ""
     if repo:
-        base = f"https://cdn.jsdelivr.net/gh/{repo}@{branch}/output"
+        output_base = f"https://cdn.jsdelivr.net/gh/{repo}@{branch}/output"
+        repo_base = f"https://github.com/{repo}/blob/{branch}"
         links = (
-            f"- [verified.txt]({base}/verified.txt)\n"
-            f"- [verified.yaml]({base}/verified.yaml)\n"
-            f"- [verified.json]({base}/verified.json)\n"
-            f"- [health_report.md]({base}/health_report.md)\n"
-            f"- [scoring_profiles.md]({base}/scoring_profiles.md)\n"
-            f"- [stats.json]({base}/stats.json)\n"
+            f"- [verified.txt]({output_base}/verified.txt)\n"
+            f"- [verified.yaml]({output_base}/verified.yaml)\n"
+            f"- [verified.json]({output_base}/verified.json)\n"
+            f"- [health_report.md]({output_base}/health_report.md)\n"
+            f"- [scoring_profiles.md]({output_base}/scoring_profiles.md)\n"
+            f"- [stats.json]({output_base}/stats.json)\n"
+            f"- [release notes]({repo_base}/docs/releases/README.md)\n"
         )
 
     return f"""# AutoNodes Run Summary
