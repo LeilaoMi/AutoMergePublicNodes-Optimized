@@ -119,6 +119,7 @@ jobs:
       - name: Build health report
         run: |
           python tools/source_scores_report.py --output-dir output --output output/source_scores.md
+          python tools/scoring_profiles_report.py --profiles 'config/scoring*.yaml' --output output/scoring_profiles.md
           python tools/suggest_source_cleanup.py --output-dir output --sources config/sources.yaml --output output/source_cleanup_suggestions.md --json-output output/source_cleanup_suggestions.json
           python tools/health_report.py --output-dir output --verified-prefix verified --output output/health_report.json
           python tools/daily_report.py --output-dir output --output output/daily_report.md
@@ -178,6 +179,7 @@ jobs:
             output/health_report.md
             output/daily_report.md
             output/source_scores.md
+            output/scoring_profiles.md
             output/source_cleanup_suggestions.md
             output/source_cleanup_suggestions.json
             output/trend_history.json
@@ -189,7 +191,7 @@ jobs:
           REPO="${{ github.repository }}"
           BRANCH="${{ github.event.repository.default_branch }}"
           failed=0
-          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json health_report.md daily_report.md source_scores.md source_cleanup_suggestions.md source_cleanup_suggestions.json trend_history.json geo_cache.json; do
+          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json health_report.md daily_report.md source_scores.md scoring_profiles.md source_cleanup_suggestions.md source_cleanup_suggestions.json trend_history.json geo_cache.json; do
             code=$(curl -s -o /tmp/jsdelivr-purge.json -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@${BRANCH}/output/${f}" || true)
             if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then
               echo "::warning::jsDelivr purge failed for output/${f} HTTP ${code}"
