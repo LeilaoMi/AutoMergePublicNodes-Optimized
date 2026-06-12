@@ -260,14 +260,14 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-12 00:07:33 |
+| 更新时间 | 2026-06-12 00:12:18 |
 | 版本 | 2.2.0 |
 | 订阅源 | 44/44 |
 | 原始节点 | 39955 |
 | 去重后 | 15028 |
 | TCP 可达 | 1500 |
-| 真实可用 | 409 |
-| 真测通过率 | 27.3% |
+| 真实可用 | 420 |
+| 真测通过率 | 28.0% |
 | Verified 输出 | 300 |
 | Global 输出 | 300 |
 | All 输出 | 15028 |
@@ -278,21 +278,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 58.42 | socks | 403.4 | Surfboard-tg-mixed |
-| 57.12 | shadowsocks | 292.5 | Au1rxx-base64 |
-| 57.1 | shadowsocks | 293.2 | Au1rxx-base64 |
-| 57.09 | shadowsocks | 293.5 | Au1rxx-base64 |
-| 56.97 | shadowsocks | 297.0 | Au1rxx-base64 |
+| 59.38 | shadowsocks | 222.8 | Au1rxx-base64 |
+| 58.83 | shadowsocks | 456.1 | Au1rxx-base64 |
+| 58.82 | shadowsocks | 458.4 | Au1rxx-base64 |
+| 58.77 | shadowsocks | 458.4 | Au1rxx-base64 |
+| 58.39 | shadowsocks | 253.4 | Au1rxx-base64 |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
 | snakem982 | 0.958 | 43 | prefer |
-| Au1rxx-base64 | 0.675 | 71 | observe |
-| Surfboard-tg-mixed | 0.386 | 769 | observe |
-| mheidari-all | 0.317 | 95 | observe |
-| Epodonios-all | 0.287 | 2 | observe |
+| Au1rxx-base64 | 0.62 | 71 | observe |
+| Surfboard-tg-mixed | 0.387 | 763 | observe |
+| mheidari-all | 0.357 | 92 | observe |
+| Barabama-yudou | 0.318 | 2 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
