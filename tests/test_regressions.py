@@ -26,6 +26,7 @@ from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanu
 from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_scoring_warnings, validate_sources
 from tools.doctor import build_doctor_report
 from core.stats import build_source_scores, build_trend_alerts, load_historical_pass_rates, update_trend_history
+from core.report import write_health_report
 from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
 from core.tester import SingBoxTester, build_error_detail
 import main as m
@@ -861,6 +862,35 @@ weights:
             self.assertIn("points", item)
             self.assertGreaterEqual(item["score"], 0)
             self.assertLessEqual(item["score"], 1)
+
+    def test_health_report_includes_score_breakdown_columns(self):
+        stats = {
+            "version": "test",
+            "scoring": {"weights": {"latency": 35, "jitter": 15}},
+            "top_scores": [{
+                "score": 80,
+                "type": "trojan",
+                "latency_ms": 120,
+                "jitter_ms": 10,
+                "source": "src",
+                "server": "example.com",
+                "score_breakdown": {
+                    "latency": {"points": 35},
+                    "jitter": {"points": 14},
+                    "tcp": {"points": 9},
+                    "protocol_history": {"points": 10},
+                    "source_history": {"points": 12},
+                },
+            }],
+        }
+        with tempfile.TemporaryDirectory() as d:
+            path = write_health_report(d, stats)
+            content = Path(path).read_text(encoding="utf-8")
+        self.assertIn("评分权重", content)
+        self.assertIn("延迟分", content)
+        self.assertIn("协议历史分", content)
+        self.assertIn("来源历史分", content)
+        self.assertIn("| 80 | trojan | 120 | 10 | 35 | 14 | 9 | 10 | 12 | src | example.com |", content)
 
     def test_doctor_report_runs_without_strict_requirements(self):
         with tempfile.TemporaryDirectory() as d:
