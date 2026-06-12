@@ -2,9 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+Release notes index: [`docs/releases/`](docs/releases/)
+
 ## 2.3.0 - 2026-06-12
 
-Release notes: [`docs/releases/2.3.0.md`](docs/releases/2.3.0.md)
+Detailed release notes: [`docs/releases/2.3.0.md`](docs/releases/2.3.0.md)
 
 ### Added
 
