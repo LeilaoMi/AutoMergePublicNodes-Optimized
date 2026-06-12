@@ -247,7 +247,7 @@ AutoMergePublicNodes-Optimized/
 - [`docs/resources.md`](docs/resources.md)：测速、转换和排障资源。
 - [`docs/reports/`](docs/reports/)：历史审查与复核报告。
 - [`CHANGELOG.md`](CHANGELOG.md)：版本变更记录。
-- [`docs/releases/2.3.0.md`](docs/releases/2.3.0.md)：2.3.0 发布说明。
+- [`docs/releases/`](docs/releases/)：版本发布说明索引，包含 2.3.0 等用户向发布说明。
 
 ## License
 
