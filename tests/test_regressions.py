@@ -23,6 +23,7 @@ from tools.health_report import build_health_report
 from tools.daily_report import build_daily_report
 from tools.source_scores_report import build_source_scores_report
 from tools.scoring_profiles_report import build_scoring_profiles_report
+from tools.actions_summary import build_summary
 from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanup_payload, build_cleanup_report, build_cleanup_suggestions, build_disable_patch_preview, filter_names
 from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_scoring_warnings, validate_sources
 from tools.doctor import build_doctor_report
@@ -800,6 +801,46 @@ class RegressionTests(unittest.TestCase):
             lines = [line for line in report.splitlines() if line.startswith(f"| {name} |")]
             self.assertTrue(lines, name)
             self.assertTrue(lines[0].endswith("| 100 |"), lines[0])
+
+    def test_actions_summary_includes_scoring_breakdown_and_profile_link(self):
+        stats = {
+            "version": "test",
+            "timestamp": "now",
+            "scoring": {"weights": {"latency": 35, "jitter": 15}},
+            "top_scores": [{
+                "score": 80,
+                "type": "trojan",
+                "latency_ms": 120,
+                "jitter_ms": 10,
+                "source": "src",
+                "score_breakdown": {
+                    "latency": {"points": 35},
+                    "jitter": {"points": 14},
+                    "tcp": {"points": 9},
+                    "protocol_history": {"points": 10},
+                    "source_history": {"points": 12},
+                },
+            }],
+        }
+        summary = build_summary(stats, repo="owner/repo", branch="main")
+        self.assertIn("scoring_profiles.md", summary)
+        self.assertIn("Latency pts", summary)
+        self.assertIn("Protocol hist pts", summary)
+        self.assertIn("Source hist pts", summary)
+        self.assertIn("| 80 | trojan | 120 | 10 | 35 | 14 | 9 | 10 | 12 | src |", summary)
+
+    def test_actions_summary_handles_missing_score_breakdown(self):
+        stats = {
+            "top_scores": [{
+                "score": 70,
+                "type": "vless",
+                "latency_ms": 200,
+                "jitter_ms": 20,
+                "source": "legacy",
+            }],
+        }
+        summary = build_summary(stats, repo="owner/repo", branch="main")
+        self.assertIn("| 70 | vless | 200 | 20 | - | - | - | - | - | legacy |", summary)
 
     def test_scoring_config_loads_yaml_and_changes_score(self):
         with tempfile.TemporaryDirectory() as d:
