@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-06-12 04:12:44
+生成时间：2026-06-12 10:19:50
 
 ## 摘要
 
@@ -8,8 +8,8 @@
 | --- | --- |
 | 已评分订阅源总数 | 44 |
 | 建议优先 | 1 |
-| 继续观察 | 32 |
-| 建议降权 | 11 |
+| 继续观察 | 33 |
+| 建议降权 | 10 |
 | 建议禁用 | 0 |
 
 ## 建议优先
@@ -22,17 +22,16 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| mfuu-v2ray | 0.074 | downweight | 9 | 0 | 9 | 0.0 | 387 | 0 |
-| xiaoji235-airport-v2ray-all | 0.087 | downweight | 10 | 0 | 10 | 0.0 | 774 | 0 |
-| moneyfly1-collectSub | 0.093 | downweight | 19 | 0 | 19 | 0.0 | 1164 | 0 |
-| ninja-vless | 0.118 | downweight | 18 | 0 | 18 | 0.0 | 1791 | 0 |
-| mahdibland-V2RayAggregator | 0.13 | downweight | 14 | 0 | 14 | 0.0 | 4536 | 0 |
-| SoliSpirit-all | 0.132 | downweight | 13 | 0 | 13 | 0.0 | 3000 | 0 |
+| xiaoji235-airport-v2ray-all | 0.085 | downweight | 11 | 0 | 11 | 0.0 | 774 | 0 |
+| moneyfly1-collectSub | 0.085 | downweight | 24 | 0 | 24 | 0.0 | 1164 | 0 |
+| 10ium-HighSpeed | 0.095 | downweight | 8 | 0 | 8 | 0.0 | 839 | 0 |
+| ninja-vless | 0.118 | downweight | 19 | 0 | 19 | 0.0 | 1791 | 0 |
+| mahdibland-V2RayAggregator | 0.13 | downweight | 14 | 0 | 14 | 0.0 | 4561 | 0 |
 | 10ium-ScrapeCategorize-Vless | 0.133 | downweight | 12 | 0 | 12 | 0.0 | 2000 | 0 |
-| Barabama-yudou | 0.137 | downweight | 21 | 2 | 19 | 0.095 | 166 | 0 |
-| nscl5-all | 0.169 | downweight | 8 | 1 | 7 | 0.125 | 1178 | 0 |
-| DeltaKronecker-all | 0.209 | downweight | 339 | 43 | 296 | 0.127 | 4660 | 0 |
-| Epodonios-all | 0.247 | downweight | 52 | 8 | 44 | 0.154 | 3000 | 0 |
+| SoliSpirit-all | 0.144 | downweight | 7 | 0 | 7 | 0.0 | 3000 | 0 |
+| nscl5-all | 0.16 | downweight | 10 | 1 | 9 | 0.1 | 1178 | 0 |
+| DeltaKronecker-all | 0.166 | downweight | 419 | 35 | 384 | 0.084 | 4706 | 0 |
+| barry-far-vless | 0.181 | downweight | 14 | 1 | 13 | 0.071 | 2000 | 0 |
 
 ## 建议禁用
 
@@ -43,33 +42,33 @@
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | snakem982 | 0.958 | prefer | 43 | 42 | 1 | 0.977 | 52 | 0 |
-| Au1rxx-base64 | 0.478 | observe | 91 | 43 | 48 | 0.473 | 121 | 0 |
-| roosterkid-openproxylist-v2ray | 0.446 | observe | 23 | 10 | 13 | 0.435 | 150 | 0 |
-| Surfboard-tg-mixed | 0.365 | observe | 734 | 209 | 525 | 0.285 | 4083 | 0 |
-| mheidari-all | 0.343 | observe | 93 | 24 | 69 | 0.258 | 2000 | 0 |
-| Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 3039 | 0 |
+| Au1rxx-base64 | 0.531 | observe | 74 | 39 | 35 | 0.527 | 106 | 0 |
+| mheidari-all | 0.28 | observe | 93 | 18 | 75 | 0.194 | 2000 | 0 |
+| Surfboard-tg-mixed | 0.26 | observe | 726 | 130 | 596 | 0.179 | 4171 | 0 |
+| roosterkid-openproxylist-v2ray | 0.256 | observe | 22 | 5 | 17 | 0.227 | 150 | 0 |
+| Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 3165 | 0 |
+| Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 3000 | 0 |
 | MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3000 | 0 |
-| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 2000 | 0 |
-| Epodonios-all | 0.247 | downweight | 52 | 8 | 44 | 0.154 | 3000 | 0 |
-| DeltaKronecker-all | 0.209 | downweight | 339 | 43 | 296 | 0.127 | 4660 | 0 |
-| 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
-| barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 501 | 0 |
+| barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 494 | 0 |
 | barry-far-Sub1 | 0.194 | observe | 0 | 0 | 0 | None | 476 | 0 |
-| MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
+| mfuu-v2ray | 0.191 | observe | 0 | 0 | 0 | None | 390 | 0 |
+| Barabama-yudou | 0.186 | observe | 3 | 1 | 2 | 0.333 | 166 | 0 |
+| MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 199 | 0 |
 | barabama-yudou66 | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
-| Au1rxx-clash | 0.18 | observe | 0 | 0 | 0 | None | 122 | 0 |
-| ts-sf-Fly | 0.179 | observe | 0 | 0 | 0 | None | 89 | 0 |
-| ts-sf | 0.179 | observe | 0 | 0 | 0 | None | 88 | 0 |
+| barry-far-vless | 0.181 | downweight | 14 | 1 | 13 | 0.071 | 2000 | 0 |
+| ts-sf-Fly | 0.179 | observe | 0 | 0 | 0 | None | 109 | 0 |
+| ts-sf | 0.179 | observe | 0 | 0 | 0 | None | 108 | 0 |
+| Au1rxx-clash | 0.179 | observe | 0 | 0 | 0 | None | 106 | 0 |
 | zhangkai | 0.177 | observe | 0 | 0 | 0 | None | 52 | 0 |
-| chromego_merge | 0.177 | observe | 0 | 0 | 0 | None | 45 | 0 |
+| chromego_merge | 0.177 | observe | 0 | 0 | 0 | None | 49 | 0 |
+| peasoft-NoMoreWalls | 0.176 | observe | 0 | 0 | 0 | None | 32 | 0 |
 | ermaozi | 0.176 | observe | 0 | 0 | 0 | None | 29 | 0 |
 | ermaozi-get_subscribe | 0.176 | observe | 0 | 0 | 0 | None | 29 | 0 |
-| peasoft-NoMoreWalls | 0.176 | observe | 0 | 0 | 0 | None | 28 | 0 |
 | vxiaov | 0.176 | observe | 0 | 0 | 0 | None | 28 | 0 |
 | Mr8AHAL | 0.176 | observe | 0 | 0 | 0 | None | 26 | 0 |
-| abc-configs-readme-latest30 | 0.176 | observe | 0 | 0 | 0 | None | 25 | 0 |
 | Barabama-we | 0.176 | observe | 0 | 0 | 0 | None | 23 | 0 |
 | barabama-nodefree | 0.176 | observe | 0 | 0 | 0 | None | 23 | 0 |
+| abc-configs-readme-latest30 | 0.176 | observe | 0 | 0 | 0 | None | 16 | 0 |
 | ripaojiedian-freenode | 0.176 | observe | 0 | 0 | 0 | None | 15 | 0 |
 | freefq | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
 
@@ -77,36 +76,36 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| mfuu-v2ray | 0.074 | downweight | 9 | 0 | 9 | 0.0 | 387 | 0 |
-| xiaoji235-airport-v2ray-all | 0.087 | downweight | 10 | 0 | 10 | 0.0 | 774 | 0 |
-| moneyfly1-collectSub | 0.093 | downweight | 19 | 0 | 19 | 0.0 | 1164 | 0 |
-| ninja-vless | 0.118 | downweight | 18 | 0 | 18 | 0.0 | 1791 | 0 |
+| xiaoji235-airport-v2ray-all | 0.085 | downweight | 11 | 0 | 11 | 0.0 | 774 | 0 |
+| moneyfly1-collectSub | 0.085 | downweight | 24 | 0 | 24 | 0.0 | 1164 | 0 |
+| 10ium-HighSpeed | 0.095 | downweight | 8 | 0 | 8 | 0.0 | 839 | 0 |
+| ninja-vless | 0.118 | downweight | 19 | 0 | 19 | 0.0 | 1791 | 0 |
 | ninja-tuic | 0.128 | observe | 1 | 0 | 1 | 0.0 | 1 | 0 |
-| mahdibland-V2RayAggregator | 0.13 | downweight | 14 | 0 | 14 | 0.0 | 4536 | 0 |
-| SoliSpirit-all | 0.132 | downweight | 13 | 0 | 13 | 0.0 | 3000 | 0 |
+| mahdibland-V2RayAggregator | 0.13 | downweight | 14 | 0 | 14 | 0.0 | 4561 | 0 |
 | 10ium-ScrapeCategorize-Vless | 0.133 | downweight | 12 | 0 | 12 | 0.0 | 2000 | 0 |
-| Barabama-yudou | 0.137 | downweight | 21 | 2 | 19 | 0.095 | 166 | 0 |
-| nscl5-all | 0.169 | downweight | 8 | 1 | 7 | 0.125 | 1178 | 0 |
+| SoliSpirit-all | 0.144 | downweight | 7 | 0 | 7 | 0.0 | 3000 | 0 |
+| nscl5-all | 0.16 | downweight | 10 | 1 | 9 | 0.1 | 1178 | 0 |
+| DeltaKronecker-all | 0.166 | downweight | 419 | 35 | 384 | 0.084 | 4706 | 0 |
 | ninja-hy2 | 0.175 | observe | 0 | 0 | 0 | None | 3 | 0 |
 | tonykong-base64 | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
 | tonykong-clash | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
-| Pawdroid | 0.175 | observe | 0 | 0 | 0 | None | 11 | 0 |
+| Pawdroid | 0.175 | observe | 0 | 0 | 0 | None | 10 | 0 |
 | freefq | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
 | ripaojiedian-freenode | 0.176 | observe | 0 | 0 | 0 | None | 15 | 0 |
+| abc-configs-readme-latest30 | 0.176 | observe | 0 | 0 | 0 | None | 16 | 0 |
 | Barabama-we | 0.176 | observe | 0 | 0 | 0 | None | 23 | 0 |
 | barabama-nodefree | 0.176 | observe | 0 | 0 | 0 | None | 23 | 0 |
-| abc-configs-readme-latest30 | 0.176 | observe | 0 | 0 | 0 | None | 25 | 0 |
 | Mr8AHAL | 0.176 | observe | 0 | 0 | 0 | None | 26 | 0 |
-| peasoft-NoMoreWalls | 0.176 | observe | 0 | 0 | 0 | None | 28 | 0 |
 | vxiaov | 0.176 | observe | 0 | 0 | 0 | None | 28 | 0 |
 | ermaozi | 0.176 | observe | 0 | 0 | 0 | None | 29 | 0 |
 | ermaozi-get_subscribe | 0.176 | observe | 0 | 0 | 0 | None | 29 | 0 |
-| chromego_merge | 0.177 | observe | 0 | 0 | 0 | None | 45 | 0 |
+| peasoft-NoMoreWalls | 0.176 | observe | 0 | 0 | 0 | None | 32 | 0 |
+| chromego_merge | 0.177 | observe | 0 | 0 | 0 | None | 49 | 0 |
 | zhangkai | 0.177 | observe | 0 | 0 | 0 | None | 52 | 0 |
-| ts-sf | 0.179 | observe | 0 | 0 | 0 | None | 88 | 0 |
-| ts-sf-Fly | 0.179 | observe | 0 | 0 | 0 | None | 89 | 0 |
-| Au1rxx-clash | 0.18 | observe | 0 | 0 | 0 | None | 122 | 0 |
-| barabama-yudou66 | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
+| Au1rxx-clash | 0.179 | observe | 0 | 0 | 0 | None | 106 | 0 |
+| ts-sf | 0.179 | observe | 0 | 0 | 0 | None | 108 | 0 |
+| ts-sf-Fly | 0.179 | observe | 0 | 0 | 0 | None | 109 | 0 |
+| barry-far-vless | 0.181 | downweight | 14 | 1 | 13 | 0.071 | 2000 | 0 |
 
 ## 说明
 
