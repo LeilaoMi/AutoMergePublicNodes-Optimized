@@ -6,7 +6,7 @@ autonodes - 主入口
 2) 解析全协议节点（vmess/vless/trojan/ss/ssr/hysteria/hysteria2/tuic/anytls/socks5/http）
 3) 去重 + TCP 预筛选
 4) sing-box 真实代理测试（Karing 同源内核）
-5) 按延迟排序，取 Top N
+5) 综合评分排序，取 Top N
 6) 生成多格式订阅
 """
 from __future__ import annotations
@@ -24,7 +24,7 @@ from typing import Dict, List, Tuple, Any
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-__version__ = "2.2.0"  # weighted scoring + health_report
+__version__ = "2.3.0"  # configurable scoring profiles + observability reports
 
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
