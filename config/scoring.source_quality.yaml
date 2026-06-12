@@ -1,0 +1,20 @@
+# Source-quality scoring profile
+# Prioritizes source and protocol historical quality. Useful when public pools are noisy.
+
+weights:
+  latency: 20
+  jitter: 15
+  tcp: 10
+  protocol_history: 25
+  source_history: 30
+
+thresholds:
+  excellent_latency_ms: 150
+  bad_latency_ms: 1400
+  bad_jitter_ms: 400
+  excellent_tcp_latency_ms: 100
+  bad_tcp_latency_ms: 1000
+
+defaults:
+  missing_tcp_score: 0.5
+  missing_history_score: 0.5
