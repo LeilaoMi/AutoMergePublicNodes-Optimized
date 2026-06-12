@@ -1,0 +1,20 @@
+# Low-latency scoring profile
+# Prioritizes current real-test latency. Useful when you want the fastest nodes first.
+
+weights:
+  latency: 55
+  jitter: 15
+  tcp: 10
+  protocol_history: 10
+  source_history: 10
+
+thresholds:
+  excellent_latency_ms: 100
+  bad_latency_ms: 1000
+  bad_jitter_ms: 400
+  excellent_tcp_latency_ms: 100
+  bad_tcp_latency_ms: 1000
+
+defaults:
+  missing_tcp_score: 0.5
+  missing_history_score: 0.5
