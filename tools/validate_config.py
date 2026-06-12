@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import glob
 import re
 import sys
 from pathlib import Path
@@ -265,19 +266,33 @@ def validate_filter_rules(path: str) -> List[str]:
     return errors
 
 
+def _expand_paths(patterns: List[str]) -> List[str]:
+    paths: List[str] = []
+    seen: Set[str] = set()
+    for pattern in patterns:
+        matches = sorted(glob.glob(pattern)) if any(ch in pattern for ch in "*?[") else [pattern]
+        if not matches:
+            matches = [pattern]
+        for path in matches:
+            if path not in seen:
+                seen.add(path)
+                paths.append(path)
+    return paths
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sources", default="config/sources.yaml")
     parser.add_argument("--filter-rules", default="config/filter_rules.yaml")
-    parser.add_argument("--scoring-rules", default="config/scoring.yaml")
+    parser.add_argument("--scoring-rules", action="append", default=[], help="评分配置文件，可重复传入，也支持 glob，例如 config/scoring*.yaml")
     args = parser.parse_args()
 
-    errors = (
-        validate_sources(args.sources)
-        + validate_filter_rules(args.filter_rules)
-        + validate_scoring_rules(args.scoring_rules)
-    )
-    warnings = validate_scoring_warnings(args.scoring_rules)
+    scoring_paths = _expand_paths(args.scoring_rules or ["config/scoring.yaml"])
+    errors = validate_sources(args.sources) + validate_filter_rules(args.filter_rules)
+    warnings: List[str] = []
+    for scoring_path in scoring_paths:
+        errors.extend(validate_scoring_rules(scoring_path))
+        warnings.extend(validate_scoring_warnings(scoring_path))
     for warning in warnings:
         print(f"配置警告：{warning}", file=sys.stderr)
 
