@@ -91,6 +91,23 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 
 配置校验会检查字段、阈值和默认值范围。权重总和不等于 100 时只给 warning，不阻断 CI；建议保持 100，便于分数解释和跨轮对比。
 
+可选评分模板：
+
+| 模板 | 适用场景 | 特点 |
+|---|---|---|
+| `config/scoring.yaml` | 默认均衡 | 兼顾延迟、抖动、TCP、协议历史和来源历史 |
+| `config/scoring.low_latency.yaml` | 追求速度 | 提高 `latency` 权重，优先低延迟节点 |
+| `config/scoring.stability.yaml` | 追求稳定 | 提高 `jitter` 和 `source_history` 权重，减少波动节点 |
+| `config/scoring.source_quality.yaml` | 公开池噪声较高 | 强化订阅源和协议历史质量 |
+
+本地运行时可指定模板：
+
+```bash
+python main.py --scoring-rules config/scoring.stability.yaml
+```
+
+CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 workflow 中的 `--scoring-rules`。
+
 ---
 
 ## 输出文件
