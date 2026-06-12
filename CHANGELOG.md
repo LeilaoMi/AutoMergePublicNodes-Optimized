@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## 2.3.0 - 2026-06-12
 
+Release notes: [`docs/releases/2.3.0.md`](docs/releases/2.3.0.md)
+
 ### Added
 
 - Added configurable weighted node scoring via `config/scoring.yaml`.
