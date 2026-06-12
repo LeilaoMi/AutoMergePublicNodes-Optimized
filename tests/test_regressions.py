@@ -26,7 +26,7 @@ from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanu
 from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_scoring_warnings, validate_sources
 from tools.doctor import build_doctor_report
 from core.stats import build_source_scores, build_trend_alerts, load_historical_pass_rates, update_trend_history
-from core.scoring import ScoreInput, calculate_score, load_scoring_config
+from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
 from core.tester import SingBoxTester, build_error_detail
 import main as m
 
@@ -840,6 +840,27 @@ weights:
         self.assertEqual(errors, [])
         self.assertEqual(len(warnings), 1)
         self.assertIn("总和为 50", warnings[0])
+
+    def test_score_breakdown_matches_total_score(self):
+        data = ScoreInput(
+            latency_ms=300,
+            jitter_ms=50,
+            tcp_latency_ms=120,
+            protocol="trojan",
+            source="good-source",
+            protocol_rates={"trojan": 0.8},
+            source_rates={"good-source": 0.9},
+        )
+        breakdown = calculate_score_breakdown(data)
+        total_from_breakdown = round(sum(item["points"] for item in breakdown.values()), 2)
+        self.assertEqual(calculate_score(data), total_from_breakdown)
+        self.assertEqual(set(breakdown), {"latency", "jitter", "tcp", "protocol_history", "source_history"})
+        for item in breakdown.values():
+            self.assertIn("score", item)
+            self.assertIn("weight", item)
+            self.assertIn("points", item)
+            self.assertGreaterEqual(item["score"], 0)
+            self.assertLessEqual(item["score"], 1)
 
     def test_doctor_report_runs_without_strict_requirements(self):
         with tempfile.TemporaryDirectory() as d:
