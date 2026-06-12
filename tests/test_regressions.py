@@ -775,6 +775,13 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(validate_filter_rules("config/filter_rules.yaml"), [])
         self.assertEqual(validate_scoring_rules("config/scoring.yaml"), [])
 
+    def test_validate_all_scoring_profiles(self):
+        paths = sorted(Path("config").glob("scoring*.yaml"))
+        self.assertGreaterEqual(len(paths), 4)
+        for path in paths:
+            with self.subTest(path=str(path)):
+                self.assertEqual(validate_scoring_rules(str(path)), [])
+
     def test_scoring_config_loads_yaml_and_changes_score(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "scoring.yaml"
