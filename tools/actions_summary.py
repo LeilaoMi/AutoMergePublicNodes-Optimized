@@ -77,17 +77,28 @@ def build_summary(stats: Dict[str, Any], repo: str = "", branch: str = "main") -
     if isinstance(weights, dict):
         weight_rows = [[key, value] for key, value in weights.items()]
 
-    score_rows = [
-        [
+    score_rows = []
+    for item in (stats.get("top_scores") or [])[:10]:
+        if not isinstance(item, dict):
+            continue
+        breakdown = item.get("score_breakdown") or {}
+
+        def _points(name: str) -> object:
+            value = breakdown.get(name) if isinstance(breakdown, dict) else None
+            return value.get("points", "-") if isinstance(value, dict) else "-"
+
+        score_rows.append([
             item.get("score", "-"),
             item.get("type", "-"),
             item.get("latency_ms", "-"),
             item.get("jitter_ms", "-"),
+            _points("latency"),
+            _points("jitter"),
+            _points("tcp"),
+            _points("protocol_history"),
+            _points("source_history"),
             item.get("source", "-"),
-        ]
-        for item in (stats.get("top_scores") or [])[:10]
-        if isinstance(item, dict)
-    ]
+        ])
 
     error_rows = [
         [
@@ -140,7 +151,7 @@ def build_summary(stats: Dict[str, Any], repo: str = "", branch: str = "main") -
 
 ## Top Node Scores
 
-{table(["Score", "Protocol", "Latency(ms)", "Jitter(ms)", "Source"], score_rows)}
+{table(["Score", "Protocol", "Latency(ms)", "Jitter(ms)", "Latency pts", "Jitter pts", "TCP pts", "Protocol hist pts", "Source hist pts", "Source"], score_rows)}
 
 ## Top Source Quality
 
