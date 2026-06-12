@@ -1,0 +1,20 @@
+# Stability scoring profile
+# Prioritizes jitter and historical quality. Useful when you want fewer flaky nodes.
+
+weights:
+  latency: 20
+  jitter: 25
+  tcp: 10
+  protocol_history: 20
+  source_history: 25
+
+thresholds:
+  excellent_latency_ms: 150
+  bad_latency_ms: 1500
+  bad_jitter_ms: 300
+  excellent_tcp_latency_ms: 100
+  bad_tcp_latency_ms: 1000
+
+defaults:
+  missing_tcp_score: 0.5
+  missing_history_score: 0.5
