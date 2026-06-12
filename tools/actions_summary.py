@@ -120,6 +120,7 @@ def build_summary(stats: Dict[str, Any], repo: str = "", branch: str = "main") -
             f"- [verified.yaml]({base}/verified.yaml)\n"
             f"- [verified.json]({base}/verified.json)\n"
             f"- [health_report.md]({base}/health_report.md)\n"
+            f"- [scoring_profiles.md]({base}/scoring_profiles.md)\n"
             f"- [stats.json]({base}/stats.json)\n"
         )
 
