@@ -235,6 +235,7 @@ AutoMergePublicNodes-Optimized/
 ├── tests/                          # 回归测试与协议样例
 ├── output/                         # CI 输出文件
 ├── docs/                           # 使用指南、资源与历史报告
+├── CHANGELOG.md                    # 版本变更记录
 └── .github/workflows/update.yml    # 自动更新流程
 ```
 
@@ -245,6 +246,7 @@ AutoMergePublicNodes-Optimized/
 - [`docs/client-guide.md`](docs/client-guide.md)：客户端导入指南。
 - [`docs/resources.md`](docs/resources.md)：测速、转换和排障资源。
 - [`docs/reports/`](docs/reports/)：历史审查与复核报告。
+- [`CHANGELOG.md`](CHANGELOG.md)：版本变更记录。
 
 ## License
 
