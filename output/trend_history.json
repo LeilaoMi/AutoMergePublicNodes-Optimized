@@ -1,37 +1,7 @@
 {
-  "updated_at": "2026-06-13 14:06:41",
+  "updated_at": "2026-06-13 19:32:01",
   "keep": 30,
   "runs": [
-    {
-      "timestamp": "2026-06-08 11:03:23",
-      "duration_sec": 212.7,
-      "nodes_raw": 38896,
-      "nodes_dedup": 15206,
-      "nodes_tcp_ok": 1500,
-      "nodes_real_ok": 226,
-      "nodes_verified_output": 226,
-      "nodes_global_output": 242,
-      "nodes_global_extra_from_cn_block": 16,
-      "real_test_errors": {
-        "204": 1043,
-        "sing-box exited 1": 55,
-        "geo": 58,
-        "speed": 88,
-        "cn-block": 30
-      },
-      "output_guard": {
-        "verified": {
-          "preserved": false,
-          "previous_count": 266,
-          "proposed_count": 226
-        },
-        "global": {
-          "preserved": false,
-          "previous_count": 273,
-          "proposed_count": 242
-        }
-      }
-    },
     {
       "timestamp": "2026-06-08 15:59:31",
       "duration_sec": 213.3,
@@ -901,7 +871,48 @@
           "proposed_count": 231
         }
       }
+    },
+    {
+      "timestamp": "2026-06-13 19:32:01",
+      "duration_sec": 215.6,
+      "nodes_raw": 40141,
+      "nodes_dedup": 15452,
+      "nodes_tcp_ok": 1500,
+      "nodes_real_ok": 207,
+      "nodes_verified_output": 207,
+      "nodes_global_output": 215,
+      "nodes_global_extra_from_cn_block": 8,
+      "real_test_errors": {
+        "204": 1016,
+        "sing-box exited 1": 60,
+        "cn-block": 28,
+        "geo": 165,
+        "speed": 24
+      },
+      "output_guard": {
+        "verified": {
+          "preserved": false,
+          "previous_count": 217,
+          "proposed_count": 207
+        },
+        "global": {
+          "preserved": false,
+          "previous_count": 231,
+          "proposed_count": 215
+        }
+      }
     }
   ],
-  "alerts": []
+  "alerts": [
+    {
+      "type": "verified_downtrend_4_runs",
+      "message": "verified output decreased for 4 consecutive runs",
+      "values": [
+        300,
+        268,
+        217,
+        207
+      ]
+    }
+  ]
 }
