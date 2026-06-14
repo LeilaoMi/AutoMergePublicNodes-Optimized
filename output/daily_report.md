@@ -1,6 +1,6 @@
 # AutoNodes 每日报告
 
-生成时间：2026-06-14 14:10:55
+生成时间：2026-06-14 19:33:10
 
 ## 摘要
 
@@ -9,119 +9,119 @@
 | 健康状态 | warning |
 | 健康检查通过 | True |
 | 健康源数量 | 44/44 |
-| 清理建议：禁用/降权 | 0/13 |
-| 清理建议：优先/观察 | 1/30 |
-| 原始节点数 | 40637 |
-| 去重后节点数 | 15778 |
+| 清理建议：禁用/降权 | 0/11 |
+| 清理建议：优先/观察 | 1/32 |
+| 原始节点数 | 41035 |
+| 去重后节点数 | 15688 |
 | TCP 可达数 | 1500 |
-| 真测通过数 | 234 |
-| verified 输出数 | 234 |
-| global 输出数 | 240 |
-| all 输出数 | 15778 |
+| 真测通过数 | 214 |
+| verified 输出数 | 214 |
+| global 输出数 | 219 |
+| all 输出数 | 15688 |
 | all 输出模式 | full |
 
 ## 阶段耗时
 
 | 阶段 | 秒 |
 | --- | --- |
-| fetch | 3.3 |
-| generate | 33.6 |
-| geo | 1.2 |
-| real_test | 171.9 |
-| tcp | 39.6 |
+| fetch | 3.2 |
+| generate | 37.7 |
+| geo | 1.3 |
+| real_test | 193.2 |
+| tcp | 39.2 |
 
 ## 协议通过率
 
 | 协议 | 已测 | 通过 | 失败 | 通过率 |
 | --- | --- | --- | --- | --- |
 | http | 44 | 42 | 2 | 95.5% |
-| hysteria2 | 10 | 2 | 8 | 20.0% |
-| shadowsocks | 380 | 66 | 314 | 17.4% |
+| hysteria2 | 11 | 2 | 9 | 18.2% |
+| shadowsocks | 354 | 62 | 292 | 17.5% |
 | shadowsocksr | 8 | 0 | 8 | 0.0% |
-| socks | 5 | 0 | 5 | 0.0% |
-| trojan | 175 | 19 | 156 | 10.9% |
+| socks | 2 | 0 | 2 | 0.0% |
+| trojan | 156 | 9 | 147 | 5.8% |
 | tuic | 1 | 0 | 1 | 0.0% |
-| vless | 862 | 100 | 762 | 11.6% |
-| vmess | 15 | 5 | 10 | 33.3% |
+| vless | 910 | 95 | 815 | 10.4% |
+| vmess | 14 | 4 | 10 | 28.6% |
 
 ## 主要真测错误
 
 | 错误 | 数量 |
 | --- | --- |
-| 204:ProxyError | 471 |
-| 204:ClientOSError | 406 |
-| 204:TimeoutError | 113 |
-| geo:status | 75 |
-| geo:status | 58 |
-| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: uTLS is required by reality client | 46 |
-| cn-block:TimeoutError | 12 |
-| speed:ClientOSError | 11 |
-| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: unknown method: �N|smy���{�4�Ϛ�M�o��}ֻ{� | 9 |
+| 204:ProxyError | 489 |
+| 204:ClientOSError | 375 |
+| 204:TimeoutError | 184 |
+| geo:status | 62 |
+| geo:status | 44 |
+| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: uTLS is required by reality client | 42 |
+| cn-block:TimeoutError | 22 |
+| speed:ClientOSError | 13 |
+| speed:TimeoutError | 13 |
 | sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: ShadowsocksR is deprecated and removed in sing-box 1.6.0 | 8 |
-| cn-block:ClientOSError | 6 |
-| speed:TimeoutError | 6 |
-| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: unknown method: {� | צ����� | 3 |
-| geo:TimeoutError | 3 |
-| geo:ProxyError | 3 |
-| geo:ClientOSError | 3 |
-| cn-block:ProxyError | 2 |
-| speed:ProxyError | 2 |
-| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: unknown method: i�s���G�k� | 2 |
-| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: unknown method: �}x�� | 2 |
+| geo:TimeoutError | 6 |
+| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: unknown method: �N|smy���{�4�Ϛ�M�o��}ֻ{� | 4 |
+| cn-block:ClientOSError | 4 |
+| speed:ClientPayloadError | 2 |
+| sing-box exited 1: [31mFATAL[0m[0000] decode config at /tmp/sb-6we7hjom/config.json: outbounds[0].security: json: cannot unmarshal bool into Go struct field VMessOutboundOptions.security of type string | 1 |
+| sing-box exited 1: [31mFATAL[0m[0000] decode config at /tmp/sb-wi2qlq9s/config.json: outbounds[0].security: json: cannot unmarshal bool into Go struct field VMessOutboundOptions.security of type string | 1 |
+| sing-box exited 1: [31mFATAL[0m[0000] decode config at /tmp/sb-i05oic_f/config.json: outbounds[0].security: json: cannot unmarshal bool into Go struct field VMessOutboundOptions.security of type string | 1 |
+| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: unknown method: �gv�n{�� | 1 |
+| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: unknown method: � | 1 |
+| sing-box exited 1: [31mFATAL[0m[0000] create service: initialize outbound[0]: unknown method: chacha20-poly1305 | 1 |
 
 ## TCP 预筛选错误
 
 | 错误 | 数量 |
 | --- | --- |
-| TimeoutError | 1952 |
-| ConnectionRefusedError | 441 |
-| gaierror | 184 |
-| OSError | 39 |
+| TimeoutError | 2008 |
+| ConnectionRefusedError | 447 |
+| gaierror | 145 |
+| OSError | 41 |
 
 ## 高评分订阅源
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过率 | 解析数 |
 | --- | --- | --- | --- | --- | --- |
-| snakem982 | 0.898 | prefer | 46 | 0.913 | 52 |
-| Au1rxx-base64 | 0.599 | observe | 72 | 0.597 | 105 |
-| roosterkid-openproxylist-v2ray | 0.492 | observe | 33 | 0.485 | 150 |
+| snakem982 | 0.917 | prefer | 45 | 0.933 | 52 |
+| Au1rxx-base64 | 0.578 | observe | 87 | 0.575 | 122 |
+| roosterkid-openproxylist-v2ray | 0.32 | observe | 33 | 0.303 | 150 |
+| Epodonios-all | 0.255 | observe | 0 | None | 3000 |
 | MatinGhanbari-all-sub | 0.255 | observe | 0 | None | 3000 |
-| Surfboard-tg-vless | 0.255 | observe | 0 | None | 3454 |
+| Surfboard-tg-vless | 0.255 | observe | 0 | None | 3622 |
 | barry-far-vless | 0.255 | observe | 0 | None | 2000 |
-| mheidari-all | 0.22 | downweight | 91 | 0.132 | 2000 |
-| Surfboard-tg-mixed | 0.217 | downweight | 686 | 0.136 | 4381 |
+| mheidari-all | 0.218 | downweight | 92 | 0.13 | 2000 |
 | barry-far-Sub2 | 0.195 | observe | 0 | None | 500 |
-| barry-far-Sub1 | 0.194 | observe | 0 | None | 479 |
+| barry-far-Sub1 | 0.194 | observe | 0 | None | 477 |
 
 ## 需关注订阅源
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过率 | 连续死亡 | 解析数 |
 | --- | --- | --- | --- | --- | --- | --- |
-| ts-sf | 0.053 | downweight | 14 | 0.0 | 0 | 67 |
-| Barabama-we | 0.069 | downweight | 6 | 0.0 | 0 | 23 |
-| moneyfly1-collectSub | 0.072 | downweight | 37 | 0.0 | 0 | 1164 |
-| xiaoji235-airport-v2ray-all | 0.082 | downweight | 10 | 0.0 | 0 | 656 |
-| ermaozi | 0.091 | observe | 3 | 0.0 | 0 | 29 |
-| 10ium-ScrapeCategorize-Vless | 0.091 | downweight | 85 | 0.0 | 0 | 2000 |
-| SoliSpirit-all | 0.104 | downweight | 39 | 0.0 | 0 | 3000 |
-| 10ium-HighSpeed | 0.114 | observe | 4 | 0.0 | 0 | 839 |
-| ninja-vless | 0.117 | downweight | 20 | 0.0 | 0 | 1791 |
-| nscl5-all | 0.118 | downweight | 5 | 0.0 | 0 | 1123 |
+| xiaoji235-airport-v2ray-all | 0.081 | downweight | 11 | 0.0 | 0 | 656 |
+| moneyfly1-collectSub | 0.085 | downweight | 24 | 0.0 | 0 | 1164 |
+| Barabama-yudou | 0.09 | downweight | 22 | 0.045 | 0 | 166 |
+| ninja-vless | 0.118 | downweight | 19 | 0.0 | 0 | 1791 |
+| DeltaKronecker-all | 0.12 | downweight | 348 | 0.037 | 0 | 5188 |
+| SoliSpirit-all | 0.127 | downweight | 18 | 0.0 | 0 | 3000 |
+| Pawdroid | 0.128 | observe | 1 | 0.0 | 0 | 8 |
+| ninja-tuic | 0.128 | observe | 1 | 0.0 | 0 | 1 |
+| 10ium-ScrapeCategorize-Vless | 0.128 | downweight | 17 | 0.0 | 0 | 2000 |
+| mahdibland-V2RayAggregator | 0.13 | downweight | 14 | 0.0 | 0 | 4511 |
 
 ## 订阅源清理建议
 
 | 分类 | 订阅源 | 评分 | 已测 | 通过率 | 连续死亡 | 原因 |
 | --- | --- | --- | --- | --- | --- | --- |
-| downweight | ts-sf | 0.053 | 14 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | Barabama-we | 0.069 | 6 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | moneyfly1-collectSub | 0.072 | 37 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | xiaoji235-airport-v2ray-all | 0.082 | 10 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | 10ium-ScrapeCategorize-Vless | 0.091 | 85 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | SoliSpirit-all | 0.104 | 39 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | ninja-vless | 0.117 | 20 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | nscl5-all | 0.118 | 5 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | mahdibland-V2RayAggregator | 0.129 | 15 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
-| downweight | Epodonios-all | 0.158 | 75 | 0.067 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | xiaoji235-airport-v2ray-all | 0.081 | 11 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | moneyfly1-collectSub | 0.085 | 24 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | Barabama-yudou | 0.09 | 22 | 0.045 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | ninja-vless | 0.118 | 19 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | DeltaKronecker-all | 0.12 | 348 | 0.037 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | SoliSpirit-all | 0.127 | 18 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | 10ium-ScrapeCategorize-Vless | 0.128 | 17 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | mahdibland-V2RayAggregator | 0.13 | 14 | 0.0 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | nscl5-all | 0.181 | 6 | 0.167 | 0 | 已测数量 >= 5 且评分偏低 |
+| downweight | Surfboard-tg-mixed | 0.193 | 759 | 0.112 | 0 | 已测数量 >= 5 且评分偏低 |
 
 ## 真测通过率较低的订阅源
 
@@ -129,39 +129,42 @@
 | --- | --- | --- | --- | --- |
 | ninja-tuic | 0.0 | 0 | 1 | 1 |
 | Pawdroid | 0.0 | 0 | 1 | 1 |
-| chromego_merge | 0.0 | 0 | 1 | 1 |
-| abc-configs-readme-latest30 | 0.0 | 0 | 1 | 1 |
-| ermaozi | 0.0 | 0 | 3 | 3 |
-| 10ium-HighSpeed | 0.0 | 0 | 4 | 4 |
-| nscl5-all | 0.0 | 0 | 5 | 5 |
-| Barabama-we | 0.0 | 0 | 6 | 6 |
-| xiaoji235-airport-v2ray-all | 0.0 | 0 | 10 | 10 |
-| ts-sf | 0.0 | 0 | 14 | 14 |
+| MatinGhanbari-super-sub | 0.0 | 0 | 1 | 1 |
+| 10ium-HighSpeed | 0.0 | 0 | 2 | 2 |
+| xiaoji235-airport-v2ray-all | 0.0 | 0 | 11 | 11 |
+| mahdibland-V2RayAggregator | 0.0 | 0 | 14 | 14 |
+| 10ium-ScrapeCategorize-Vless | 0.0 | 0 | 17 | 17 |
+| SoliSpirit-all | 0.0 | 0 | 18 | 18 |
+| ninja-vless | 0.0 | 0 | 19 | 19 |
+| moneyfly1-collectSub | 0.0 | 0 | 24 | 24 |
 
 ## 解析节点数较高的订阅源
 
 | 订阅源 | 节点数 | 是否正常 | 耗时 | 连续死亡 |
 | --- | --- | --- | --- | --- |
-| DeltaKronecker-all | 5188 | yes | 2.94 | 0 |
-| mahdibland-V2RayAggregator | 4511 | yes | 0.96 | 0 |
-| Surfboard-tg-mixed | 4381 | yes | 2.22 | 0 |
-| Surfboard-tg-vless | 3454 | yes | 0.89 | 0 |
-| Epodonios-all | 3000 | yes | 0.77 | 0 |
-| SoliSpirit-all | 3000 | yes | 2.25 | 0 |
-| MatinGhanbari-all-sub | 3000 | yes | 1.99 | 0 |
-| mheidari-all | 2000 | yes | 3.08 | 0 |
-| 10ium-ScrapeCategorize-Vless | 2000 | yes | 1.5 | 0 |
-| barry-far-vless | 2000 | yes | 1.86 | 0 |
+| DeltaKronecker-all | 5188 | yes | 3.14 | 0 |
+| Surfboard-tg-mixed | 4520 | yes | 0.29 | 0 |
+| mahdibland-V2RayAggregator | 4511 | yes | 1.56 | 0 |
+| Surfboard-tg-vless | 3622 | yes | 2.01 | 0 |
+| Epodonios-all | 3000 | yes | 1.9 | 0 |
+| SoliSpirit-all | 3000 | yes | 1.68 | 0 |
+| MatinGhanbari-all-sub | 3000 | yes | 1.75 | 0 |
+| mheidari-all | 2000 | yes | 3.03 | 0 |
+| 10ium-ScrapeCategorize-Vless | 2000 | yes | 1.35 | 0 |
+| barry-far-vless | 2000 | yes | 1.17 | 0 |
 
 ## 趋势报警
 
-无趋势报警。
+| 类型 | 信息 |
+| --- | --- |
+| verified_downtrend_4_runs | verified output decreased for 4 consecutive runs |
 
 ## 健康报警
 
 ### 低通过率协议
 | 协议 | 通过率 |
 | --- | --- |
+| trojan | 0.058 |
 | shadowsocksr | 0.0 |
 | tuic | 0.0 |
 | socks | 0.0 |
@@ -169,8 +172,8 @@
 ### 真测错误报警
 | 错误 | 数量 |
 | --- | --- |
-| 204 | 990 |
-| geo | 142 |
-| sing-box exited 1 | 94 |
-| cn-block | 21 |
-| speed | 19 |
+| 204 | 1048 |
+| geo | 113 |
+| sing-box exited 1 | 70 |
+| speed | 28 |
+| cn-block | 27 |
