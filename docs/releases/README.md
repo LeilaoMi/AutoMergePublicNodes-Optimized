@@ -4,18 +4,19 @@ This directory contains user-facing release notes for notable project versions.
 
 | Version | Date | Summary |
 |---|---|---|
-| [2.3.0](2.3.0.md) | 2026-06-12 | Configurable scoring profiles, score breakdown, observability reports, Actions Summary, and README status automation |
+| [2.4.0](2.4.0.md) | 2026-06-14 | 分块输出、协议分文件、节点稳定性追踪、解锁检测、降级容错、CI 通知、源发现 |
+| [2.3.0](2.3.0.md) | 2026-06-12 | 可配置评分模板、评分分项拆解、可观测报告、Actions Summary、README 状态自动化 |
 
-For concise change history, see [`../../CHANGELOG.md`](../../CHANGELOG.md).
+如需简洁的变更历史，请查看 [`../../CHANGELOG.md`](../../CHANGELOG.md)。
 
-## Maintenance checklist
+## 维护清单
 
-When adding a new project version:
+新增项目版本时：
 
-1. Add a new `docs/releases/<version>.md` file for user-facing release notes.
-2. Add the version to the table above.
-3. Add the concise technical change log to [`../../CHANGELOG.md`](../../CHANGELOG.md).
-4. Keep README pointing to this release notes index instead of a single version file.
+1. 新增 `docs/releases/<version>.md` 用户向发布说明。
+2. 将版本号加入上方表格。
+3. 在 [`../../CHANGELOG.md`](../../CHANGELOG.md) 中添加简洁的技术变更记录。
+4. README 固定指向本发布说明索引，不直接指向单个版本文件。
 
 ## GitHub Release publishing
 
