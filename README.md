@@ -254,7 +254,7 @@ AutoMergePublicNodes-Optimized/
 - [`docs/cloudflare-worker-setup.md`](docs/cloudflare-worker-setup.md)：Cloudflare Worker 订阅加速方案。
 - [`docs/competitive-analysis-2026-06-14.md`](docs/competitive-analysis-2026-06-14.md)：33 个同类项目全量对标分析。
 - [`CHANGELOG.md`](CHANGELOG.md)：版本变更记录。
-- [`docs/releases/`](docs/releases/)：版本发布说明索引，包含 2.3.0 等用户向发布说明。
+- [`docs/releases/`](docs/releases/)：版本发布说明索引，包含 2.4.0 和 2.3.0 用户向发布说明。
 
 ## License
 
