@@ -270,29 +270,39 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-14 00:02:00 |
+| 更新时间 | 2026-06-14 01:17:57 |
 | 版本 | 2.4.0 |
-| 订阅源 | 1/1 |
-| 原始节点 | 1 |
-| 去重后 | 1 |
-| TCP 可达 | 1 |
-| 真实可用 | 1 |
-| 真测通过率 | 100.0% |
-| Verified 输出 | 1 |
-| Global 输出 | 0 |
-| All 输出 | 1 |
+| 订阅源 | 44/44 |
+| 原始节点 | 40280 |
+| 去重后 | 15578 |
+| TCP 可达 | 1500 |
+| 真实可用 | 376 |
+| 真测通过率 | 25.1% |
+| Verified 输出 | 300 |
+| Global 输出 | 300 |
+| All 输出 | 15578 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
 ### Top 节点评分
 
-_暂无评分数据_
+| 评分 | 协议 | 延迟(ms) | 来源 |
+| --- | --- | --- | --- |
+| 63.17 | http | 683.2 | snakem982 |
+| 63.16 | http | 683.5 | snakem982 |
+| 63.14 | http | 684.0 | snakem982 |
+| 63.13 | http | 684.4 | snakem982 |
+| 63.12 | http | 684.0 | snakem982 |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| mock-source | 0.175 | 0 | observe |
+| snakem982 | 0.938 | 45 | prefer |
+| roosterkid-openproxylist-v2ray | 0.574 | 35 | observe |
+| Au1rxx-base64 | 0.442 | 108 | observe |
+| Surfboard-tg-mixed | 0.377 | 658 | observe |
+| Barabama-yudou | 0.318 | 2 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
