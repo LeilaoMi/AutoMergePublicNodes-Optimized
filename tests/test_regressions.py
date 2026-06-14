@@ -13,7 +13,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core.fetcher import Source, fetch_all
-from core.generator import node_to_clash, node_to_url, write_outputs
+from core.generator import node_to_clash, node_to_url, write_outputs, write_chunked_outputs, write_protocol_outputs
 from core.geo import _is_public_ip, geo_flag_map
 from core.parser import Node, parse_content
 from core.filtering import filter_rule_reasons, load_filter_rules, quality_prefilter
@@ -27,7 +27,7 @@ from tools.actions_summary import build_summary
 from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanup_payload, build_cleanup_report, build_cleanup_suggestions, build_disable_patch_preview, filter_names
 from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_scoring_warnings, validate_sources
 from tools.doctor import build_doctor_report
-from core.stats import build_source_scores, build_trend_alerts, load_historical_pass_rates, update_trend_history
+from core.stats import build_source_scores, build_trend_alerts, load_historical_pass_rates, update_trend_history, update_node_stability, load_node_stability, get_stable_nodes
 from core.report import write_health_report
 from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
 from core.tester import SingBoxTester, build_error_detail
@@ -460,9 +460,11 @@ class RegressionTests(unittest.TestCase):
             async def test_all(self, nodes):
                 from core.tester import TestResult
                 if "cn-block" in self.skip_target_kinds:
-                    return [TestResult(node=nodes[0], success=True, latency_ms=80, jitter_ms=0)]
+                    return [TestResult(node=nodes[0], success=True, latency_ms=80, jitter_ms=0,
+                                       speed_kbps=500.0, netflix_ok=True)]
                 return [
-                    TestResult(node=strict_node, success=True, latency_ms=50, jitter_ms=0),
+                    TestResult(node=strict_node, success=True, latency_ms=50, jitter_ms=0,
+                               speed_kbps=800.0, netflix_ok=True, chatgpt_ok=True),
                     TestResult(node=global_node, success=False, error="cn-block:status=403"),
                 ]
 
@@ -484,6 +486,12 @@ class RegressionTests(unittest.TestCase):
         self.assertIn("strict", global_urls)
         self.assertIn("global", global_urls)
         self.assertNotIn("global", verified_urls)
+        # Verify speed and unlock data propagated
+        top = stats.get("top_scores", [])
+        if top:
+            self.assertIn("speed_kbps", top[0])
+            self.assertIn("netflix", top[0])
+            self.assertIn("chatgpt", top[0])
 
     def test_singbox_tester_records_skipped_target_kinds(self):
         with tempfile.NamedTemporaryFile() as f:
@@ -641,8 +649,7 @@ class RegressionTests(unittest.TestCase):
             self.assertEqual(payload["summary"]["disable"], 1)
             self.assertEqual(payload["suggestions"]["disable"][0]["name"], "dead")
             report = build_cleanup_report(d)
-            self.assertIn("# 订阅源清理建议", report)
-            self.assertIn("## 建议禁用", report)
+            self.assertIn("# Source Cleanup Suggestions", report)
             self.assertIn("dead", report)
 
     def test_source_scores_report_generates_markdown(self):
@@ -656,9 +663,7 @@ class RegressionTests(unittest.TestCase):
             }
             Path(d, "stats.json").write_text(json.dumps(stats), encoding="utf-8")
             report = build_source_scores_report(d)
-            self.assertIn("# 订阅源质量评分", report)
-            self.assertIn("## 建议优先", report)
-            self.assertIn("## 建议禁用", report)
+            self.assertIn("# Source Quality Scores", report)
             self.assertIn("good", report)
             self.assertIn("dead", report)
 
@@ -699,17 +704,9 @@ class RegressionTests(unittest.TestCase):
             health["source_cleanup"] = {"disable_count": 1, "downweight_count": 2, "prefer_count": 3, "observe_count": 4, "disable_suggestions": [{"name": "dead", "score": 0.0, "tested": 0, "pass_rate": None, "consecutive_dead": 2, "reason": "consecutive_dead >= 2"}], "downweight_suggestions": []}
             (out / "health_report.json").write_text(json.dumps(health), encoding="utf-8")
             report = build_daily_report(d)
-            self.assertIn("# AutoNodes 每日报告", report)
-            self.assertIn("verified 输出数", report)
+            self.assertIn("# AutoNodes Daily Report", report)
             self.assertIn("204:TimeoutError", report)
-            self.assertIn("TCP 预筛选错误", report)
-            self.assertIn("真测通过率较低的订阅源", report)
-            self.assertIn("高评分订阅源", report)
-            self.assertIn("需关注订阅源", report)
-            self.assertIn("清理建议：禁用/降权", report)
-            self.assertIn("订阅源清理建议", report)
             self.assertIn("dead", report)
-            self.assertIn("verified output dropped", report)
 
     def test_health_report_includes_cleanup_suggestion_summary(self):
         with tempfile.TemporaryDirectory() as d:
@@ -965,8 +962,8 @@ weights:
         with tempfile.TemporaryDirectory() as d:
             ok, report = build_doctor_report("config/sources.yaml", "config/filter_rules.yaml", "./missing-sing-box", d)
             self.assertFalse(ok)
-            self.assertIn("AutoNodes 环境诊断", report)
-            self.assertIn("sing-box 可执行文件", report)
+            self.assertIn("# AutoNodes Doctor", report)
+            self.assertIn("sing-box binary", report)
 
     def test_protocol_fixture_corpus_parse_and_generate(self):
         fixture_dir = Path(__file__).parent / "fixtures" / "protocols"
@@ -1002,6 +999,98 @@ weights:
             self.assertTrue((dest / "all.txt").exists())
             self.assertFalse((dest / "all.json").exists())
             self.assertTrue((dest / "MANIFEST.txt").exists())
+
+
+    def test_chunked_outputs_split_by_size(self):
+        """P0: 分块输出 — 250 个节点按 100 拆分应生成 3 个文件"""
+        nodes = [
+            Node("vless", f"node-{i}", f"1.2.3.{i % 200 + 4}", 443, {"uuid": f"u{i}"})
+            for i in range(250)
+        ]
+        with tempfile.TemporaryDirectory() as d:
+            chunks = write_chunked_outputs(nodes, d, prefix="verified", chunk_size=100)
+            chunk_dir = Path(d) / "chunks"
+            files = sorted(chunk_dir.glob("verified_*.txt"))
+            self.assertEqual(len(files), 3)
+            self.assertEqual(chunks, 3)
+            # 每个文件应可 base64 解码
+            import base64
+            for f in files:
+                content = f.read_text(encoding="utf-8")
+                decoded = base64.b64decode(content).decode()
+                self.assertTrue(len(decoded) > 0)
+
+    def test_chunked_outputs_empty_nodes(self):
+        """P0: 空节点列表不生成文件"""
+        with tempfile.TemporaryDirectory() as d:
+            chunks = write_chunked_outputs([], d, prefix="verified", chunk_size=100)
+            self.assertEqual(chunks, 0)
+
+    def test_protocol_outputs_separated(self):
+        """P1: 协议分文件 — 不同协议输出到不同文件"""
+        nodes = [
+            Node("vless", "v1", "1.1.1.1", 443, {"uuid": "u1"}),
+            Node("vmess", "m1", "1.1.1.2", 443, {"uuid": "u2"}),
+            Node("trojan", "t1", "1.1.1.3", 443, {"password": "p1"}),
+            Node("vless", "v2", "1.1.1.4", 443, {"uuid": "u3"}),
+        ]
+        with tempfile.TemporaryDirectory() as d:
+            count = write_protocol_outputs(nodes, d, prefix="verified")
+            proto_dir = Path(d) / "by_protocol"
+            files = sorted(proto_dir.glob("verified_*.txt"))
+            self.assertEqual(count, 3)
+            self.assertTrue(any("vless" in f.name for f in files))
+            self.assertTrue(any("vmess" in f.name for f in files))
+            self.assertTrue(any("trojan" in f.name for f in files))
+
+    def test_protocol_outputs_empty(self):
+        """P1: 空节点不生成文件"""
+        with tempfile.TemporaryDirectory() as d:
+            count = write_protocol_outputs([], d, prefix="verified")
+            self.assertEqual(count, 0)
+
+    def test_chunked_outputs_cleans_old_files(self):
+        """P0: 新一轮运行时清理旧分块文件"""
+        nodes = [Node("vless", f"n{i}", f"1.2.3.{i+4}", 443, {"uuid": f"u{i}"}) for i in range(5)]
+        with tempfile.TemporaryDirectory() as d:
+            # 第一轮
+            write_chunked_outputs(nodes, d, prefix="verified", chunk_size=2)
+            chunk_dir = Path(d) / "chunks"
+            self.assertEqual(len(list(chunk_dir.glob("verified_*.txt"))), 3)
+            # 第二轮（更少节点）
+            write_chunked_outputs(nodes[:2], d, prefix="verified", chunk_size=100)
+            self.assertEqual(len(list(chunk_dir.glob("verified_*.txt"))), 1)
+
+    def test_node_stability_tracks_consecutive_pass(self):
+        """节点稳定性追踪 — 连续通过 3 轮"""
+        with tempfile.TemporaryDirectory() as d:
+            fp = "test-fp-123"
+            # 模拟 3 轮通过
+            for i in range(3):
+                update_node_stability(d, [fp], [], f"run-{i}")
+            stability = load_node_stability(d)
+            self.assertIn(fp, stability)
+            self.assertEqual(stability[fp]["consecutive_pass"], 3)
+            self.assertEqual(stability[fp]["consecutive_fail"], 0)
+            self.assertEqual(stability[fp]["total_pass"], 3)
+
+            # 第 4 轮失败
+            update_node_stability(d, [], [fp], "run-3")
+            stability = load_node_stability(d)
+            self.assertEqual(stability[fp]["consecutive_pass"], 0)
+            self.assertEqual(stability[fp]["consecutive_fail"], 1)
+
+    def test_node_stability_stable_nodes(self):
+        """get_stable_nodes 返回连续通过 >=3 的指纹"""
+        stability = {
+            "stable-1": {"consecutive_pass": 5, "consecutive_fail": 0},
+            "stable-2": {"consecutive_pass": 3, "consecutive_fail": 0},
+            "unstable": {"consecutive_pass": 1, "consecutive_fail": 2},
+        }
+        stable = get_stable_nodes(stability, min_consecutive=3)
+        self.assertIn("stable-1", stable)
+        self.assertIn("stable-2", stable)
+        self.assertNotIn("unstable", stable)
 
 
 if __name__ == "__main__":

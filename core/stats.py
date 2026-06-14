@@ -1,4 +1,4 @@
-"""Statistics helpers for sampling, source quality, and trend history.
+"""Statistics helpers for sampling, source quality, trend history, and node stability.
 
 This module keeps reporting/health logic out of main.py so the pipeline entrypoint
 can stay focused on orchestration.
@@ -90,6 +90,92 @@ def load_historical_pass_rates(output_dir: str) -> Tuple[Dict[str, float], Dict[
             if isinstance(values, dict)
         }
     return protocol_rates, source_rates
+
+
+# ============================================================
+# Node stability tracking (per-fingerprint pass/fail history)
+# ============================================================
+
+def load_node_stability(output_dir: str) -> Dict[str, Dict[str, object]]:
+    """Load node stability history from node_stability.json.
+
+    Returns a dict keyed by fingerprint:
+        {fp: {"consecutive_pass": N, "consecutive_fail": N, "total_pass": N, "total_fail": N, "last_seen": "..."}}
+    """
+    path = Path(output_dir) / "node_stability.json"
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and "nodes" in data:
+            return data["nodes"]
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def update_node_stability(
+    output_dir: str,
+    passed_fingerprints: List[str],
+    failed_fingerprints: List[str],
+    timestamp: str,
+    keep_recent: int = 5000,
+) -> Dict[str, Dict[str, object]]:
+    """Update node stability history with this run's results.
+
+    Tracks consecutive pass/fail and total pass/fail per fingerprint.
+    Keeps only the most recent `keep_recent` fingerprints to bound file size.
+    """
+    path = Path(output_dir) / "node_stability.json"
+    nodes: Dict[str, Dict[str, object]] = load_node_stability(str(Path(output_dir)))
+
+    all_fps = set(passed_fingerprints) | set(failed_fingerprints)
+
+    for fp in all_fps:
+        entry = nodes.get(fp, {
+            "consecutive_pass": 0,
+            "consecutive_fail": 0,
+            "total_pass": 0,
+            "total_fail": 0,
+            "last_seen": "",
+        })
+        entry = dict(entry)  # copy
+        if fp in passed_fingerprints:
+            entry["consecutive_pass"] = int(entry.get("consecutive_pass", 0)) + 1
+            entry["consecutive_fail"] = 0
+            entry["total_pass"] = int(entry.get("total_pass", 0)) + 1
+        else:
+            entry["consecutive_fail"] = int(entry.get("consecutive_fail", 0)) + 1
+            entry["consecutive_pass"] = 0
+            entry["total_fail"] = int(entry.get("total_fail", 0)) + 1
+        entry["last_seen"] = timestamp
+        nodes[fp] = entry
+
+    # Prune: keep only fingerprints seen recently
+    if len(nodes) > keep_recent:
+        # Sort by last_seen descending, keep top N
+        sorted_nodes = sorted(
+            nodes.items(),
+            key=lambda x: x[1].get("last_seen", ""),
+            reverse=True,
+        )
+        nodes = dict(sorted_nodes[:keep_recent])
+
+    payload = {
+        "updated_at": timestamp,
+        "total_tracked": len(nodes),
+        "nodes": nodes,
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload
+
+
+def get_stable_nodes(stability: Dict[str, Dict[str, object]], min_consecutive: int = 3) -> List[str]:
+    """Return fingerprints with >= min_consecutive consecutive passes."""
+    return [
+        fp for fp, data in stability.items()
+        if isinstance(data, dict) and int(data.get("consecutive_pass", 0)) >= min_consecutive
+    ]
 
 
 def build_trend_entry(stats: Dict[str, object]) -> Dict[str, object]:

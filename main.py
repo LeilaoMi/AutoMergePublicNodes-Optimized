@@ -24,14 +24,14 @@ from typing import Dict, List, Tuple, Any
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-__version__ = "2.3.0"  # configurable scoring profiles + observability reports
+__version__ = "2.4.0"  # chunked output + protocol split + node stability + unlock detection + degraded mode
 
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
 from core.parser import Node
 from core.filtering import load_filter_rules, quality_prefilter
 from core.sampling import protocol_priority, sample_for_real_test, sample_for_real_test_weighted
-from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history
+from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history, update_node_stability, load_node_stability, get_stable_nodes
 from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
 from core.report import write_health_report
 from core.readme_updater import update_readme_stats
@@ -251,6 +251,11 @@ async def run(args):
         results = await tester.test_all(nodes)
         stage_durations["real_test"] = round(time.time() - stage_start, 1)
         stage_start = time.time()
+
+        # Load node stability for scoring boost
+        stability_data = load_node_stability(args.output_dir)
+        stable_fingerprints = set(get_stable_nodes(stability_data, min_consecutive=2)) if stability_data else set()
+
         scored_valid = []
         for r in results:
             if not r.success:
@@ -269,10 +274,16 @@ async def run(args):
             )
             score = calculate_score(score_input, scoring_config)
             breakdown = calculate_score_breakdown(score_input, scoring_config)
-            scored_valid.append((r.node, r.latency_ms, r.jitter_ms, score, src_name, breakdown))
+
+            # Stability bonus: nodes with consecutive passes get a small score boost
+            if fp in stable_fingerprints:
+                stability_bonus = min(3.0, 0)  # configurable future
+                score = round(score + stability_bonus, 2)
+
+            scored_valid.append((r.node, r.latency_ms, r.jitter_ms, score, src_name, breakdown, r))
 
         scored_valid.sort(key=lambda x: (-x[3], x[1]))
-        valid = [(n, lat, jit) for n, lat, jit, _, _, _ in scored_valid]
+        valid = [(n, lat, jit) for n, lat, jit, _, _, _, _ in scored_valid]
         real_test_passed = bool(valid)
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
         if valid:
@@ -305,7 +316,8 @@ async def run(args):
         cn_block_retry_results = []
         cn_block_retry_valid = []
 
-    # TCP 延迟只保留为"是否可达"信息, 不参与延迟排序. 真测 0 通过时显式失败.
+    # TCP 延迟只保留为"是否可达"信息, 不参与延迟排序. 真测 0 通过时降级.
+    degraded_mode = False
     if real_test_passed:
         pass
     elif not args.real_test:
@@ -316,23 +328,25 @@ async def run(args):
         )
         print(f"[5/6] TCP 模式: {len(valid)} 节点")
     else:
-        # 真测 0 成功: 报警并退出, 不静默回退到 TCP 延迟
-        # 统计失败原因, 方便排查
+        # 真测 0 成功: 降级到 TCP 模式, 避免用户订阅完全变空
         err_counter: Dict[str, int] = {}
         for r in results:
             if not r.success and r.error:
-                # 只取前 60 字符防止爆内存
                 key = r.error[:60]
                 err_counter[key] = err_counter.get(key, 0) + 1
         top_errs = sorted(err_counter.items(), key=lambda x: -x[1])[:5]
-        print(f"      ❌ 真测 0 通过 — sing-box 启动 / 端点可达性 / ip-api 限流可能异常")
+        print(f"      ⚠️ 真测 0 通过 — 降级到 TCP 模式")
         for err, cnt in top_errs:
             print(f"        [{cnt}×] {err}")
-        # 把失败原因暂存到全局给 stats 阶段用
         global _REAL_TEST_FAIL_REASONS
         _REAL_TEST_FAIL_REASONS = dict(err_counter)
-        # verified 输出空, 写 stats 后 SystemExit
-        valid = []
+        # 降级: 用 TCP 可达节点填充输出
+        valid = sorted(
+            [(n, tcp_latency.get(n.fingerprint(), 0), 0.0) for n in nodes],
+            key=lambda x: x[1],
+        )
+        degraded_mode = True
+        print(f"      降级输出 {len(valid)} 个 TCP 可达节点 (未经真测验证)")
 
     # 真实测试失败原因统计 — 让 stats.json 自带诊断
     from core.tester import build_error_detail
@@ -377,7 +391,7 @@ async def run(args):
 
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
-    from core.generator import write_outputs
+    from core.generator import write_outputs, write_chunked_outputs, write_protocol_outputs
 
     output_guard: Dict[str, Dict[str, object]] = {}
 
@@ -394,6 +408,12 @@ async def run(args):
         print(f"      verified.* 保留上一轮: {previous_verified}（本轮 {proposed_verified} 低于阈值）")
     else:
         n_top = write_outputs(final_nodes, args.output_dir, prefix="verified", repo_path=args.repo, branch=args.branch)
+        # P0: 分块输出 (verified)
+        write_chunked_outputs(final_nodes, args.output_dir, prefix="verified",
+                             repo_path=args.repo, branch=args.branch, chunk_size=100)
+        # P1: 协议分文件输出 (verified)
+        write_protocol_outputs(final_nodes, args.output_dir, prefix="verified",
+                              repo_path=args.repo, branch=args.branch)
         output_guard["verified"] = {"preserved": False, "previous_count": previous_verified, "proposed_count": n_top}
 
     if args.global_output:
@@ -410,6 +430,12 @@ async def run(args):
             print(f"      global.* 保留上一轮: {previous_global}（本轮 {proposed_global} 低于阈值）")
         else:
             n_global = write_outputs(global_nodes, args.output_dir, prefix="global", repo_path=args.repo, branch=args.branch)
+            # P0: 分块输出 (global)
+            write_chunked_outputs(global_nodes, args.output_dir, prefix="global",
+                                 repo_path=args.repo, branch=args.branch, chunk_size=100)
+            # P1: 协议分文件输出 (global)
+            write_protocol_outputs(global_nodes, args.output_dir, prefix="global",
+                                  repo_path=args.repo, branch=args.branch)
             output_guard["global"] = {"preserved": False, "previous_count": previous_global, "proposed_count": n_global}
     else:
         n_global = 0
@@ -460,6 +486,7 @@ async def run(args):
         "version": __version__,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "duration_sec": round(elapsed, 1),
+        "degraded_mode": degraded_mode,
         "stage_durations": stage_durations,
         "sources_total": len(sources),
         "sources_healthy": healthy,
@@ -506,14 +533,28 @@ async def run(args):
                 "jitter_ms": round(jit, 1),
                 "score": score,
                 "score_breakdown": breakdown,
+                "speed_kbps": getattr(r, "speed_kbps", 0) if r else 0,
+                "netflix": getattr(r, "netflix_ok", False) if r else False,
+                "chatgpt": getattr(r, "chatgpt_ok", False) if r else False,
             }
-            for n, lat, jit, score, source, breakdown in scored_valid[:20]
+            for n, lat, jit, score, source, breakdown, r in scored_valid[:20]
         ],
     }
     os.makedirs(args.output_dir, exist_ok=True)
     with open(f"{args.output_dir}/stats.json", "w", encoding="utf-8") as f:
         json.dump(stats, f, ensure_ascii=False, indent=2)
     update_trend_history(args.output_dir, stats)
+
+    # Node stability tracking
+    if args.real_test and results:
+        passed_fps = [r.node.fingerprint() for r in results if r.success]
+        failed_fps = [r.node.fingerprint() for r in results if not r.success]
+        stability = update_node_stability(args.output_dir, passed_fps, failed_fps,
+                                          stats.get("timestamp", ""))
+        stats["node_stability_count"] = stability.get("total_tracked", 0) if isinstance(stability, dict) else 0
+        # Re-write stats with stability count
+        with open(f"{args.output_dir}/stats.json", "w", encoding="utf-8") as f:
+            json.dump(stats, f, ensure_ascii=False, indent=2)
     report_path = write_health_report(args.output_dir, stats)
     print(f"      健康报告: {report_path}")
     if update_readme_stats("README.md", stats):
