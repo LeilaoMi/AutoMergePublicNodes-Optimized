@@ -783,12 +783,12 @@ class RegressionTests(unittest.TestCase):
 
     def test_scoring_profiles_report_includes_all_profiles_and_totals(self):
         report = build_scoring_profiles_report(["config/scoring*.yaml"])
-        self.assertIn("# Scoring Profiles Report", report)
+        self.assertIn("# 评分模板对比报告", report)
         self.assertIn("scoring.yaml", report)
         self.assertIn("scoring.low_latency.yaml", report)
         self.assertIn("scoring.stability.yaml", report)
         self.assertIn("scoring.source_quality.yaml", report)
-        self.assertIn("| Profile | latency | jitter | tcp | protocol_history | source_history | total |", report)
+        self.assertIn("| 模板 | latency | jitter | tcp | protocol_history | source_history | 总和 |", report)
         for name in (
             "scoring.yaml",
             "scoring.low_latency.yaml",
@@ -821,7 +821,7 @@ class RegressionTests(unittest.TestCase):
         }
         summary = build_summary(stats, repo="owner/repo", branch="main")
         self.assertIn("scoring_profiles.md", summary)
-        self.assertIn("release notes", summary)
+        self.assertIn("发布说明", summary)
         self.assertIn("docs/releases/README.md", summary)
         self.assertIn("Latency pts", summary)
         self.assertIn("Protocol hist pts", summary)
