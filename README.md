@@ -250,7 +250,6 @@ AutoMergePublicNodes-Optimized/
 
 - [`docs/client-guide.md`](docs/client-guide.md)：客户端导入指南。
 - [`docs/resources.md`](docs/resources.md)：测速、转换和排障资源。
-- [`docs/reports/`](docs/reports/)：历史审查与复核报告。
 - [`docs/cloudflare-worker-setup.md`](docs/cloudflare-worker-setup.md)：Cloudflare Worker 订阅加速方案。
 - [`docs/competitive-analysis-2026-06-14.md`](docs/competitive-analysis-2026-06-14.md)：33 个同类项目全量对标分析。
 - [`CHANGELOG.md`](CHANGELOG.md)：版本变更记录。
