@@ -576,8 +576,91 @@ def write_outputs(
 
 
 # ============================================================
-# 订阅转换链接生成
+# P0: 分块输出 — 将节点按 chunk_size 拆分为多个 txt 文件
 # ============================================================
+
+def write_chunked_outputs(
+    nodes: List[Node],
+    output_dir: str,
+    prefix: str = "verified",
+    repo_path: str | None = None,
+    branch: str = "main",
+    chunk_size: int = 100,
+) -> int:
+    """将节点按 chunk_size 拆分，输出 {prefix}_1.txt ~ {prefix}_N.txt。
+
+    每个文件是独立的 base64 订阅，可单独导入客户端。
+    """
+    import os
+    chunk_dir = os.path.join(output_dir, "chunks")
+    os.makedirs(chunk_dir, exist_ok=True)
+
+    prepared = _prepare_nodes(nodes)
+    urls = [u for n in prepared if (u := node_to_url(n))]
+
+    if not urls:
+        return 0
+
+    # 清理旧文件
+    import glob
+    for old in glob.glob(os.path.join(chunk_dir, f"{prefix}_*.txt")):
+        os.remove(old)
+
+    total_chunks = 0
+    for i in range(0, len(urls), chunk_size):
+        chunk_urls = urls[i:i + chunk_size]
+        chunk_num = i // chunk_size + 1
+        b64 = base64.b64encode("\n".join(chunk_urls).encode()).decode()
+        path = os.path.join(chunk_dir, f"{prefix}_{chunk_num}.txt")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(b64)
+        total_chunks += 1
+
+    return total_chunks
+
+
+# ============================================================
+# P1: 协议分文件输出 — 按协议类型分文件输出
+# ============================================================
+
+def write_protocol_outputs(
+    nodes: List[Node],
+    output_dir: str,
+    prefix: str = "verified",
+    repo_path: str | None = None,
+    branch: str = "main",
+) -> int:
+    """按协议类型分文件输出 base64 订阅。
+
+    输出到 output/by_protocol/{prefix}_{protocol}.txt
+    """
+    import os
+    proto_dir = os.path.join(output_dir, "by_protocol")
+    os.makedirs(proto_dir, exist_ok=True)
+
+    prepared = _prepare_nodes(nodes)
+
+    # 按协议分组
+    proto_groups: Dict[str, List[str]] = {}
+    for n in prepared:
+        url = node_to_url(n)
+        if url:
+            proto_groups.setdefault(n.type, []).append(url)
+
+    # 清理旧文件
+    import glob
+    for old in glob.glob(os.path.join(proto_dir, f"{prefix}_*.txt")):
+        os.remove(old)
+
+    count = 0
+    for proto, urls in sorted(proto_groups.items()):
+        b64 = base64.b64encode("\n".join(urls).encode()).decode()
+        path = os.path.join(proto_dir, f"{prefix}_{proto}.txt")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(b64)
+        count += 1
+
+    return count
 
 # 常用订阅转换后端
 CONVERTERS = [

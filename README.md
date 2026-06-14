@@ -117,13 +117,17 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 | `verified.txt/yaml/json/urls` | 严格真测通过节点 |
 | `global.txt/yaml/json/urls` | 海外可用的扩展节点 |
 | `all.txt/yaml/json/urls` | 全量去重候选节点 |
-| `stats.json` | 数量、耗时、协议通过率、错误明细、缩水守门结果 |
+| `chunks/verified_*.txt` | 分块订阅（每 100 节点一块，避免单文件过大） |
+| `by_protocol/verified_*.txt` | 按协议分文件（vmess/vless/trojan/ss 独立订阅） |
+| `stats.json` | 数量、耗时、协议通过率、错误明细、缩水守门结果、节点速度和解锁状态 |
 | `health_report.md` | 当前流水线健康报告，包含评分、来源质量、失败原因与输出保护 |
 | `health_report.json` | 输出完整性、重复项、报警、源清理摘要 |
 | `daily_report.md` | 面向人工阅读的每日摘要 |
 | `source_scores.md` | 订阅源质量评分 |
 | `scoring_profiles.md` | 评分模板权重、阈值和默认值对比 |
 | `source_cleanup_suggestions.md/json` | 订阅源清理建议 |
+| `source_discovery.json` | 从其他项目扫描发现的候选节点统计 |
+| `node_stability.json` | 节点跨轮稳定性追踪（连续通过/失败计数） |
 | `trend_history.json` | 最近 30 轮核心趋势 |
 
 健康状态说明：
@@ -226,6 +230,7 @@ AutoMergePublicNodes-Optimized/
 │   ├── daily_report.py             # Markdown 日报
 │   ├── source_scores_report.py     # 源质量评分报告
 │   ├── scoring_profiles_report.py  # 评分模板对比报告
+│   ├── source_discovery.py         # 从其他项目发现新源
 │   ├── suggest_source_cleanup.py   # 源清理建议与安全应用
 │   ├── validate_config.py          # 配置静态校验
 │   ├── doctor.py                   # 本地环境诊断
@@ -246,6 +251,8 @@ AutoMergePublicNodes-Optimized/
 - [`docs/client-guide.md`](docs/client-guide.md)：客户端导入指南。
 - [`docs/resources.md`](docs/resources.md)：测速、转换和排障资源。
 - [`docs/reports/`](docs/reports/)：历史审查与复核报告。
+- [`docs/cloudflare-worker-setup.md`](docs/cloudflare-worker-setup.md)：Cloudflare Worker 订阅加速方案。
+- [`docs/competitive-analysis-2026-06-14.md`](docs/competitive-analysis-2026-06-14.md)：33 个同类项目全量对标分析。
 - [`CHANGELOG.md`](CHANGELOG.md)：版本变更记录。
 - [`docs/releases/`](docs/releases/)：版本发布说明索引，包含 2.3.0 等用户向发布说明。
 
@@ -263,39 +270,29 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-13 19:32:01 |
-| 版本 | 2.3.0 |
-| 订阅源 | 44/44 |
-| 原始节点 | 40141 |
-| 去重后 | 15452 |
-| TCP 可达 | 1500 |
-| 真实可用 | 207 |
-| 真测通过率 | 13.8% |
-| Verified 输出 | 207 |
-| Global 输出 | 215 |
-| All 输出 | 15452 |
+| 更新时间 | 2026-06-14 00:02:00 |
+| 版本 | 2.4.0 |
+| 订阅源 | 1/1 |
+| 原始节点 | 1 |
+| 去重后 | 1 |
+| TCP 可达 | 1 |
+| 真实可用 | 1 |
+| 真测通过率 | 100.0% |
+| Verified 输出 | 1 |
+| Global 输出 | 0 |
+| All 输出 | 1 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
 ### Top 节点评分
 
-| 评分 | 协议 | 延迟(ms) | 来源 |
-| --- | --- | --- | --- |
-| 55.19 | shadowsocks | 442.5 | Au1rxx-base64 |
-| 54.59 | shadowsocks | 228.5 | Au1rxx-base64 |
-| 54.54 | shadowsocks | 229.8 | Au1rxx-base64 |
-| 54.45 | shadowsocks | 456.3 | Au1rxx-base64 |
-| 54.3 | shadowsocks | 237.3 | Au1rxx-base64 |
+_暂无评分数据_
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| snakem982 | 0.898 | 46 | prefer |
-| Au1rxx-base64 | 0.511 | 65 | observe |
-| roosterkid-openproxylist-v2ray | 0.423 | 34 | observe |
-| Epodonios-all | 0.335 | 1 | observe |
-| MatinGhanbari-all-sub | 0.255 | 0 | observe |
+| mock-source | 0.175 | 0 | observe |
 
 <!-- AUTONODES_STATS_END -->
 

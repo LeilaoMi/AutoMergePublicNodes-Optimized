@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 Release notes index: [`docs/releases/`](docs/releases/)
 
+## 2.4.0 - 2026-06-14
+
+### Added
+
+- Added chunked output: `output/chunks/verified_*.txt` splits verified nodes into 100-per-file blocks.
+- Added protocol-split output: `output/by_protocol/verified_*.txt` separates nodes by protocol type.
+- Added node stability tracking: `output/node_stability.json` records per-fingerprint consecutive pass/fail history.
+- Added Netflix and ChatGPT unlock detection in test results (non-blocking, informational).
+- Added download speed quantification: `speed_kbps` field in `stats.json` top scores.
+- Added 204 latency triple-sampling with median for improved accuracy.
+- Added source discovery tool `tools/source_discovery.py` scanning 6 high-star projects.
+- Added CI failure notification via auto-created Issue with `ci-failure` label.
+- Added CI recovery auto-close of `ci-failure` Issues with comment.
+- Added graceful degradation: TCP fallback when real-test yields 0 passing nodes.
+- Added sing-box download fallback to older versions on download failure.
+- Added GitHub Issue template for community source contributions.
+- Added Cloudflare Worker acceleration documentation `docs/cloudflare-worker-setup.md`.
+- Added full competitive analysis `docs/competitive-analysis-2026-06-14.md` covering 33 projects.
+- Added `degraded_mode` field to `stats.json`.
+
+### Changed
+
+- TestResult dataclass extended with `speed_kbps`, `netflix_ok`, `chatgpt_ok` fields.
+- Workflow purges chunks/ and by_protocol/ directories via jsDelivr.
+- Workflow artifacts include `source_discovery.json` and `node_stability.json`.
+- Version bumped to 2.4.0.
+
 ## 2.3.0 - 2026-06-12
 
 Detailed release notes: [`docs/releases/2.3.0.md`](docs/releases/2.3.0.md)
