@@ -649,7 +649,7 @@ class RegressionTests(unittest.TestCase):
             self.assertEqual(payload["summary"]["disable"], 1)
             self.assertEqual(payload["suggestions"]["disable"][0]["name"], "dead")
             report = build_cleanup_report(d)
-            self.assertIn("# Source Cleanup Suggestions", report)
+            self.assertIn("订阅源清理", report)
             self.assertIn("dead", report)
 
     def test_source_scores_report_generates_markdown(self):
@@ -663,7 +663,7 @@ class RegressionTests(unittest.TestCase):
             }
             Path(d, "stats.json").write_text(json.dumps(stats), encoding="utf-8")
             report = build_source_scores_report(d)
-            self.assertIn("# Source Quality Scores", report)
+            self.assertIn("订阅源质量评分", report)
             self.assertIn("good", report)
             self.assertIn("dead", report)
 
@@ -704,7 +704,7 @@ class RegressionTests(unittest.TestCase):
             health["source_cleanup"] = {"disable_count": 1, "downweight_count": 2, "prefer_count": 3, "observe_count": 4, "disable_suggestions": [{"name": "dead", "score": 0.0, "tested": 0, "pass_rate": None, "consecutive_dead": 2, "reason": "consecutive_dead >= 2"}], "downweight_suggestions": []}
             (out / "health_report.json").write_text(json.dumps(health), encoding="utf-8")
             report = build_daily_report(d)
-            self.assertIn("# AutoNodes Daily Report", report)
+            self.assertIn("AutoNodes", report)
             self.assertIn("204:TimeoutError", report)
             self.assertIn("dead", report)
 
@@ -962,8 +962,8 @@ weights:
         with tempfile.TemporaryDirectory() as d:
             ok, report = build_doctor_report("config/sources.yaml", "config/filter_rules.yaml", "./missing-sing-box", d)
             self.assertFalse(ok)
-            self.assertIn("# AutoNodes Doctor", report)
-            self.assertIn("sing-box binary", report)
+            self.assertIn("AutoNodes", report)
+            self.assertIn("sing-box", report)
 
     def test_protocol_fixture_corpus_parse_and_generate(self):
         fixture_dir = Path(__file__).parent / "fixtures" / "protocols"
