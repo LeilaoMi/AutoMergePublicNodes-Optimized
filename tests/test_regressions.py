@@ -823,9 +823,9 @@ class RegressionTests(unittest.TestCase):
         self.assertIn("scoring_profiles.md", summary)
         self.assertIn("发布说明", summary)
         self.assertIn("docs/releases/README.md", summary)
-        self.assertIn("Latency pts", summary)
-        self.assertIn("Protocol hist pts", summary)
-        self.assertIn("Source hist pts", summary)
+        self.assertIn("延迟分", summary)
+        self.assertIn("协议历史分", summary)
+        self.assertIn("来源历史分", summary)
         self.assertIn("| 80 | trojan | 120 | 10 | 35 | 14 | 9 | 10 | 12 | src |", summary)
 
     def test_actions_summary_handles_missing_score_breakdown(self):
