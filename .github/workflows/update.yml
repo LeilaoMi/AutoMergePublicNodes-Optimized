@@ -109,16 +109,14 @@ jobs:
         run: |
           python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json
 
-      - name: Validate code
-        run: |
-          set -x
-          python -m compileall -q main.py core tools tests
-          echo "COMPILEALL_EXIT=$?"
-          python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules 'config/scoring*.yaml'
-          echo "VALIDATE_CONFIG_EXIT=$?"
-          python -m unittest -v tests.test_regressions
-          echo "UNITTEST_EXIT=$?"
-          set +x
+      - name: Compile check
+        run: python -m compileall -q main.py core tools tests
+
+      - name: Config validation
+        run: python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules 'config/scoring*.yaml'
+
+      - name: Unit tests
+        run: python -m unittest -v tests.test_regressions
 
       - name: Run pipeline
         env:
