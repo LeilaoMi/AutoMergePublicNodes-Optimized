@@ -269,17 +269,17 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-14 19:32:57 |
+| 更新时间 | 2026-06-15 04:31:11 |
 | 版本 | 2.4.0 |
 | 订阅源 | 44/44 |
-| 原始节点 | 41035 |
-| 去重后 | 15688 |
+| 原始节点 | 40677 |
+| 去重后 | 15750 |
 | TCP 可达 | 1500 |
-| 真实可用 | 214 |
-| 真测通过率 | 14.3% |
-| Verified 输出 | 214 |
-| Global 输出 | 219 |
-| All 输出 | 15688 |
+| 真实可用 | 395 |
+| 真测通过率 | 26.3% |
+| Verified 输出 | 300 |
+| Global 输出 | 300 |
+| All 输出 | 15750 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -287,21 +287,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 61.17 | http | 740.0 | snakem982 |
-| 61.0 | http | 743.2 | snakem982 |
-| 60.96 | http | 744.6 | snakem982 |
-| 60.85 | http | 748.3 | snakem982 |
-| 60.79 | http | 749.7 | snakem982 |
+| 57.71 | http | 845.8 | snakem982 |
+| 57.7 | shadowsocks | 193.9 | Au1rxx-base64 |
+| 57.59 | http | 848.7 | snakem982 |
+| 57.55 | shadowsocks | 198.8 | Au1rxx-base64 |
+| 57.47 | http | 852.5 | snakem982 |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| snakem982 | 0.917 | 45 | prefer |
-| Au1rxx-base64 | 0.578 | 87 | observe |
-| roosterkid-openproxylist-v2ray | 0.32 | 33 | observe |
-| Epodonios-all | 0.255 | 0 | observe |
-| MatinGhanbari-all-sub | 0.255 | 0 | observe |
+| snakem982 | 0.919 | 46 | prefer |
+| roosterkid-openproxylist-v2ray | 0.613 | 26 | observe |
+| Au1rxx-base64 | 0.555 | 98 | observe |
+| Surfboard-tg-mixed | 0.356 | 769 | observe |
+| barry-far-vless | 0.335 | 1 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
