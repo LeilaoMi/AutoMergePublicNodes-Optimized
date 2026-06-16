@@ -1,37 +1,7 @@
 {
-  "updated_at": "2026-06-16 17:00:03",
+  "updated_at": "2026-06-16 20:58:15",
   "keep": 30,
   "runs": [
-    {
-      "timestamp": "2026-06-11 16:09:37",
-      "duration_sec": 240.6,
-      "nodes_raw": 39877,
-      "nodes_dedup": 15187,
-      "nodes_tcp_ok": 1500,
-      "nodes_real_ok": 259,
-      "nodes_verified_output": 259,
-      "nodes_global_output": 264,
-      "nodes_global_extra_from_cn_block": 5,
-      "real_test_errors": {
-        "204": 971,
-        "sing-box exited 1": 86,
-        "geo": 133,
-        "speed": 25,
-        "cn-block": 26
-      },
-      "output_guard": {
-        "verified": {
-          "preserved": false,
-          "previous_count": 300,
-          "proposed_count": 259
-        },
-        "global": {
-          "preserved": false,
-          "previous_count": 300,
-          "proposed_count": 264
-        }
-      }
-    },
     {
       "timestamp": "2026-06-11 20:27:58",
       "duration_sec": 211.6,
@@ -901,7 +871,48 @@
           "proposed_count": 235
         }
       }
+    },
+    {
+      "timestamp": "2026-06-16 20:58:15",
+      "duration_sec": 261.5,
+      "nodes_raw": 43663,
+      "nodes_dedup": 18298,
+      "nodes_tcp_ok": 1500,
+      "nodes_real_ok": 219,
+      "nodes_verified_output": 219,
+      "nodes_global_output": 224,
+      "nodes_global_extra_from_cn_block": 5,
+      "real_test_errors": {
+        "204": 957,
+        "sing-box exited 1": 92,
+        "speed": 25,
+        "geo": 177,
+        "cn-block": 30
+      },
+      "output_guard": {
+        "verified": {
+          "preserved": false,
+          "previous_count": 227,
+          "proposed_count": 219
+        },
+        "global": {
+          "preserved": false,
+          "previous_count": 235,
+          "proposed_count": 224
+        }
+      }
     }
   ],
-  "alerts": []
+  "alerts": [
+    {
+      "type": "verified_downtrend_4_runs",
+      "message": "verified output decreased for 4 consecutive runs",
+      "values": [
+        300,
+        244,
+        227,
+        219
+      ]
+    }
+  ]
 }
