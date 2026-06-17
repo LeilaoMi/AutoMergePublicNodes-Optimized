@@ -139,7 +139,8 @@ class SingBoxTester:
     def __init__(self, sb_path: str = "./sing-box", concurrency: int = 30,
                  startup_wait: float = 0.6, request_timeout: float = 6.0,
                  min_latency_ms: float = DEFAULT_MIN_LATENCY_MS,
-                 skip_target_kinds: Iterable[str] | None = None):
+                 skip_target_kinds: Iterable[str] | None = None,
+                 probe_only: bool = False):
         if not os.path.exists(sb_path):
             raise FileNotFoundError(f"sing-box binary not found: {sb_path}")
         self.sb_path = os.path.abspath(sb_path)
@@ -148,6 +149,7 @@ class SingBoxTester:
         self.request_timeout = request_timeout
         self.min_latency_ms = min_latency_ms
         self.skip_target_kinds = set(skip_target_kinds or [])
+        self.probe_only = probe_only
         self._port_counter = 30000
 
     def _alloc_port(self) -> int:
@@ -231,7 +233,8 @@ class SingBoxTester:
                 speed_download_bytes = 0
                 speed_download_time = 0.0
 
-                for target_url, target_kind in TEST_TARGETS:
+                probe_targets = TEST_TARGETS[:1] if self.probe_only else TEST_TARGETS
+                for target_url, target_kind in probe_targets:
                     if target_kind in self.skip_target_kinds:
                         continue
 

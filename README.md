@@ -68,12 +68,15 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
   → 质量预过滤
   → TCP 预筛选
   → 历史权重下采样
+  → 轻量探活（lightweight probe, 高并发快筛不可达节点）
   → sing-box 真实代理测试
   → 综合评分排序输出
   → 生成健康报告、日报、源评分与清理建议
 ```
 
 真实测试包含：海外 204 检测、出口地理检测、中国站点连通检测、小文件下载测速、可疑低延迟过滤。
+
+轻量探活（lightweight probe）在完整真测前用更高并发（80）、更短超时（4s）只测 204 目标，快速筛除第一个目标就不可达的节点，把完整真测的节点数从 ~1500 降到 ~600，显著缩短真测总耗时。
 
 ---
 
@@ -83,10 +86,12 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 
 | 因子 | 默认权重 | 说明 |
 |---|---:|---|
-| `latency` | 35 | sing-box 真实代理测试延迟，越低越好 |
+| `latency` | 25 | sing-box 真实代理测试延迟，越低越好 |
 | `jitter` | 15 | 多目标测试抖动，越低越稳定 |
 | `tcp` | 10 | TCP 预筛选延迟，用作基础可达性参考 |
-| `protocol_history` | 20 | 协议历史通过率，降低长期低质协议权重 |
+| `speed` | 10 | 下载速度（KB/s），越高越好 |
+| `fingerprint_resistance` | 5 | 流量指纹抗检测能力（REALITY/uTLS/WS+TLS） |
+| `protocol_history` | 15 | 协议历史通过率，降低长期低质协议权重 |
 | `source_history` | 20 | 订阅源历史通过率，优先稳定来源 |
 
 配置校验会检查字段、阈值和默认值范围。权重总和不等于 100 时只给 warning，不阻断 CI；建议保持 100，便于分数解释和跨轮对比。
