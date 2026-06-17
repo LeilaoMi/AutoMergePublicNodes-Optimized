@@ -78,6 +78,8 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 
 轻量探活（lightweight probe）在完整真测前用更高并发（80）、更短超时（4s）只测 204 目标，快速筛除第一个目标就不可达的节点，把完整真测的节点数从 ~1500 降到 ~600，显著缩短真测总耗时。
 
+稳定性加成：连续多轮真测通过的节点会获得评分加成（连续 2 轮 +2，3 轮 +3，上限 +5），在评分系统之外额外提升跨周期稳定节点的排名。中国大陆用户使用公开节点最大的痛点是"时灵时不灵"，这一机制让历史稳定的老节点优先排在前面。
+
 ---
 
 ## 评分策略
@@ -274,39 +276,29 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-17 17:07:44 |
+| 更新时间 | 2026-06-17 17:30:28 |
 | 版本 | 2.4.0 |
-| 订阅源 | 44/44 |
-| 原始节点 | 43696 |
-| 去重后 | 18208 |
-| TCP 可达 | 1500 |
-| 真实可用 | 78 |
-| 真测通过率 | 5.2% |
-| Verified 输出 | 78 |
-| Global 输出 | 81 |
-| All 输出 | 18208 |
+| 订阅源 | 1/1 |
+| 原始节点 | 1 |
+| 去重后 | 1 |
+| TCP 可达 | 1 |
+| 真实可用 | 1 |
+| 真测通过率 | 100.0% |
+| Verified 输出 | 1 |
+| Global 输出 | 0 |
+| All 输出 | 1 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
 ### Top 节点评分
 
-| 评分 | 协议 | 延迟(ms) | 来源 |
-| --- | --- | --- | --- |
-| 64.41 | shadowsocks | 244.2 | DeltaKronecker-all |
-| 62.12 | shadowsocks | 292.6 | DeltaKronecker-all |
-| 56.64 | vmess | 555.0 | DeltaKronecker-all |
-| 56.09 | vmess | 588.7 | DeltaKronecker-all |
-| 55.83 | shadowsocks | 347.3 | DeltaKronecker-all |
+_暂无评分数据_
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| snakem982 | 0.791 | 15 | prefer |
-| DeltaKronecker-all | 0.732 | 90 | prefer |
-| Surfboard-tg-mixed | 0.3 | 5 | observe |
-| nscl5-all | 0.294 | 1 | observe |
-| 10ium-ScrapeCategorize-Vless | 0.255 | 0 | observe |
+| mock-source | 0.175 | 0 | observe |
 
 <!-- AUTONODES_STATS_END -->
 

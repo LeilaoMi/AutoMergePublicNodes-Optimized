@@ -299,9 +299,11 @@ async def run(args):
             score = calculate_score(score_input, scoring_config)
             breakdown = calculate_score_breakdown(score_input, scoring_config)
 
-            # Stability bonus: nodes with consecutive passes get a small score boost
+            # Stability bonus: 连续多轮通过的节点更值得信赖, 给予评分加成
             if fp in stable_fingerprints:
-                stability_bonus = min(3.0, 0)  # configurable future
+                # 连续通过 2 轮 +2, 3 轮 +3, 上限 +5 (满分 100 内)
+                stability_count = stability_data.get(fp, {}).get("consecutive_passes", 0) if stability_data else 0
+                stability_bonus = min(5.0, float(stability_count))
                 score = round(score + stability_bonus, 2)
 
             scored_valid.append((r.node, r.latency_ms, r.jitter_ms, score, src_name, breakdown, r))
