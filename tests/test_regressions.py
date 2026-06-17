@@ -379,6 +379,7 @@ class RegressionTests(unittest.TestCase):
             global_output = False
             min_retain_ratio = 0.7
             all_output_mode = "full"
+            lightweight_probe = False
 
         source = Source(url="https://example.com/sub.txt", name="mock-source")
         node = Node("http", "mock", "127.0.0.1", 8080, {})
@@ -432,6 +433,7 @@ class RegressionTests(unittest.TestCase):
             global_output = True
             min_retain_ratio = 0.7
             all_output_mode = "light"
+            lightweight_probe = False
             singbox = __file__
             test_concurrency = 1
             startup_wait = 0

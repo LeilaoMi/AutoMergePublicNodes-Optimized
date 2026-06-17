@@ -231,6 +231,26 @@ async def run(args):
         nodes = sample_for_real_test_weighted(nodes, tcp_latency, args.test_limit, node_source_map, protocol_rates, source_rates)
         print(f"      下采样: {before_sample} -> {len(nodes)}（协议基础探索 + 历史通过率加权）")
 
+    # 4.5) lightweight probe 轻量探活（可选）
+    if args.lightweight_probe and args.real_test and nodes:
+        from core.tester import SingBoxTester
+        print(f"[4.5/6] 轻量探活（并发 {args.probe_concurrency}, 超时 {args.probe_timeout}s）...")
+        probe_tester = SingBoxTester(
+            sb_path=args.singbox,
+            concurrency=args.probe_concurrency,
+            startup_wait=args.probe_startup_wait,
+            request_timeout=args.probe_timeout,
+            min_latency_ms=0,
+            probe_only=True,
+        )
+        probe_results = await probe_tester.test_all(nodes, progress_every=100)
+        probe_pass_fps = {r.node.fingerprint() for r in probe_results if r.success}
+        before_probe = len(nodes)
+        nodes = [n for n in nodes if n.fingerprint() in probe_pass_fps]
+        stage_durations["probe"] = round(time.time() - stage_start, 1)
+        stage_start = time.time()
+        print(f"      探活通过: {len(nodes)}/{before_probe}")
+
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
     scored_valid: List[tuple] = []  # [(node, latency_ms, jitter_ms, score, source, breakdown)]
@@ -581,7 +601,11 @@ def main():
     p.add_argument("--tcp-timeout", type=float, default=3.0)
 
     p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument("--test-concurrency", type=int, default=30)
+    p.add_argument("--test-concurrency", type=int, default=50)
+    p.add_argument("--lightweight-probe", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument("--probe-concurrency", type=int, default=80)
+    p.add_argument("--probe-timeout", type=float, default=4.0)
+    p.add_argument("--probe-startup-wait", type=float, default=0.4)
     p.add_argument("--test-timeout", type=float, default=6.0)
     p.add_argument("--startup-wait", type=float, default=0.6)
     p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
