@@ -10,8 +10,8 @@
 
 ### A. 有工程代码的项目（8 个）
 
-| # | 项目 | Stars | 语言 | 更新 | 真测 | 核心特点 |
-|---|---|---:|---|---|---|---|
+| \# | 项目 | Stars | 语言 | 更新 | 真测 | 核心特点 |
+| --- | --- | --- | --- | --- | --- | --- |
 | 1 | chengaopan/AutoMergePublicNodes | 7.6k | Python | 定时 | 否 | 我们项目的父仓库 |
 | 2 | mahdibland/V2RayAggregator | 4.0k | Python | 12h | 是(LiteSpeedTest) | LiteSpeedTest 测速 + 区域配置 + subconverter |
 | 3 | Epodonios/v2ray-configs | 3.1k | Python | **5min** | 否 | 5 分钟高频更新 + 42 分块 + 协议分文件 |
@@ -23,8 +23,8 @@
 
 ### B. 纯分享/无代码/GitHub Pages 项目（25 个）
 
-| # | 项目 | Stars | 特点 |
-|---|---|---:|---|
+| \# | 项目 | Stars | 特点 |
+| --- | --- | --- | --- |
 | 9 | Pawdroid/Free-servers | 17.8k | 纯分享 + v2cross.com |
 | 10 | free-nodes/clashfree | 15.7k | 纯分享 + clashgithub.com |
 | 11 | OpenRunner/clash-freenode | 6.3k | 纯分享 SSR/Clash/V2Ray |
@@ -58,23 +58,26 @@
 ### 1. Barabama/FreeNodes — Scrapy 爬虫框架
 
 **他们的做法：**
+
 - 使用 Scrapy 框架，每个数据源一个 Spider
-- `config.json` 集中管理所有目标站点
-- 每个源输出独立的 `.txt` + `.yaml`
+- `file config.json` 集中管理所有目标站点
+- 每个源输出独立的 `file .txt` + `file .yaml`
 - 用户可以选择只订阅某个源的节点
 
 **我们可学习的：**
+
 - ✅ 模块化爬虫：每个源独立 Spider，某个源挂了不影响其他
 - ✅ 配置驱动源列表
 - ❌ Scrapy 太重，我们已有更轻的 asyncio 异步抓取
 
-**差距评估：** 无。我们的 `core/fetcher.py` 已经是异步并发 + 配置驱动。但可以借鉴"分源输出"的想法——按来源分文件输出，方便用户选择。
+**差距评估：** 无。我们的 `file core/fetcher.py` 已经是异步并发 + 配置驱动。但可以借鉴"分源输出"的想法——按来源分文件输出，方便用户选择。
 
 ---
 
 ### 2. snakem982/proxypool — Go 爬虫 + CDN
 
 **他们的做法：**
+
 - Go 语言编写爬虫，性能优于 Python
 - 爬取多种协议格式（vmess/vless/trojan/ss/hysteria2）
 - 输出 clash-meta.yaml 和 v2ray.txt 两种格式
@@ -83,6 +86,7 @@
 - 4700+ commits，维护非常活跃
 
 **我们可学习的：**
+
 - ✅ 多协议解析覆盖面广（含 hysteria2、tuic 等新协议）
 - ✅ Spider 模块化
 - ❌ Go vs Python：我们没有切换语言的需求
@@ -94,6 +98,7 @@
 ### 3. xiaoji235/airport-free — 3 小时高频更新 + CDN 分片
 
 **他们的做法：**
+
 - 每 3 小时更新一次（比常见的 6h 更频繁）
 - 多个 Python 脚本分别爬不同站点
 - 输出分片：v2ray nodes 1/2/3, clash nodes 1/2/3
@@ -103,6 +108,7 @@
 - 有 Issues 提交新源的社区机制
 
 **我们可学习的：**
+
 - ✅ **CDN 分片输出**：大订阅文件拆成多个分片，避免单文件过大被 CDN 缓存卡住
 - ✅ **更新频率可调**：我们当前 6h，可考虑支持 3h/4h 选项
 - ✅ **社区贡献源**：Issues 模板让用户提交新源
@@ -112,11 +118,13 @@
 ### 4. shuaidaoya/FreeNodes — SubsCheck 自动测速
 
 **他们的做法：**
+
 - 使用 SubsCheck-Win-GUI 自动从节点池测速筛选
 - 每 4h 更新一次
 - 测速后输出可用节点
 
 **我们可学习的：**
+
 - ✅ 自动测速概念（我们已有 sing-box 真测，更彻底）
 - ❌ SubsCheck 是 Windows GUI 工具，不适合 CI
 
@@ -127,12 +135,14 @@
 ### 5. Pawdroid/Free-servers — 17.8k Stars 纯分享
 
 **他们的做法：**
+
 - 无代码，纯订阅链接分享
 - 6h 更新
 - README 极其简洁，只有订阅链接
 - v2cross.com 独立网站导流
 
 **我们可学习的：**
+
 - ✅ README 简洁明了：用户打开就看到订阅链接
 - ✅ 独立网站导流（我们暂不需要）
 - ❌ 无工程能力，不可持续
@@ -146,7 +156,7 @@
 ### 我们已经领先的能力（全 33 个项目中独一无二）
 
 | 能力 | 同类项目普遍水平 | 我们的水平 | 独特性 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 真实代理测试 | 仅 V2RayAggregator(LiteSpeedTest) | sing-box 全协议真测 | **唯一** |
 | 综合评分排序 | 纯延迟 或 无排序 | 5 因子加权评分 + 4 套模板 | **唯一** |
 | 评分透明度 | 无 | 分项 breakdown + 报告 | **唯一** |
@@ -161,7 +171,7 @@
 ### 我们需要补足的短板（从 33 个项目提炼）
 
 | 短板 | 来源 | 优先级 | 实现难度 | 验证依据 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | **分块输出** | Epodonios/V2RayAggregator/xiaoji235/ebrasha | 高 | 中 | 4 个工程化项目都做了 |
 | **协议分文件** | Epodonios/V2RayAggregator/ebrasha | 高 | 中 | 3 个项目都做了 |
 | **社区贡献源** | xiaoji235/V2RayAggregator | 中 | 低 | 2 个项目有 |
@@ -178,10 +188,11 @@
 
 ### P0：CDN 分片输出（高价值）
 
-**问题：** 当 verified 节点 > 300 时，单文件可能超过 500KB，jsDelivr CDN 缓存更新延迟。
+**问题：** 当 verified 节点 &gt; 300 时，单文件可能超过 500KB，jsDelivr CDN 缓存更新延迟。
 
 **方案：**
-```
+
+```markdown
 output/verified_1.txt   # 第 1-100 个节点
 output/verified_2.txt   # 第 101-200 个节点
 output/verified_3.txt   # 第 201-300 个节点
@@ -189,21 +200,24 @@ output/verified_all.txt # 全量（兼容旧订阅）
 ```
 
 **影响文件：**
-- `core/generator.py`：新增分片输出逻辑
-- `main.py`：传入分片参数
-- `.github/workflows/update.yml`：purge 分片文件
+
+- `file core/generator.py`：新增分片输出逻辑
+- `file main.py`：传入分片参数
+- `file .github/workflows/update.yml`：purge 分片文件
 
 ### P1：社区贡献源机制（中价值）
 
 **方案：**
-- 创建 Issue 模板 `.github/ISSUE_TEMPLATE/new-source.md`
+
+- 创建 Issue 模板 `file .github/ISSUE_TEMPLATE/new-source.md`
 - 用户填 URL + 协议 + 预估节点数
-- 维护者审核后加入 `config/sources.yaml`
+- 维护者审核后加入 `file config/sources.yaml`
 
 ### P2：按来源分文件输出（中价值）
 
 **方案：**
-```
+
+```markdown
 output/by_source/snakem982.txt
 output/by_source/aiboboxx.txt
 output/by_source/v2rayshare.txt
@@ -214,6 +228,7 @@ output/by_source/v2rayshare.txt
 ### P3：Telegram/Discord 推送（低优先）
 
 **方案：**
+
 - CI 完成后通过 Bot 推送更新摘要
 - 包含节点数量、Top 延迟、报告链接
 
@@ -224,6 +239,7 @@ output/by_source/v2rayshare.txt
 ### 6. mahdibland/V2RayAggregator (4.0k stars) — 最接近我们的工程化项目
 
 **他们的做法：**
+
 - Python + GitHub Actions 全自动化
 - 使用 LiteSpeedTest 做测速筛选（类似我们的 sing-box 真测）
 - 收集 20+ 个公共节点源，22758 commits，维护极为活跃
@@ -236,6 +252,7 @@ output/by_source/v2rayshare.txt
 - 机场节点单独分组，2 小时更新
 
 **我们可学习的（新发现）：**
+
 - ✅ **区域化配置**：Clash Meta For Iran/China/Others — 不同地区输出不同分流策略
 - ✅ **机场 vs 公共节点分组**：两类源分开管理，更新频率不同
 - ✅ **Log Visualizer**：Netlify 上可视化节点延迟测试结果
@@ -249,16 +266,18 @@ output/by_source/v2rayshare.txt
 ### 7. Epodonios/v2ray-configs (3.1k stars) — 5 分钟极高频更新
 
 **他们的做法：**
+
 - **每 5 分钟更新一次**（是所有同类项目中最高的频率）
 - 43237 commits，极为活跃
 - 收集数千个配置
-- 输出 Sub1.txt ~ Sub42.txt（42 个分块文件，250 配置/块）
+- 输出 Sub1.txt \~ Sub42.txt（42 个分块文件，250 配置/块）
 - 按协议分文件：vless/vmess/ss/ssr/trojan
 - 提供 Base64 格式
 - 提供 V2Ray Config Scanner 脚本（Python，测延迟）
 - GPL-3.0 开源
 
 **我们可学习的（新发现）：**
+
 - ✅ **42 个分块文件**：比 xiaoji235 的 3 个分块更极致，大池子也不会单文件过大
 - ✅ **5 分钟更新**：虽然 GitHub Actions 免费版不支持 5 分钟 cron，但说明高频更新有需求
 - ✅ **独立 Scanner 脚本**：让用户本地测延迟排序
@@ -270,6 +289,7 @@ output/by_source/v2rayshare.txt
 ### 8. ebrasha/free-v2ray-public-list (952 stars) — Telegram Bot + 15 分钟更新
 
 **他们的做法：**
+
 - **每 15 分钟更新**
 - 支持 SS/SSR/Trojan/VLESS/VMess/TUIC/Hysteria2 全协议
 - **Telegram Bot 自动推送配置**：@AbdalV2rayBot
@@ -280,6 +300,7 @@ output/by_source/v2rayshare.txt
 - 面向伊朗用户为主，兼顾中国
 
 **我们可学习的（新发现）：**
+
 - ✅ **Telegram Bot 集成**：不只是推送，还支持过滤和定时发送
 - ✅ **按国家/端口过滤配置**：用户可以选择特定地区的节点
 - ✅ **分块 + 分协议双重输出**：chunks 目录 + separated 目录
@@ -290,7 +311,7 @@ output/by_source/v2rayshare.txt
 ## 六、汇总：所有项目的优点矩阵
 
 | 能力/特性 | 我们 | V2RayAggregator | Epodonios | ebrasha | Barabama | xiaoji235 | snakem982 |
-|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- |
 | 真实代理测试 | ✅ sing-box | ✅ LiteSpeedTest | ❌ | ❌ | ❌ | ❌ | ❌ |
 | 综合评分排序 | ✅ 5因子 | ❌ 纯速度 | ❌ | ❌ | ❌ | ❌ | ❌ |
 | 评分透明度 | ✅ breakdown | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -318,7 +339,8 @@ output/by_source/v2rayshare.txt
 4 个高 star 项目都做了分块，说明这是刚需。
 
 **方案：**
-```
+
+```markdown
 output/verified_1.txt   # 第 1-100
 output/verified_2.txt   # 第 101-200
 output/verified_3.txt   # 第 201-300
@@ -332,7 +354,8 @@ output/verified.txt     # 全量（兼容旧订阅）
 3 个项目都做了协议分文件。
 
 **方案：**
-```
+
+```markdown
 output/by_protocol/vmess.txt
 output/by_protocol/vless.txt
 output/by_protocol/trojan.txt
@@ -344,13 +367,15 @@ output/by_protocol/ss.txt
 来源：xiaoji235 + V2RayAggregator 的源列表
 
 **方案：**
-- Issue 模板 `.github/ISSUE_TEMPLATE/new-source.md`
+
+- Issue 模板 `file .github/ISSUE_TEMPLATE/new-source.md`
 
 ### P3：Telegram Bot 推送（低优先，差异化）
 
 来源：ebrasha
 
 **方案：**
+
 - CI 完成后 Bot 推送更新摘要
 
 ### P4：区域化 Clash 配置（低优先）
@@ -358,6 +383,7 @@ output/by_protocol/ss.txt
 来源：V2RayAggregator
 
 **方案：**
+
 - 输出 Clash Meta For China（国内分流策略）
 - 输出 Clash Meta For Global（海外分流策略）
 
@@ -370,9 +396,9 @@ cd /sdcard/Download/Operit/projects/AutoMergePublicNodes-Optimized
 python -m compileall -q main.py core tools tests
 
 # 配置校验
-python tools/validate_config.py \
-  --sources config/sources.yaml \
-  --filter-rules config/filter_rules.yaml \
+python tools/validate_config.py 
+  --sources config/sources.yaml 
+  --filter-rules config/filter_rules.yaml 
   --scoring-rules 'config/scoring*.yaml'
 
 # 回归测试

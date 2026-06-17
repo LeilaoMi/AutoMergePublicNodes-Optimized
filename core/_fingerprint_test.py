@@ -83,9 +83,24 @@ def analyze_fingerprint_resistance(node: Node) -> Dict[str, Any]:
             resistance = "medium"
             detail += " + QUIC-based protocol adds obfuscation"
 
+    # 端口抗检测加成: 443 混在正常 HTTPS 流量里 GFW 最难区分(verified 池 443 占 72%)
+    CF_HTTPS_PORTS = {8443, 2053, 2083, 2087, 2096}
+    port = getattr(node, "server_port", 0) or 0
+    if port == 443:
+        port_bonus = 0.1
+    elif port in CF_HTTPS_PORTS:
+        port_bonus = 0.08
+    elif port == 80:
+        port_bonus = 0.05
+    else:
+        port_bonus = 0.0
+    final_score = min(1.0, RESISTANCE_LEVELS.get(resistance, 0.1) + port_bonus)
+    if port_bonus > 0:
+        detail += f" + port:{port}"
+
     return {
         "resistance": resistance,
-        "score": RESISTANCE_LEVELS.get(resistance, 0.1),
+        "score": final_score,
         "has_reality": has_reality,
         "has_utls": has_utls,
         "has_ws_tls": has_ws_tls,
