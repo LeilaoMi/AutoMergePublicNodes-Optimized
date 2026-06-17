@@ -274,17 +274,17 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-17 16:49:04 |
+| 更新时间 | 2026-06-17 17:07:44 |
 | 版本 | 2.4.0 |
 | 订阅源 | 44/44 |
 | 原始节点 | 43696 |
-| 去重后 | 18218 |
-| TCP 可达 | 272 |
-| 真实可用 | 140 |
-| 真测通过率 | 51.5% |
-| Verified 输出 | 140 |
-| Global 输出 | 142 |
-| All 输出 | 18218 |
+| 去重后 | 18208 |
+| TCP 可达 | 1500 |
+| 真实可用 | 78 |
+| 真测通过率 | 5.2% |
+| Verified 输出 | 78 |
+| Global 输出 | 81 |
+| All 输出 | 18208 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -292,21 +292,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 55.68 | shadowsocks | 240.1 | Au1rxx-base64 |
-| 55.63 | shadowsocks | 242.2 | Au1rxx-base64 |
-| 55.53 | shadowsocks | 246.5 | Au1rxx-base64 |
-| 55.46 | shadowsocks | 249.6 | Au1rxx-base64 |
-| 52.45 | shadowsocks | 283.0 | Au1rxx-base64 |
+| 64.41 | shadowsocks | 244.2 | DeltaKronecker-all |
+| 62.12 | shadowsocks | 292.6 | DeltaKronecker-all |
+| 56.64 | vmess | 555.0 | DeltaKronecker-all |
+| 56.09 | vmess | 588.7 | DeltaKronecker-all |
+| 55.83 | shadowsocks | 347.3 | DeltaKronecker-all |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| DeltaKronecker-all | 0.699 | 40 | observe |
-| ninja-vless | 0.685 | 29 | observe |
-| roosterkid-openproxylist-v2ray | 0.683 | 16 | observe |
-| Au1rxx-base64 | 0.519 | 66 | observe |
-| snakem982 | 0.47 | 58 | observe |
+| snakem982 | 0.791 | 15 | prefer |
+| DeltaKronecker-all | 0.732 | 90 | prefer |
+| Surfboard-tg-mixed | 0.3 | 5 | observe |
+| nscl5-all | 0.294 | 1 | observe |
+| 10ium-ScrapeCategorize-Vless | 0.255 | 0 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
