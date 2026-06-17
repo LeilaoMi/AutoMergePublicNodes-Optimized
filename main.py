@@ -232,6 +232,7 @@ async def run(args):
         print(f"      下采样: {before_sample} -> {len(nodes)}（协议基础探索 + 历史通过率加权）")
 
     # 4.5) lightweight probe 轻量探活（可选）
+    nodes_before_probe = len(nodes)  # TCP 后、probe 前的节点数
     if args.lightweight_probe and args.real_test and nodes:
         from core.tester import SingBoxTester
         print(f"[4.5/6] 轻量探活（并发 {args.probe_concurrency}, 超时 {args.probe_timeout}s）...")
@@ -250,6 +251,7 @@ async def run(args):
         stage_durations["probe"] = round(time.time() - stage_start, 1)
         stage_start = time.time()
         print(f"      探活通过: {len(nodes)}/{before_probe}")
+    nodes_after_probe = len(nodes)  # probe 后的节点数
 
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
@@ -514,7 +516,8 @@ async def run(args):
         "sources_healthy": healthy,
         "nodes_raw": total_raw,
         "nodes_dedup": len(set(nd.fingerprint() for nd in all_nodes)),
-        "nodes_tcp_ok": len(nodes),
+        "nodes_tcp_ok": nodes_before_probe,
+        "nodes_probe_ok": nodes_after_probe,
         "nodes_real_ok": len(valid),
         "nodes_verified_output": n_top,
         "nodes_global_output": n_global,
@@ -597,7 +600,7 @@ def main():
                    help="整批订阅抓取总超时秒数，超时后返回已完成源的部分结果")
 
     p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument("--tcp-concurrency", type=int, default=200)
+    p.add_argument("--tcp-concurrency", type=int, default=500)
     p.add_argument("--tcp-timeout", type=float, default=3.0)
 
     p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=True)

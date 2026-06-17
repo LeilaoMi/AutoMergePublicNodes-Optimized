@@ -233,7 +233,8 @@ class SingBoxTester:
                 speed_download_bytes = 0
                 speed_download_time = 0.0
 
-                probe_targets = TEST_TARGETS[:1] if self.probe_only else TEST_TARGETS
+                # probe 模式: 测 204 + geo, 提前剔除出口CN节点
+                probe_targets = [TEST_TARGETS[0], TEST_TARGETS[2]] if self.probe_only else TEST_TARGETS
                 for target_url, target_kind in probe_targets:
                     if target_kind in self.skip_target_kinds:
                         continue

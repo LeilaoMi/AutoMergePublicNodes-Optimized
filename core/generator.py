@@ -565,7 +565,11 @@ def write_outputs(
         },
     }
     with open(f"{output_dir}/{prefix}.json", "w", encoding="utf-8") as f:
-        json.dump(singbox, f, ensure_ascii=False, indent=2)
+        # 大文件(>1000节点)用紧凑格式减小体积, 小文件保留可读性
+        if len(nodes) > 1000:
+            json.dump(singbox, f, ensure_ascii=False, separators=(",", ":"))
+        else:
+            json.dump(singbox, f, ensure_ascii=False, indent=2)
 
     # 5) 订阅转换链接（基于 jsdelivr CDN）
     repo_path = repo_path or "LeilaoMi/AutoMergePublicNodes-Optimized"
