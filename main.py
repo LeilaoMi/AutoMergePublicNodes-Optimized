@@ -251,6 +251,15 @@ async def run(args):
         stage_durations["probe"] = round(time.time() - stage_start, 1)
         stage_start = time.time()
         print(f"      探活通过: {len(nodes)}/{before_probe}")
+        # 记录 probe 失败原因分布, 填补可观测性空白
+        probe_error_counts: Dict[str, int] = {}
+        for r in probe_results:
+            if not r.success and r.error:
+                key = r.error.split(":")[0] if ":" in r.error else r.error
+                probe_error_counts[key] = probe_error_counts.get(key, 0) + 1
+        probe_error_top = sorted(probe_error_counts.items(), key=lambda x: -x[1])[:10]
+        if probe_error_top:
+            print(f"      探活失败 Top: {', '.join(f'{k}={v}' for k, v in probe_error_top)}")
     nodes_after_probe = len(nodes)  # probe 后的节点数
 
     # 5) 真实代理测试（sing-box）
@@ -522,6 +531,7 @@ async def run(args):
         "nodes_tcp_ok": nodes_before_probe,
         "nodes_probe_ok": nodes_after_probe,
         "nodes_real_ok": len(valid),
+        "probe_error_details": probe_error_top if (args.lightweight_probe and args.real_test) else [],
         "nodes_verified_output": n_top,
         "nodes_global_output": n_global,
         "output_guard": output_guard,
