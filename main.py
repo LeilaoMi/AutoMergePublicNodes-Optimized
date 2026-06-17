@@ -271,6 +271,8 @@ async def run(args):
                 source=src_name,
                 protocol_rates=protocol_rates,
                 source_rates=source_rates,
+                speed_kbps=getattr(r, "speed_kbps", 0),
+                fingerprint_resistance=getattr(r, "fingerprint_resistance_score", 0.0),
             )
             score = calculate_score(score_input, scoring_config)
             breakdown = calculate_score_breakdown(score_input, scoring_config)
@@ -534,6 +536,7 @@ async def run(args):
                 "score": score,
                 "score_breakdown": breakdown,
                 "speed_kbps": getattr(r, "speed_kbps", 0) if r else 0,
+                "fingerprint_resistance": getattr(r, "fingerprint_resistance", "") if r else "",
                 "netflix": getattr(r, "netflix_ok", False) if r else False,
                 "chatgpt": getattr(r, "chatgpt_ok", False) if r else False,
             }

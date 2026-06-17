@@ -788,7 +788,7 @@ class RegressionTests(unittest.TestCase):
         self.assertIn("scoring.low_latency.yaml", report)
         self.assertIn("scoring.stability.yaml", report)
         self.assertIn("scoring.source_quality.yaml", report)
-        self.assertIn("| 模板 | latency | jitter | tcp | protocol_history | source_history | 总和 |", report)
+        self.assertIn("| 模板 | latency | jitter | tcp | speed | fingerprint_resistance | protocol_history | source_history | 总和 |", report)
         for name in (
             "scoring.yaml",
             "scoring.low_latency.yaml",
@@ -921,7 +921,7 @@ weights:
         breakdown = calculate_score_breakdown(data)
         total_from_breakdown = round(sum(item["points"] for item in breakdown.values()), 2)
         self.assertEqual(calculate_score(data), total_from_breakdown)
-        self.assertEqual(set(breakdown), {"latency", "jitter", "tcp", "protocol_history", "source_history"})
+        self.assertEqual(set(breakdown), {"latency", "jitter", "tcp", "speed", "fingerprint_resistance", "protocol_history", "source_history"})
         for item in breakdown.values():
             self.assertIn("score", item)
             self.assertIn("weight", item)

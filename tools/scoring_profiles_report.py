@@ -10,15 +10,17 @@ from typing import Any, Dict, List
 import yaml
 
 
-WEIGHT_KEYS = ["latency", "jitter", "tcp", "protocol_history", "source_history"]
+WEIGHT_KEYS = ["latency", "jitter", "tcp", "speed", "fingerprint_resistance", "protocol_history", "source_history"]
 THRESHOLD_KEYS = [
     "excellent_latency_ms",
     "bad_latency_ms",
     "bad_jitter_ms",
     "excellent_tcp_latency_ms",
     "bad_tcp_latency_ms",
+    "excellent_speed_kbps",
+    "bad_speed_kbps",
 ]
-DEFAULT_KEYS = ["missing_tcp_score", "missing_history_score"]
+DEFAULT_KEYS = ["missing_tcp_score", "missing_history_score", "missing_fingerprint_score"]
 
 
 def _load_yaml(path: Path) -> Dict[str, Any]:

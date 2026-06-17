@@ -134,7 +134,7 @@ def validate_scoring_rules(path: str) -> List[str]:
     if not isinstance(weights, dict):
         _add(errors, "scoring.weights 必须是映射")
     else:
-        required_weights = {"latency", "jitter", "tcp", "protocol_history", "source_history"}
+        required_weights = {"latency", "jitter", "tcp", "protocol_history", "source_history", "speed", "fingerprint_resistance"}
         for key in weights:
             if key not in required_weights:
                 _add(errors, f"scoring.weights 包含未知字段：{key}")
@@ -151,6 +151,7 @@ def validate_scoring_rules(path: str) -> List[str]:
         allowed_thresholds = {
             "excellent_latency_ms", "bad_latency_ms", "bad_jitter_ms",
             "excellent_tcp_latency_ms", "bad_tcp_latency_ms",
+            "excellent_speed_kbps", "bad_speed_kbps",
         }
         for key in thresholds:
             if key not in allowed_thresholds:
@@ -180,7 +181,7 @@ def validate_scoring_rules(path: str) -> List[str]:
     if not isinstance(defaults, dict):
         _add(errors, "scoring.defaults 必须是映射")
     else:
-        allowed_defaults = {"missing_tcp_score", "missing_history_score"}
+        allowed_defaults = {"missing_tcp_score", "missing_history_score", "missing_fingerprint_score"}
         for key in defaults:
             if key not in allowed_defaults:
                 _add(errors, f"scoring.defaults 包含未知字段：{key}")
@@ -208,7 +209,7 @@ def validate_scoring_warnings(path: str) -> List[str]:
     if weights is None or not isinstance(weights, dict):
         return []
 
-    required_weights = {"latency", "jitter", "tcp", "protocol_history", "source_history"}
+    required_weights = {"latency", "jitter", "tcp", "protocol_history", "source_history", "speed", "fingerprint_resistance"}
     total = 0.0
     usable = False
     for key in required_weights:

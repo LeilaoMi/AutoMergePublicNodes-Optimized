@@ -2,11 +2,13 @@
 # Prioritizes current real-test latency. Useful when you want the fastest nodes first.
 
 weights:
-  latency: 55
+  latency: 45
   jitter: 15
   tcp: 10
-  protocol_history: 10
-  source_history: 10
+  speed: 15
+  fingerprint_resistance: 5
+  protocol_history: 5
+  source_history: 5
 
 thresholds:
   excellent_latency_ms: 100
@@ -14,7 +16,10 @@ thresholds:
   bad_jitter_ms: 400
   excellent_tcp_latency_ms: 100
   bad_tcp_latency_ms: 1000
+  excellent_speed_kbps: 500
+  bad_speed_kbps: 10
 
 defaults:
   missing_tcp_score: 0.5
   missing_history_score: 0.5
+  missing_fingerprint_score: 0.3

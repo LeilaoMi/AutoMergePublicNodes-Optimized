@@ -65,6 +65,8 @@ class TestResult:
     error: str = ""
     error_detail: Dict[str, Any] = field(default_factory=dict)
     speed_kbps: float = 0.0  # 下载速度 KB/s
+    fingerprint_resistance: str = ""  # high/medium/low/none
+    fingerprint_resistance_score: float = 0.0  # 0~1 数值，供评分系统直接使用
     netflix_ok: bool = False  # Netflix 解锁
     chatgpt_ok: bool = False  # ChatGPT 可访问
 
@@ -327,6 +329,15 @@ class SingBoxTester:
                         # 量化下载速度
                         if speed_download_bytes > 0 and speed_download_time > 0:
                             result.speed_kbps = round(speed_download_bytes / 1024 / speed_download_time, 1)
+                        # 协议指纹抗检测评分（REALITY/uTLS/WS+TLS 等）
+                        try:
+                            from core._fingerprint_test import analyze_fingerprint_resistance
+                            fp_analysis = analyze_fingerprint_resistance(node)
+                            result.fingerprint_resistance = fp_analysis["resistance"]
+                            result.fingerprint_resistance_score = fp_analysis["score"]
+                        except Exception:
+                            result.fingerprint_resistance = "none"
+                            result.fingerprint_resistance_score = 0.0
                 else:
                     result.error = failed_target or "no-test-completed"
 

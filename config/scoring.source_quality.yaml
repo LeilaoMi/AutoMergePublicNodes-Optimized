@@ -2,11 +2,13 @@
 # Prioritizes source and protocol historical quality. Useful when public pools are noisy.
 
 weights:
-  latency: 20
-  jitter: 15
+  latency: 18
+  jitter: 13
   tcp: 10
-  protocol_history: 25
-  source_history: 30
+  speed: 5
+  fingerprint_resistance: 5
+  protocol_history: 22
+  source_history: 27
 
 thresholds:
   excellent_latency_ms: 150
@@ -14,7 +16,10 @@ thresholds:
   bad_jitter_ms: 400
   excellent_tcp_latency_ms: 100
   bad_tcp_latency_ms: 1000
+  excellent_speed_kbps: 500
+  bad_speed_kbps: 10
 
 defaults:
   missing_tcp_score: 0.5
   missing_history_score: 0.5
+  missing_fingerprint_score: 0.3

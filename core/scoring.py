@@ -15,10 +15,12 @@ import yaml
 @dataclass(frozen=True)
 class ScoringConfig:
     weights: Dict[str, float] = field(default_factory=lambda: {
-        "latency": 35.0,
+        "latency": 25.0,
         "jitter": 15.0,
         "tcp": 10.0,
-        "protocol_history": 20.0,
+        "speed": 10.0,
+        "fingerprint_resistance": 5.0,
+        "protocol_history": 15.0,
         "source_history": 20.0,
     })
     excellent_latency_ms: float = 120.0
@@ -26,8 +28,11 @@ class ScoringConfig:
     bad_jitter_ms: float = 400.0
     excellent_tcp_latency_ms: float = 100.0
     bad_tcp_latency_ms: float = 1000.0
+    excellent_speed_kbps: float = 500.0
+    bad_speed_kbps: float = 10.0
     missing_tcp_score: float = 0.5
     missing_history_score: float = 0.5
+    missing_fingerprint_score: float = 0.3
 
 
 @dataclass(frozen=True)
@@ -39,6 +44,8 @@ class ScoreInput:
     source: str
     protocol_rates: Dict[str, float]
     source_rates: Dict[str, float]
+    speed_kbps: float = 0.0
+    fingerprint_resistance: float = 0.0
 
 
 def clamp(value: float, min_value: float = 0.0, max_value: float = 1.0) -> float:
@@ -86,8 +93,11 @@ def load_scoring_config(path: str = "config/scoring.yaml") -> ScoringConfig:
         bad_jitter_ms=max(1.0, _float_value(thresholds.get("bad_jitter_ms"), default.bad_jitter_ms)),
         excellent_tcp_latency_ms=max(1.0, _float_value(thresholds.get("excellent_tcp_latency_ms"), default.excellent_tcp_latency_ms)),
         bad_tcp_latency_ms=max(1.0, _float_value(thresholds.get("bad_tcp_latency_ms"), default.bad_tcp_latency_ms)),
+        excellent_speed_kbps=max(1.0, _float_value(thresholds.get("excellent_speed_kbps"), default.excellent_speed_kbps)),
+        bad_speed_kbps=max(0.0, _float_value(thresholds.get("bad_speed_kbps"), default.bad_speed_kbps)),
         missing_tcp_score=clamp(_float_value(defaults.get("missing_tcp_score"), default.missing_tcp_score)),
         missing_history_score=clamp(_float_value(defaults.get("missing_history_score"), default.missing_history_score)),
+        missing_fingerprint_score=clamp(_float_value(defaults.get("missing_fingerprint_score"), default.missing_fingerprint_score)),
     )
 
 
@@ -124,6 +134,19 @@ def tcp_score(tcp_latency_ms: float, cfg: ScoringConfig | None = None) -> float:
     return clamp(1 - (tcp_latency_ms - cfg.excellent_tcp_latency_ms) / span)
 
 
+def speed_score(speed_kbps: float, cfg: ScoringConfig | None = None) -> float:
+    """下载速度评分：speed_kbps 越高越好。"""
+    cfg = cfg or ScoringConfig()
+    if speed_kbps <= 0:
+        return 0.0
+    if speed_kbps >= cfg.excellent_speed_kbps:
+        return 1.0
+    if speed_kbps <= cfg.bad_speed_kbps:
+        return 0.0
+    span = max(cfg.excellent_speed_kbps - cfg.bad_speed_kbps, 1.0)
+    return clamp((speed_kbps - cfg.bad_speed_kbps) / span)
+
+
 def historical_rate_score(name: str, rates: Dict[str, float], default: float = 0.5) -> float:
     if not name:
         return default
@@ -146,6 +169,8 @@ def calculate_score_breakdown(data: ScoreInput, config: ScoringConfig | None = N
         "latency": latency_score(data.latency_ms, cfg),
         "jitter": jitter_score(data.jitter_ms, cfg),
         "tcp": tcp_score(data.tcp_latency_ms, cfg),
+        "speed": speed_score(data.speed_kbps, cfg),
+        "fingerprint_resistance": data.fingerprint_resistance if data.fingerprint_resistance > 0 else cfg.missing_fingerprint_score,
         "protocol_history": historical_rate_score(data.protocol, data.protocol_rates, cfg.missing_history_score),
         "source_history": historical_rate_score(data.source, data.source_rates, cfg.missing_history_score),
     }

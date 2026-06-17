@@ -2,10 +2,12 @@
 # The real proxy test decides whether a node is usable. These weights only rank usable nodes.
 
 weights:
-  latency: 35
+  latency: 25
   jitter: 15
   tcp: 10
-  protocol_history: 20
+  speed: 10
+  fingerprint_resistance: 5
+  protocol_history: 15
   source_history: 20
 
 thresholds:
@@ -14,7 +16,10 @@ thresholds:
   bad_jitter_ms: 400
   excellent_tcp_latency_ms: 100
   bad_tcp_latency_ms: 1000
+  excellent_speed_kbps: 500
+  bad_speed_kbps: 10
 
 defaults:
   missing_tcp_score: 0.5
   missing_history_score: 0.5
+  missing_fingerprint_score: 0.3
