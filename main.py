@@ -300,16 +300,17 @@ async def run(args):
             breakdown = calculate_score_breakdown(score_input, scoring_config)
 
             # Stability bonus: 连续多轮通过的节点更值得信赖, 给予评分加成
+            stability_bonus = 0.0
             if fp in stable_fingerprints:
                 # 连续通过 2 轮 +2, 3 轮 +3, 上限 +5 (满分 100 内)
                 stability_count = stability_data.get(fp, {}).get("consecutive_passes", 0) if stability_data else 0
                 stability_bonus = min(5.0, float(stability_count))
                 score = round(score + stability_bonus, 2)
 
-            scored_valid.append((r.node, r.latency_ms, r.jitter_ms, score, src_name, breakdown, r))
+            scored_valid.append((r.node, r.latency_ms, r.jitter_ms, score, src_name, breakdown, r, stability_bonus))
 
         scored_valid.sort(key=lambda x: (-x[3], x[1]))
-        valid = [(n, lat, jit) for n, lat, jit, _, _, _, _ in scored_valid]
+        valid = [(n, lat, jit) for n, lat, jit, _, _, _, _, _ in scored_valid]
         real_test_passed = bool(valid)
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
         if valid:
@@ -560,12 +561,14 @@ async def run(args):
                 "jitter_ms": round(jit, 1),
                 "score": score,
                 "score_breakdown": breakdown,
+                "stability_bonus": stability_bonus,
                 "speed_kbps": getattr(r, "speed_kbps", 0) if r else 0,
                 "fingerprint_resistance": getattr(r, "fingerprint_resistance", "") if r else "",
                 "netflix": getattr(r, "netflix_ok", False) if r else False,
                 "chatgpt": getattr(r, "chatgpt_ok", False) if r else False,
+                "stability_bonus": stability_bonus,
             }
-            for n, lat, jit, score, source, breakdown, r in scored_valid[:20]
+            for n, lat, jit, score, source, breakdown, r, stability_bonus in scored_valid[:20]
         ],
     }
     os.makedirs(args.output_dir, exist_ok=True)
