@@ -5,39 +5,40 @@
 | 指标 | 数值 |
 | --- | --- |
 | 版本 | 2.4.0 |
-| 更新时间 | 2026-06-17 16:26:30 |
-| 运行耗时 | 313.3s |
+| 更新时间 | 2026-06-17 16:49:04 |
+| 运行耗时 | 142.2s |
 | 订阅源总数 | 44 |
 | 健康订阅源 | 44 |
-| 原始节点 | 43524 |
-| 去重后节点 | 18049 |
-| TCP 可达 | 1500 |
-| 真实可用 | 236 |
-| Verified 输出 | 236 |
-| Global 输出 | 249 |
-| All 输出 | 18049 |
+| 原始节点 | 43696 |
+| 去重后节点 | 18218 |
+| TCP 可达 | 272 |
+| 真实可用 | 140 |
+| Verified 输出 | 140 |
+| Global 输出 | 142 |
+| All 输出 | 18218 |
 
 ## 阶段耗时
 
 | 阶段 | 秒 |
 | --- | --- |
-| fetch | 3.4 |
-| geo | 1.3 |
-| tcp | 46.8 |
-| real_test | 233.3 |
-| generate | 28.5 |
+| fetch | 3.1 |
+| geo | 1.2 |
+| tcp | 40.4 |
+| probe | 31.6 |
+| real_test | 50.1 |
+| generate | 15.8 |
 
 ## 协议分布
 
 | 协议 | 数量 |
 | --- | --- |
-| vless | 22176 |
-| shadowsocks | 8316 |
-| trojan | 7129 |
-| vmess | 5550 |
-| hysteria2 | 159 |
+| vless | 22386 |
+| shadowsocks | 8331 |
+| trojan | 7097 |
+| vmess | 5473 |
+| hysteria2 | 174 |
+| http | 95 |
 | shadowsocksr | 95 |
-| http | 54 |
 | socks | 38 |
 | hysteria | 6 |
 | tuic | 1 |
@@ -58,73 +59,67 @@
 
 | 评分 | 协议 | 延迟(ms) | 抖动(ms) | 延迟分 | 抖动分 | TCP分 | 协议历史分 | 来源历史分 | 来源 | 服务器 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 55.48 | shadowsocks | 205.8 | 500.1 | 23.01 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 173.244.56.9 |
-| 54.64 | shadowsocks | 242.2 | 615.3 | 22.17 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 173.244.56.6 |
-| 54.36 | vless | 204.4 | 488.4 | 23.05 | 0.0 | 10.0 | 2.08 | 4.42 | Surfboard-tg-mixed | 67.230.170.34 |
-| 54.2 | shadowsocks | 261.3 | 622.6 | 21.73 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 156.146.38.167 |
-| 54.18 | shadowsocks | 262.3 | 620.2 | 21.71 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 156.146.38.170 |
-| 54.14 | shadowsocks | 263.7 | 635.0 | 21.67 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 156.146.38.169 |
-| 54.13 | vmess | 202.2 | 488.2 | 23.1 | 0.0 | 10.0 | 5.29 | 5.24 | Barabama-yudou | 82.198.246.233 |
-| 53.93 | vless | 356.7 | 798.3 | 19.52 | 0.0 | 10.0 | 2.08 | 9.08 | Au1rxx-base64 | 15.204.97.214 |
-| 53.64 | vless | 220.4 | 490.7 | 22.68 | 0.0 | 10.0 | 2.08 | 3.88 | DeltaKronecker-all | 172.252.125.77 |
-| 53.49 | vless | 226.6 | 478.1 | 22.53 | 0.0 | 10.0 | 2.08 | 3.88 | DeltaKronecker-all | 64.23.143.23 |
-| 52.83 | vless | 255.3 | 640.8 | 21.87 | 0.0 | 10.0 | 2.08 | 3.88 | DeltaKronecker-all | 132.226.85.167 |
-| 52.83 | shadowsocks | 309.9 | 813.2 | 20.6 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 108.181.118.10 |
-| 52.66 | shadowsocks | 258.3 | 613.3 | 21.8 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 156.146.38.168 |
-| 52.15 | shadowsocks | 349.8 | 938.9 | 19.68 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 108.181.0.177 |
-| 51.77 | vless | 235.5 | 504.7 | 22.33 | 0.0 | 10.0 | 2.08 | 2.36 | ninja-vless | 47.251.25.74 |
-| 50.5 | shadowsocks | 278.0 | 535.5 | 21.34 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 149.22.95.183 |
-| 49.95 | shadowsocks | 209.1 | 475.3 | 22.94 | 0.0 | 10.0 | 2.89 | 9.08 | Au1rxx-base64 | 216.105.168.18 |
-| 49.71 | vless | 195.4 | 478.1 | 23.25 | 0.0 | 10.0 | 2.08 | 3.88 | DeltaKronecker-all | 141.193.154.182 |
-| 48.79 | trojan | 306.2 | 668.6 | 20.69 | 0.0 | 10.0 | 2.76 | 3.88 | DeltaKronecker-all | 207.126.167.150 |
-| 48.45 | trojan | 309.5 | 744.2 | 20.61 | 0.0 | 10.0 | 2.76 | 3.88 | DeltaKronecker-all | 45.61.58.89 |
+| 55.68 | shadowsocks | 240.1 | 621.4 | 22.22 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 37.19.198.236 |
+| 55.63 | shadowsocks | 242.2 | 626.5 | 22.17 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 37.19.198.244 |
+| 55.53 | shadowsocks | 246.5 | 634.8 | 22.07 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 37.19.198.243 |
+| 55.46 | shadowsocks | 249.6 | 651.4 | 22.0 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 37.19.198.160 |
+| 52.45 | shadowsocks | 283.0 | 635.4 | 21.23 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 156.146.38.170 |
+| 52.29 | shadowsocks | 287.7 | 651.4 | 21.12 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 156.146.38.167 |
+| 52.2 | shadowsocks | 290.5 | 653.0 | 21.05 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 156.146.38.169 |
+| 50.47 | shadowsocks | 378.8 | 922.7 | 19.01 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 149.28.255.6 |
+| 49.84 | shadowsocks | 301.4 | 771.3 | 20.8 | 0.0 | 10.0 | 3.56 | 4.98 | mheidari-all | 198.98.53.130 |
+| 49.76 | shadowsocks | 245.4 | 652.1 | 22.1 | 0.0 | 10.0 | 3.56 | 3.6 | DeltaKronecker-all | 108.181.57.93 |
+| 49.7 | shadowsocks | 334.8 | 774.9 | 20.03 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 107.172.250.161 |
+| 48.64 | shadowsocks | 319.3 | 584.1 | 20.39 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 173.244.56.9 |
+| 48.06 | http | 733.1 | 983.7 | 10.81 | 0.0 | 9.63 | 13.45 | 10.56 | snakem982 | 84.239.14.148 |
+| 47.79 | shadowsocks | 355.4 | 701.4 | 19.55 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 173.244.56.6 |
+| 47.52 | shadowsocks | 344.8 | 578.6 | 19.8 | 0.0 | 10.0 | 3.56 | 9.4 | Au1rxx-base64 | 149.22.95.183 |
+| 47.47 | http | 761.1 | 1081.2 | 10.16 | 0.0 | 9.7 | 13.45 | 10.56 | snakem982 | 84.239.14.158 |
+| 47.33 | http | 760.8 | 1045.3 | 10.17 | 0.0 | 9.58 | 13.45 | 10.56 | snakem982 | 84.239.49.201 |
+| 47.26 | http | 770.0 | 1080.5 | 9.95 | 0.0 | 9.73 | 13.45 | 10.56 | snakem982 | 84.239.14.159 |
+| 47.22 | http | 775.7 | 1060.1 | 9.82 | 0.0 | 9.71 | 13.45 | 10.56 | snakem982 | 84.239.49.57 |
+| 47.16 | http | 777.6 | 1099.9 | 9.78 | 0.0 | 9.71 | 13.45 | 10.56 | snakem982 | 84.239.49.185 |
 
 ## 来源质量排行
 
 | 来源 | 评分 | 通过率 | 测试数 | 解析节点 | 建议 |
 | --- | --- | --- | --- | --- | --- |
-| snakem982 | 0.528 | 0.525 | 59 | 73 | observe |
-| roosterkid-openproxylist-v2ray | 0.486 | 0.478 | 23 | 150 | observe |
-| Au1rxx-base64 | 0.47 | 0.464 | 84 | 116 | observe |
-| Surfboard-tg-vless | 0.386 | 0.3 | 60 | 3561 | observe |
+| DeltaKronecker-all | 0.699 | 0.625 | 40 | 7763 | observe |
+| ninja-vless | 0.685 | 0.621 | 29 | 1791 | observe |
+| roosterkid-openproxylist-v2ray | 0.683 | 0.812 | 16 | 150 | observe |
+| Au1rxx-base64 | 0.519 | 0.515 | 66 | 115 | observe |
+| snakem982 | 0.47 | 0.466 | 58 | 73 | observe |
+| Surfboard-tg-mixed | 0.441 | 0.353 | 34 | 4729 | observe |
+| mheidari-all | 0.426 | 0.333 | 24 | 2000 | observe |
+| nscl5-all | 0.294 | 1.0 | 1 | 967 | observe |
+| SoliSpirit-all | 0.287 | 0.5 | 2 | 3000 | observe |
+| 10ium-ScrapeCategorize-Vless | 0.255 | None | 0 | 2000 | observe |
+| Epodonios-all | 0.255 | None | 0 | 3000 | observe |
 | MatinGhanbari-all-sub | 0.255 | None | 0 | 3000 | observe |
+| Surfboard-tg-vless | 0.255 | None | 0 | 3741 | observe |
 | barry-far-vless | 0.255 | None | 0 | 2000 | observe |
-| mheidari-all | 0.249 | 0.161 | 87 | 2000 | downweight |
-| ninja-vless | 0.218 | 0.2 | 5 | 1791 | downweight |
-| SoliSpirit-all | 0.207 | 0.0 | 1 | 3000 | observe |
-| barry-far-Sub2 | 0.195 | None | 0 | 497 | observe |
-| Surfboard-tg-mixed | 0.193 | 0.112 | 884 | 4665 | downweight |
-| barry-far-Sub1 | 0.192 | None | 0 | 429 | observe |
-| 10ium-ScrapeCategorize-Vless | 0.184 | 0.0 | 2 | 2000 | observe |
-| mfuu-v2ray | 0.184 | None | 0 | 231 | observe |
-| MatinGhanbari-super-sub | 0.183 | None | 0 | 200 | observe |
+| mahdibland-V2RayAggregator | 0.255 | None | 0 | 4541 | observe |
 
 ## 真实测试失败原因
 
 | 目标 | 原因 | 状态/值 | 数量 |
 | --- | --- | --- | --- |
-| 204 | ProxyError | - | 398 |
-| 204 | ClientOSError | - | 357 |
-| geo | status | 429 | 158 |
-| 204 | TimeoutError | - | 131 |
-| sing-box exited 1 |  [31mFATAL[0m[0000] create service: initialize outbound[0]: uTLS is required by reality client | - | 69 |
+| geo | status | 429 | 55 |
 | geo | status | 403 | 50 |
-| speed | ClientOSError | - | 46 |
-| cn-block | TimeoutError | - | 20 |
-| sing-box exited 1 |  [31mFATAL[0m[0000] create service: initialize outbound[0]: ShadowsocksR is deprecated and removed in sing-box 1.6.0 | - | 8 |
-| cn-block | ClientOSError | - | 8 |
-| speed | TimeoutError | - | 6 |
-| geo | TimeoutError | - | 5 |
-| cn-block | ProxyError | - | 2 |
-| sing-box exited 1 |  [31mFATAL[0m[0000] decode config at /tmp/sb-kheixbdt/config.json: outbounds[0].security: json: cannot unmarshal bool into Go struct field VMessOutboundOptions.security of type string | - | 1 |
-| sing-box exited 1 |  [31mFATAL[0m[0000] decode config at /tmp/sb-x3vin418/config.json: outbounds[0].security: json: cannot unmarshal bool into Go struct field VMessOutboundOptions.security of type string | - | 1 |
+| speed | ClientOSError | - | 7 |
+| cn-block | ClientOSError | - | 6 |
+| 204 | TimeoutError | - | 5 |
+| cn-block | TimeoutError | - | 3 |
+| 204 | ClientOSError | - | 3 |
+| geo | TimeoutError | - | 2 |
+| speed | TimeoutError | - | 1 |
 
 ## 输出保护
 
 | 前缀 | 是否保留旧输出 | 上一轮数量 | 本轮建议数量 | 保护比例 |
 | --- | --- | --- | --- | --- |
-| verified | False | 257 | 236 | - |
-| global | False | 270 | 249 | - |
+| verified | False | 236 | 140 | - |
+| global | False | 249 | 142 | - |
 
 ---
 
