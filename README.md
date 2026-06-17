@@ -276,29 +276,39 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-17 17:30:28 |
+| 更新时间 | 2026-06-17 17:33:50 |
 | 版本 | 2.4.0 |
-| 订阅源 | 1/1 |
-| 原始节点 | 1 |
-| 去重后 | 1 |
-| TCP 可达 | 1 |
-| 真实可用 | 1 |
-| 真测通过率 | 100.0% |
-| Verified 输出 | 1 |
-| Global 输出 | 0 |
-| All 输出 | 1 |
+| 订阅源 | 44/44 |
+| 原始节点 | 43725 |
+| 去重后 | 18176 |
+| TCP 可达 | 1500 |
+| 真实可用 | 110 |
+| 真测通过率 | 7.3% |
+| Verified 输出 | 110 |
+| Global 输出 | 111 |
+| All 输出 | 18176 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
 ### Top 节点评分
 
-_暂无评分数据_
+| 评分 | 协议 | 延迟(ms) | 来源 |
+| --- | --- | --- | --- |
+| 67.27 | trojan | 329.3 | DeltaKronecker-all |
+| 65.32 | trojan | 409.6 | DeltaKronecker-all |
+| 62.41 | trojan | 419.3 | DeltaKronecker-all |
+| 59.51 | vmess | 255.2 | Barabama-yudou |
+| 54.28 | trojan | 656.2 | DeltaKronecker-all |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| mock-source | 0.175 | 0 | observe |
+| snakem982 | 0.87 | 28 | prefer |
+| DeltaKronecker-all | 0.624 | 147 | observe |
+| Surfboard-tg-mixed | 0.4 | 4 | observe |
+| nscl5-all | 0.294 | 1 | observe |
+| 10ium-ScrapeCategorize-Vless | 0.255 | 0 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
