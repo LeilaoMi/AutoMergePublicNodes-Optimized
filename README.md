@@ -278,16 +278,16 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-17 18:40:17 |
+| 更新时间 | 2026-06-17 18:47:52 |
 | 版本 | 2.4.0 |
 | 订阅源 | 44/44 |
 | 原始节点 | 43687 |
 | 去重后 | 18013 |
 | TCP 可达 | 1500 |
-| 真实可用 | 190 |
-| 真测通过率 | 12.7% |
-| Verified 输出 | 190 |
-| Global 输出 | 199 |
+| 真实可用 | 102 |
+| 真测通过率 | 6.8% |
+| Verified 输出 | 102 |
+| Global 输出 | 112 |
 | All 输出 | 18013 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
@@ -296,21 +296,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 59.85 | vless | 265.7 | DeltaKronecker-all |
-| 58.89 | vless | 307.2 | DeltaKronecker-all |
-| 58.41 | vless | 327.7 | DeltaKronecker-all |
-| 58.28 | shadowsocks | 241.9 | DeltaKronecker-all |
-| 57.64 | http | 730.9 | snakem982 |
+| 61.95 | vmess | 191.4 | Barabama-yudou |
+| 58.93 | vless | 199.4 | DeltaKronecker-all |
+| 58.09 | vless | 231.6 | DeltaKronecker-all |
+| 56.39 | shadowsocks | 208.5 | Au1rxx-base64 |
+| 55.33 | trojan | 320.2 | DeltaKronecker-all |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| snakem982 | 0.459 | 55 | observe |
-| DeltaKronecker-all | 0.355 | 590 | observe |
+| snakem982 | 0.884 | 57 | prefer |
+| Au1rxx-base64 | 0.404 | 4 | observe |
+| DeltaKronecker-all | 0.377 | 146 | observe |
+| Surfboard-tg-mixed | 0.349 | 3 | observe |
 | Barabama-yudou | 0.262 | 1 | observe |
-| Au1rxx-base64 | 0.259 | 1 | observe |
-| 10ium-ScrapeCategorize-Vless | 0.255 | 0 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
