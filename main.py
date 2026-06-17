@@ -216,7 +216,8 @@ async def run(args):
         tcp_results = await tcp_check_batch(nodes, args.tcp_concurrency, args.tcp_timeout, tcp_errors)
         stage_durations["tcp"] = round(time.time() - stage_start, 1)
         stage_start = time.time()
-        print(f"      TCP 可达: {len(tcp_results)}")
+        nodes_tcp_reachable = len(tcp_results)  # TCP 真实可达数(下采样前)
+        print(f"      TCP 可达: {nodes_tcp_reachable}")
         nodes = [n for n, _ in tcp_results]
         tcp_latency = {n.fingerprint(): lat for n, lat in tcp_results}
     else:
@@ -529,6 +530,7 @@ async def run(args):
         "nodes_raw": total_raw,
         "nodes_dedup": len(set(nd.fingerprint() for nd in all_nodes)),
         "nodes_tcp_ok": nodes_before_probe,
+        "nodes_tcp_reachable": nodes_tcp_reachable if args.tcp_check else len(nodes),
         "nodes_probe_ok": nodes_after_probe,
         "nodes_real_ok": len(valid),
         "probe_error_details": probe_error_top if (args.lightweight_probe and args.real_test) else [],
@@ -621,12 +623,12 @@ def main():
     p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--test-concurrency", type=int, default=50)
     p.add_argument("--lightweight-probe", action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument("--probe-concurrency", type=int, default=80)
+    p.add_argument("--probe-concurrency", type=int, default=100)
     p.add_argument("--probe-timeout", type=float, default=4.0)
     p.add_argument("--probe-startup-wait", type=float, default=0.4)
     p.add_argument("--test-timeout", type=float, default=6.0)
     p.add_argument("--startup-wait", type=float, default=0.6)
-    p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
+    p.add_argument("--test-limit", type=int, default=3000, help="送入真实测试的最大节点数(0=不限)")
     p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=True,
                    help="启用质量预过滤（配置规则 + 同 server/type 降噪）")
     p.add_argument("--filter-rules", default="config/filter_rules.yaml",
