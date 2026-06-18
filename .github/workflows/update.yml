@@ -1,4 +1,4 @@
-name: Update Nodes
+name: 更新节点
 
 on:
   schedule:
@@ -45,7 +45,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -56,27 +56,27 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Get sing-box version
+      - name: 获取 sing-box 版本
         id: sb-version
         run: |
           set -euo pipefail
           VERSION=$(curl -fsSL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
           if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-            echo "::error::Failed to fetch sing-box version"
+            echo "::error::获取 sing-box 版本失败"
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Latest sing-box: $VERSION"
 
-      - name: Cache sing-box binary
+      - name: 缓存 sing-box 二进制
         id: cache-sb
         uses: actions/cache@v4
         with:
           path: ./sing-box
           key: sing-box-${{ runner.os }}-${{ steps.sb-version.outputs.version }}
 
-      - name: Download sing-box
+      - name: 下载 sing-box
         if: steps.cache-sb.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
@@ -88,7 +88,7 @@ jobs:
             mv "sing-box-${VER_NUM}-linux-amd64/sing-box" ./sing-box
             chmod +x ./sing-box
           else
-            echo "::warning::sing-box download failed, trying fallback versions"
+            echo "::warning::sing-box 下载失败，尝试回退版本"
             for FALLBACK_VER in "v1.11.15" "v1.10.7" "v1.9.7"; do
               FV="${FALLBACK_VER#v}"
               if curl -fsSL -L -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${FALLBACK_VER}/sing-box-${FV}-linux-amd64.tar.gz"; then
@@ -100,25 +100,25 @@ jobs:
               fi
             done
             if [ ! -f ./sing-box ]; then
-              echo "::error::All sing-box download attempts failed"
+              echo "::error::所有 sing-box 下载尝试均失败"
               exit 1
             fi
           fi
 
-      - name: Audit sources
+      - name: 审计订阅源
         run: |
           python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json
 
-      - name: Compile check
+      - name: 语法编译检查
         run: python -m compileall -q main.py core tools tests
 
-      - name: Config validation
+      - name: 配置校验
         run: python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules 'config/scoring*.yaml'
 
-      - name: Unit tests
+      - name: 单元测试
         run: python -m unittest -v tests.test_regressions
 
-      - name: Run pipeline
+      - name: 运行流水线
         env:
           AUTONODES_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
@@ -126,11 +126,11 @@ jobs:
           TOP_N="${{ github.event.inputs.top_n || '300' }}"
           TEST_LIMIT="${{ github.event.inputs.test_limit || '3000' }}"
           MIN_RETAIN_RATIO="${{ github.event.inputs.min_retain_ratio || '0' }}"
-          [[ "$TOP_N" =~ ^[0-9]+$ ]] || { echo "::error::top_n must be a non-negative integer"; exit 1; }
-          [[ "$TEST_LIMIT" =~ ^[0-9]+$ ]] || { echo "::error::test_limit must be a non-negative integer"; exit 1; }
-          [[ "$MIN_RETAIN_RATIO" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "::error::min_retain_ratio must be a non-negative number"; exit 1; }
-          [ "$TOP_N" -le 1000 ] || { echo "::error::top_n must be <= 1000"; exit 1; }
-          [ "$TEST_LIMIT" -le 5000 ] || { echo "::error::test_limit must be <= 5000"; exit 1; }
+          [[ "$TOP_N" =~ ^[0-9]+$ ]] || { echo "::error::top_n 必须是非负整数"; exit 1; }
+          [[ "$TEST_LIMIT" =~ ^[0-9]+$ ]] || { echo "::error::test_limit 必须是非负整数"; exit 1; }
+          [[ "$MIN_RETAIN_RATIO" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "::error::min_retain_ratio 必须是非负数字"; exit 1; }
+          [ "$TOP_N" -le 1000 ] || { echo "::error::top_n 必须小于等于 1000"; exit 1; }
+          [ "$TEST_LIMIT" -le 5000 ] || { echo "::error::test_limit 必须小于等于 5000"; exit 1; }
           python main.py \
             --top-n "$TOP_N" \
             --test-limit "$TEST_LIMIT" \
@@ -138,7 +138,7 @@ jobs:
             --repo "${{ github.repository }}" \
             --branch "${{ github.event.repository.default_branch }}"
 
-      - name: Build health report
+      - name: 生成健康报告
         run: |
           python tools/source_scores_report.py --output-dir output --output output/source_scores.md
           python tools/scoring_profiles_report.py --profiles 'config/scoring*.yaml' --output output/scoring_profiles.md
@@ -146,13 +146,13 @@ jobs:
           python tools/health_report.py --output-dir output --verified-prefix verified --output output/health_report.json
           python tools/daily_report.py --output-dir output --output output/daily_report.md
 
-      - name: Source discovery (scan other projects)
+      - name: 扫描其他项目发现新源
         if: always()
         continue-on-error: true
         run: |
           python tools/source_discovery.py --sources config/sources.yaml --output output/source_discovery.json --timeout 15 || true
 
-      - name: Write job summary
+      - name: 写入任务摘要
         if: always()
         run: |
           if [ -f output/stats.json ]; then
@@ -161,12 +161,12 @@ jobs:
               --repo "${{ github.repository }}" \
               --branch "${{ github.event.repository.default_branch }}"
           else
-            echo "# AutoNodes Run Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "# AutoNodes 运行摘要" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "stats.json was not generated. Check previous steps." >> "$GITHUB_STEP_SUMMARY"
+            echo "stats.json 未生成，请检查前序步骤。" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Commit & push
+      - name: 提交并推送
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
@@ -176,7 +176,7 @@ jobs:
           git rm -f output/top.* 2>/dev/null || true
           git add output/ README.md 2>/dev/null || true
           if git diff --staged --quiet; then
-            echo "no changes"
+            echo "无变更"
           else
             git commit -m "chore: update nodes $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')"
             for i in 1 2 3 4 5; do
@@ -184,18 +184,18 @@ jobs:
                 git push origin HEAD:"$BRANCH" && break
               else
                 git rebase --abort 2>/dev/null || true
-                echo "::error::rebase failed; refusing to force push automatically"
+                echo "::error::rebase 失败；拒绝自动强制推送"
                 exit 1
               fi
               if [ "$i" = "5" ]; then
-                echo "::error::git push failed after 5 attempts"
+                echo "::error::5 次尝试后 git push 仍失败"
                 exit 1
               fi
               sleep 5
             done
           fi
 
-      - name: Upload debug artifact
+      - name: 上传调试产物
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -215,7 +215,7 @@ jobs:
             output/trend_history.json
             output/*.converter.md
 
-      - name: Notify on failure
+      - name: 失败时通知
         if: failure()
         uses: actions/github-script@v7
         with:
@@ -229,7 +229,7 @@ jobs:
             })
             .catch(err => core.warning(`Failed to create issue: ${err.message}`))
 
-      - name: Close ci-failure issues on success
+      - name: 成功时关闭 ci-failure Issues
         if: success()
         uses: actions/github-script@v7
         with:
@@ -257,7 +257,7 @@ jobs:
             }
             core.info(`Closed ${issues.data.length} ci-failure issues.`);
 
-      - name: Purge jsDelivr cache
+      - name: 清理 jsDelivr 缓存
         run: |
           set -euo pipefail
           REPO="${{ github.repository }}"
