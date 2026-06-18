@@ -36,14 +36,14 @@ from core.parser import Node
 # 测试目标 4 层
 # - 204: youtube / google 204 = 真的墙外节点, 不能直连的才是好节点
 # - cn-block: 必须能访问中国大陆站 (baidu), 否则节点根本没流量代理能力
-# - geo: 出口 IP 不能是中国 (ipinfo.io), 否则就是"挂在中国机房的出口", 没意义
+# - geo: 出口 IP 不能是中国 (cloudflare trace), 否则就是"挂在中国机房的出口", 没意义
 # - speed: 必须真的能下完 100KB, 证明可承载真实流量
 # 第 4 层为带宽测试，能下完才算"真用得起来"
 TEST_TARGETS = [
     ("https://www.youtube.com/generate_204",   "204"),
     ("https://www.google.com/generate_204",    "204"),
     ("https://www.baidu.com/robots.txt",       "cn-block"),
-    ("https://ipinfo.io/json",                 "geo"),
+    ("https://www.cloudflare.com/cdn-cgi/trace", "geo"),
     ("https://speed.cloudflare.com/__down?bytes=102400", "speed"),
 ]
 SPEED_REQUIRED_BYTES = 100_000
@@ -329,9 +329,14 @@ class SingBoxTester:
                                     failed_target = f"{target_kind}:status={resp.status}"
                                     break
                                 try:
-                                    info = await resp.json(content_type=None)
-                                    cc = (info.get("country") or "").upper()
-                                    exit_ip = info.get("ip", "")
+                                    text = (await resp.text()) or ""
+                                    cc = ""
+                                    exit_ip = ""
+                                    for line in text.splitlines():
+                                        if line.startswith("loc="):
+                                            cc = line[4:].strip().upper()
+                                        elif line.startswith("ip="):
+                                            exit_ip = line[3:].strip()
                                 except Exception as e:
                                     failed_target = f"{target_kind}:parse={type(e).__name__}"
                                     break

@@ -19,9 +19,9 @@ on:
         required: false
         default: '300'
       test_limit:
-        description: '送入真测的最大节点数(默认 1500)'
+        description: '送入真测的最大节点数(默认 3000)'
         required: false
-        default: '1500'
+        default: '3000'
       min_retain_ratio:
         description: '缩水守门比例，0=关闭并强制写入本轮真测结果(默认 0)'
         required: false
@@ -33,6 +33,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -50,7 +51,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: pip
 
       - run: pip install -r requirements.txt
@@ -108,11 +109,14 @@ jobs:
         run: |
           python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json
 
-      - name: Validate code
-        run: |
-          python -m compileall -q main.py core tools tests
-          python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules 'config/scoring*.yaml'
-          python -m unittest -v tests.test_regressions
+      - name: Compile check
+        run: python -m compileall -q main.py core tools tests
+
+      - name: Config validation
+        run: python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules 'config/scoring*.yaml'
+
+      - name: Unit tests
+        run: python -m unittest -v tests.test_regressions
 
       - name: Run pipeline
         env:
@@ -120,13 +124,13 @@ jobs:
         run: |
           set -euo pipefail
           TOP_N="${{ github.event.inputs.top_n || '300' }}"
-          TEST_LIMIT="${{ github.event.inputs.test_limit || '1500' }}"
+          TEST_LIMIT="${{ github.event.inputs.test_limit || '3000' }}"
           MIN_RETAIN_RATIO="${{ github.event.inputs.min_retain_ratio || '0' }}"
           [[ "$TOP_N" =~ ^[0-9]+$ ]] || { echo "::error::top_n must be a non-negative integer"; exit 1; }
           [[ "$TEST_LIMIT" =~ ^[0-9]+$ ]] || { echo "::error::test_limit must be a non-negative integer"; exit 1; }
           [[ "$MIN_RETAIN_RATIO" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "::error::min_retain_ratio must be a non-negative number"; exit 1; }
           [ "$TOP_N" -le 1000 ] || { echo "::error::top_n must be <= 1000"; exit 1; }
-          [ "$TEST_LIMIT" -le 3000 ] || { echo "::error::test_limit must be <= 3000"; exit 1; }
+          [ "$TEST_LIMIT" -le 5000 ] || { echo "::error::test_limit must be <= 5000"; exit 1; }
           python main.py \
             --top-n "$TOP_N" \
             --test-limit "$TEST_LIMIT" \
