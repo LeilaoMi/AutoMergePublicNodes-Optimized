@@ -1,14 +1,14 @@
 # Source Quality Scores
 
-Generated at: 2026-06-18 10:45:19
+Generated at: 2026-06-18 15:45:12
 
 ## Summary
 
 | Metric | Value |
 | --- | --- |
 | Total scored sources | 107 |
-| Prefer | 4 |
-| Observe | 103 |
+| Prefer | 5 |
+| Observe | 102 |
 | Downweight | 0 |
 | Disable candidates | 0 |
 
@@ -17,9 +17,10 @@ Generated at: 2026-06-18 10:45:19
 | Source | Score | Recommendation | Tested | Pass | Fail | Pass Rate | Parsed | Dead |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | snakem982 | 0.966 | prefer | 25 | 25 | 0 | 1.0 | 73 | 0 |
-| Surfboard-tg-mixed | 0.894 | prefer | 326 | 266 | 60 | 0.816 | 4615 | 0 |
-| Au1rxx-base64 | 0.887 | prefer | 58 | 52 | 6 | 0.897 | 96 | 0 |
-| mheidari-all | 0.816 | prefer | 225 | 166 | 59 | 0.738 | 14164 | 0 |
+| Au1rxx-base64 | 0.922 | prefer | 82 | 76 | 6 | 0.927 | 133 | 0 |
+| Surfboard-tg-mixed | 0.906 | prefer | 325 | 269 | 56 | 0.828 | 4764 | 0 |
+| mheidari-all | 0.85 | prefer | 228 | 176 | 52 | 0.772 | 14064 | 0 |
+| DeltaKronecker-all | 0.729 | prefer | 55 | 36 | 19 | 0.655 | 7112 | 0 |
 
 ## Downweight
 
@@ -34,51 +35,52 @@ No rows.
 | Source | Score | Recommendation | Tested | Pass | Fail | Pass Rate | Parsed | Dead |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | snakem982 | 0.966 | prefer | 25 | 25 | 0 | 1.0 | 73 | 0 |
-| Surfboard-tg-mixed | 0.894 | prefer | 326 | 266 | 60 | 0.816 | 4615 | 0 |
-| Au1rxx-base64 | 0.887 | prefer | 58 | 52 | 6 | 0.897 | 96 | 0 |
-| mheidari-all | 0.816 | prefer | 225 | 166 | 59 | 0.738 | 14164 | 0 |
-| DeltaKronecker-all | 0.673 | observe | 52 | 31 | 21 | 0.596 | 7112 | 0 |
+| Au1rxx-base64 | 0.922 | prefer | 82 | 76 | 6 | 0.927 | 133 | 0 |
+| Surfboard-tg-mixed | 0.906 | prefer | 325 | 269 | 56 | 0.828 | 4764 | 0 |
+| mheidari-all | 0.85 | prefer | 228 | 176 | 52 | 0.772 | 14064 | 0 |
+| DeltaKronecker-all | 0.729 | prefer | 55 | 36 | 19 | 0.655 | 7112 | 0 |
 | Barabama-yudou | 0.318 | observe | 2 | 2 | 0 | 1.0 | 166 | 0 |
-| nscl5-all | 0.297 | observe | 1 | 1 | 0 | 1.0 | 1044 | 0 |
-| Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 6424 | 0 |
-| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 6163 | 0 |
+| xiaoji235-airport-v2ray-all | 0.289 | observe | 1 | 1 | 0 | 1.0 | 847 | 0 |
+| tg-LonUp_M | 0.262 | observe | 1 | 1 | 0 | 1.0 | 174 | 0 |
+| Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 6309 | 0 |
+| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 5844 | 0 |
 | mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 4615 | 0 |
 | 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | 0 | 0 | None | 4494 | 0 |
-| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 4217 | 0 |
-| MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3985 | 0 |
-| Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 3599 | 0 |
+| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 4375 | 0 |
+| MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3997 | 0 |
+| Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 3752 | 0 |
+| ninja-vless | 0.247 | observe | 0 | 0 | 0 | None | 1791 | 0 |
 | moneyfly1-collectSub | 0.222 | observe | 0 | 0 | 0 | None | 1164 | 0 |
-| xiaoji235-airport-v2ray-all | 0.209 | observe | 0 | 0 | 0 | None | 847 | 0 |
+| nscl5-all | 0.217 | observe | 0 | 0 | 0 | None | 1044 | 0 |
 | 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
-| ninja-vless | 0.199 | observe | 1 | 0 | 1 | 0.0 | 1791 | 0 |
-| barry-far-Sub2 | 0.194 | observe | 0 | 0 | 0 | None | 477 | 0 |
-| barry-far-Sub1 | 0.193 | observe | 0 | 0 | 0 | None | 438 | 0 |
-| MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 197 | 0 |
+| barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 500 | 0 |
+| barry-far-Sub1 | 0.194 | observe | 0 | 0 | 0 | None | 465 | 0 |
+| MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-V2RAYProxy | 0.182 | observe | 0 | 0 | 0 | None | 187 | 0 |
 | tg-ShadowsocksM | 0.182 | observe | 0 | 0 | 0 | None | 181 | 0 |
-| tg-LonUp_M | 0.182 | observe | 0 | 0 | 0 | None | 178 | 0 |
+| tg-V2ray_Alpha | 0.182 | observe | 0 | 0 | 0 | None | 175 | 0 |
 | tg-configfa | 0.182 | observe | 0 | 0 | 0 | None | 173 | 0 |
 | barabama-yudou66 | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
 | roosterkid-openproxylist-v2ray | 0.181 | observe | 0 | 0 | 0 | None | 150 | 0 |
-| ts-sf-Fly | 0.181 | observe | 0 | 0 | 0 | None | 146 | 0 |
-| ts-sf | 0.181 | observe | 0 | 0 | 0 | None | 145 | 0 |
-| tg-oneclickvpnkeys | 0.18 | observe | 0 | 0 | 0 | None | 137 | 0 |
+| tg-oneclickvpnkeys | 0.18 | observe | 0 | 0 | 0 | None | 136 | 0 |
+| Au1rxx-clash | 0.18 | observe | 0 | 0 | 0 | None | 133 | 0 |
 
 ## Bottom 30 Overall
 
 | Source | Score | Recommendation | Tested | Pass | Fail | Pass Rate | Parsed | Dead |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| tg-AzadNet | 0.025 | observe | 0 | 0 | 0 | None | 0 | 1 |
 | ninja-tuic | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | tg-GrizzlyVPN | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | tg-Ahmedhamoomi_Servers | 0.175 | observe | 0 | 0 | 0 | None | 2 | 0 |
 | tg-freevpnconfigso | 0.175 | observe | 0 | 0 | 0 | None | 2 | 0 |
 | ninja-hy2 | 0.175 | observe | 0 | 0 | 0 | None | 3 | 0 |
-| tg-AzadNet | 0.175 | observe | 0 | 0 | 0 | None | 3 | 0 |
 | tg-v2rayfree | 0.175 | observe | 0 | 0 | 0 | None | 3 | 0 |
 | tg-ernoxin_shop | 0.175 | observe | 0 | 0 | 0 | None | 4 | 0 |
 | tg-freeiranianv2rey | 0.175 | observe | 0 | 0 | 0 | None | 4 | 0 |
 | tg-proSSH | 0.175 | observe | 0 | 0 | 0 | None | 4 | 0 |
 | tg-mehduox_vpn | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
+| tg-proxy_kafee | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
 | tg-xroVPN | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
 | tonykong-base64 | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
 | tonykong-clash | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
@@ -87,17 +89,16 @@ No rows.
 | tg-ConfigWireguard | 0.175 | observe | 0 | 0 | 0 | None | 7 | 0 |
 | tg-Parsashonam | 0.175 | observe | 0 | 0 | 0 | None | 7 | 0 |
 | tg-VmessProtocol | 0.175 | observe | 0 | 0 | 0 | None | 7 | 0 |
-| tg-abc_configs | 0.175 | observe | 0 | 0 | 0 | None | 7 | 0 |
 | tg-BESTFORBEST66 | 0.175 | observe | 0 | 0 | 0 | None | 8 | 0 |
 | tg-ISVvpn | 0.175 | observe | 0 | 0 | 0 | None | 8 | 0 |
+| tg-V2RayRootFree | 0.175 | observe | 0 | 0 | 0 | None | 9 | 0 |
 | tg-v2raying | 0.175 | observe | 0 | 0 | 0 | None | 10 | 0 |
-| tg-V2RayRootFree | 0.175 | observe | 0 | 0 | 0 | None | 11 | 0 |
-| tg-proxy_kafee | 0.175 | observe | 0 | 0 | 0 | None | 11 | 0 |
 | tg-CaV2ray | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
-| tg-DirectVPN | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
-| tg-PrivateVPNs | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
-| tg-VlessConfig | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
+| tg-abc_configs | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
 | tg-vpnfail_vless | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
+| freefq | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
+| ripaojiedian-freenode | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
+| tg-SafeNet_Server | 0.176 | observe | 0 | 0 | 0 | None | 15 | 0 |
 
 ## Notes
 
