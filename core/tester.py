@@ -159,7 +159,8 @@ class SingBoxTester:
                  min_latency_ms: float = DEFAULT_MIN_LATENCY_MS,
                  skip_target_kinds: Iterable[str] | None = None,
                  process_pool_size: Optional[int] = None,
-                 io_concurrency: Optional[int] = None):
+                 io_concurrency: Optional[int] = None,
+                 probe_only: bool = False):
         """真实测试器。
 
         兼容旧签名：concurrency 同时被当作 IO 并发上限。P0-1 之后推荐显式传
@@ -170,6 +171,7 @@ class SingBoxTester:
             concurrency: 向后兼容参数；当 io_concurrency 未传时同时充当 IO 并发上限
             process_pool_size: sing-box 进程数上限（None=自动推断）
             io_concurrency: IO 任务并发上限（None=用 concurrency）
+            probe_only: 轻量探活模式，只测 204 快速探活，geo/解锁检测留给完整真测阶段
         """
         if not os.path.exists(sb_path):
             raise FileNotFoundError(f"sing-box binary not found: {sb_path}")
@@ -178,6 +180,7 @@ class SingBoxTester:
         self.request_timeout = request_timeout
         self.min_latency_ms = min_latency_ms
         self.skip_target_kinds = set(skip_target_kinds or [])
+        self.probe_only = probe_only
         self._port_counter = 30000
 
         # [P0-1] 进程池与 IO 并发解耦
@@ -280,7 +283,9 @@ class SingBoxTester:
                 speed_download_bytes = 0
                 speed_download_time = 0.0
 
-                for target_url, target_kind in TEST_TARGETS:
+                # probe 模式: 只测 204 快速探活, geo 检测留给完整真测阶段(超时更宽裕)
+                probe_targets = TEST_TARGETS[:1] if self.probe_only else TEST_TARGETS
+                for target_url, target_kind in probe_targets:
                     if target_kind in self.skip_target_kinds:
                         continue
 

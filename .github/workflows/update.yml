@@ -45,7 +45,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -135,6 +135,8 @@ jobs:
             --top-n "$TOP_N" \
             --test-limit "$TEST_LIMIT" \
             --min-retain-ratio "$MIN_RETAIN_RATIO" \
+            --lightweight-probe \
+            --probe-concurrency 100 \
             --repo "${{ github.repository }}" \
             --branch "${{ github.event.repository.default_branch }}"
 
