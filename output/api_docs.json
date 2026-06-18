@@ -1,0 +1,241 @@
+{
+  "title": "AutoNodes Open API",
+  "version": "2.8.0",
+  "base_url": "https://api.autonodes.example.com",
+  "authentication": {
+    "type": "api_key",
+    "header": "X-API-Key",
+    "description": "在请求头中添加 X-API-Key 进行认证"
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/nodes",
+      "description": "获取节点列表（支持过滤和排序）",
+      "parameters": [
+        {
+          "name": "protocol",
+          "type": "string",
+          "required": false,
+          "description": "协议类型过滤",
+          "default": null
+        },
+        {
+          "name": "region",
+          "type": "string",
+          "required": false,
+          "description": "地区过滤",
+          "default": null
+        },
+        {
+          "name": "min_score",
+          "type": "number",
+          "required": false,
+          "description": "最低评分",
+          "default": null
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "返回数量上限",
+          "default": 50
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "排序字段: score/latency/speed",
+          "default": "score"
+        }
+      ],
+      "response_example": {
+        "nodes": [
+          {
+            "tag": "...",
+            "server": "...",
+            "score": 85.2
+          }
+        ]
+      },
+      "permission": "read",
+      "rate_limit": "100/min"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/nodes/{fingerprint}",
+      "description": "获取单个节点详情",
+      "parameters": [
+        {
+          "name": "fingerprint",
+          "type": "string",
+          "required": true,
+          "description": "节点指纹",
+          "default": null
+        }
+      ],
+      "response_example": {
+        "node": {
+          "tag": "...",
+          "score": 85.2,
+          "stats": {}
+        }
+      },
+      "permission": "read",
+      "rate_limit": "100/min"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stats",
+      "description": "获取系统运行统计",
+      "parameters": [],
+      "response_example": {
+        "total_nodes": 100,
+        "pass_rate": 0.85
+      },
+      "permission": "read",
+      "rate_limit": "100/min"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recommend",
+      "description": "获取个性化推荐节点",
+      "parameters": [
+        {
+          "name": "use_case",
+          "type": "string",
+          "required": false,
+          "description": "使用场景: streaming/gaming/download/work",
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "string",
+          "required": false,
+          "description": "用户ID（用于个性化推荐）",
+          "default": null
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "返回数量",
+          "default": 10
+        }
+      ],
+      "response_example": {
+        "recommendations": [
+          {
+            "node": {},
+            "reason": "..."
+          }
+        ]
+      },
+      "permission": "read",
+      "rate_limit": "100/min"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/quality-map",
+      "description": "获取节点质量地图数据",
+      "parameters": [
+        {
+          "name": "group_by",
+          "type": "string",
+          "required": false,
+          "description": "分组维度: region/protocol",
+          "default": "region"
+        }
+      ],
+      "response_example": {
+        "regions": [
+          {
+            "region": "US",
+            "avg_score": 80
+          }
+        ]
+      },
+      "permission": "read",
+      "rate_limit": "100/min"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/feedback",
+      "description": "提交节点使用反馈",
+      "parameters": [
+        {
+          "name": "node_fingerprint",
+          "type": "string",
+          "required": true,
+          "description": "节点指纹",
+          "default": null
+        },
+        {
+          "name": "rating",
+          "type": "integer",
+          "required": true,
+          "description": "评分 1-5",
+          "default": null
+        },
+        {
+          "name": "comment",
+          "type": "string",
+          "required": false,
+          "description": "评论",
+          "default": null
+        }
+      ],
+      "response_example": {
+        "status": "received"
+      },
+      "permission": "write",
+      "rate_limit": "100/min"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/nodes/submit",
+      "description": "提交新节点到社区",
+      "parameters": [
+        {
+          "name": "node_url",
+          "type": "string",
+          "required": true,
+          "description": "节点链接",
+          "default": null
+        },
+        {
+          "name": "protocol",
+          "type": "string",
+          "required": true,
+          "description": "协议类型",
+          "default": null
+        },
+        {
+          "name": "region",
+          "type": "string",
+          "required": true,
+          "description": "地区",
+          "default": null
+        }
+      ],
+      "response_example": {
+        "submission_id": "abc123",
+        "status": "pending"
+      },
+      "permission": "write",
+      "rate_limit": "100/min"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/health",
+      "description": "健康检查",
+      "parameters": [],
+      "response_example": {
+        "status": "ok",
+        "version": "2.8.0"
+      },
+      "permission": "read",
+      "rate_limit": "600/min"
+    }
+  ]
+}
