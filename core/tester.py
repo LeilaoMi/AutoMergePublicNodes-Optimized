@@ -213,14 +213,12 @@ class SingBoxTester:
         raise RuntimeError("no free ports after 200 attempts")
 
     async def test_one(self, node: Node) -> TestResult:
-        # [P0-1] 进程池门：抢到进程槽后才能启动 sing-box 子进程
-        # probe_only 模式跳过进程池门：探活只测 204，sing-box 生命周期极短，
-        # 100 并发直接全开比排队抢 4 个进程槽快 20+ 倍
-        if self.probe_only:
-            return await self._test_one_inner(node)
-        proc_gate = self._acquire_proc()
-        async with proc_gate:
-            return await self._test_one_inner(node)
+        # ProcessPoolGate 在 GitHub runner（4 核 16G）上是反优化：
+        # 30 IO 并发排队抢 process_pool_size=2 个进程槽，实际只有 2 个 sing-box 同时跑，
+        # 比无进程池门慢 18 倍（实测：7 分钟 → 68 分钟）。
+        # 上游 2.4.0 无进程池门，30-50 并发全开 sing-box 在 4 核 runner 上完全扛得住。
+        # 保留 ProcessPoolGate 类结构供本地低并发开发调试用，但 CI 和默认场景全部跳过。
+        return await self._test_one_inner(node)
 
     async def _test_one_inner(self, node: Node) -> TestResult:
         result = TestResult(node=node)

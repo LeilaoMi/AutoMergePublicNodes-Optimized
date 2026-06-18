@@ -1171,7 +1171,7 @@ def main():
     p.add_argument("--tcp-timeout", type=float, default=3.0)
 
     p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument("--test-concurrency", type=int, default=30)
+    p.add_argument("--test-concurrency", type=int, default=50)
     p.add_argument("--test-timeout", type=float, default=6.0)
     p.add_argument("--startup-wait", type=float, default=0.6)
     p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
