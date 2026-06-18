@@ -1,0 +1,44 @@
+# 质量过滤规则配置
+# 目标：把 SubCrawler 等长期维护项目中沉淀的“易异常协议/传输/加密方式”经验配置化，
+# 避免硬编码在 main.py 中，便于本地用户按环境调整。
+#
+# enabled: false 可完全关闭配置规则，仅保留 main.py 内置的基础端口有效性检查。
+# mode:
+#   block     命中 blocked 规则的节点会被剔除
+#   annotate  仅统计命中情况，不剔除；适合观察新规则影响
+
+enabled: true
+mode: block
+
+blocked:
+  ports:
+    - 0
+
+  # SSR 常见弱/旧/异常组合，公共源里经常带来不可用或测速异常。
+  ssr_methods:
+    - none
+    - rc4
+    - rc4-md5
+
+  # SS 旧加密方式，很多客户端仍兼容但公共节点质量通常较差。
+  ss_methods:
+    - rc4-md5
+    - aes-128-cfb
+    - aes-256-cfb
+
+  # VMess auto/none 在不同客户端与内核上兼容性差，容易假阳性或测速失败。
+  vmess_security:
+    - none
+    - auto
+
+  # VMess 的 grpc/h2 在公共源里经常字段不完整；如需保留可从列表删除。
+  vmess_network:
+    - grpc
+    - h2
+
+  # 可选：按协议整体屏蔽，例如 ["http", "socks"]。
+  protocols: []
+
+suspicious:
+  # 当前只作为配置文档保留；真实测试低延迟过滤仍由 --min-latency 控制。
+  min_latency_ms: 30
