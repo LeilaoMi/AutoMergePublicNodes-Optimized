@@ -1,6 +1,6 @@
 # AutoNodes Daily Report
 
-Generated at: 2026-06-18 04:53:22
+Generated at: 2026-06-18 05:07:10
 
 ## Summary
 
@@ -8,106 +8,104 @@ Generated at: 2026-06-18 04:53:22
 | --- | --- |
 | Health status | warning |
 | Health ok | True |
-| Sources healthy | 64/64 |
-| Cleanup disable/downweight | 0/1 |
-| Cleanup prefer/observe | 4/59 |
-| Raw nodes | 69566 |
-| Dedup nodes | 22438 |
-| TCP ok | 806 |
-| Real ok | 622 |
+| Sources healthy | 107/107 |
+| Cleanup disable/downweight | 0/0 |
+| Cleanup prefer/observe | 4/103 |
+| Raw nodes | 70294 |
+| Dedup nodes | 22593 |
+| TCP ok | 786 |
+| Real ok | 636 |
 | Verified output | 300 |
 | Global output | 300 |
-| All output | 22438 |
+| All output | 22593 |
 | All output mode | full |
 
 ## Stage Durations
 
 | Stage | Seconds |
 | --- | --- |
-| fetch | 3.7 |
-| generate | 17.5 |
+| fetch | 4.8 |
+| generate | 33.3 |
 | geo | 1.3 |
-| probe | 94.9 |
-| real_test | 23.1 |
-| tcp | 63.9 |
+| probe | 100.0 |
+| real_test | 37.0 |
+| tcp | 58.4 |
 
 ## Protocol Pass Rate
 
 | Protocol | Tested | Passed | Failed | Pass Rate |
 | --- | --- | --- | --- | --- |
 | http | 25 | 25 | 0 | 100.0% |
-| hysteria2 | 2 | 2 | 0 | 100.0% |
-| shadowsocks | 130 | 123 | 7 | 94.6% |
-| socks | 2 | 1 | 1 | 50.0% |
-| trojan | 130 | 113 | 17 | 86.9% |
-| vless | 512 | 353 | 159 | 68.9% |
+| hysteria2 | 3 | 3 | 0 | 100.0% |
+| shadowsocks | 132 | 129 | 3 | 97.7% |
+| socks | 2 | 2 | 0 | 100.0% |
+| trojan | 129 | 108 | 21 | 83.7% |
+| vless | 490 | 364 | 126 | 74.3% |
 | vmess | 5 | 5 | 0 | 100.0% |
 
 ## Main Real-Test Errors
 
 | Error | Count |
 | --- | --- |
-| general:unknown | 176 |
-| geo:ClientOSError | 2 |
-| 204:TimeoutError | 2 |
-| geo:TimeoutError | 2 |
-| cn-block:ProxyError | 1 |
+| geo:TimeoutError | 53 |
+| speed:ClientOSError | 36 |
+| general:unknown | 27 |
+| geo:ClientOSError | 13 |
+| speed:TimeoutError | 8 |
+| cn-block:ClientOSError | 4 |
+| 204:TimeoutError | 4 |
+| 204:ProxyError | 4 |
 | cn-block:TimeoutError | 1 |
 
 ## TCP Precheck Errors
 
 | Error | Count |
 | --- | --- |
-| TimeoutError | 3234 |
-| ConnectionRefusedError | 634 |
-| gaierror | 323 |
-| OSError | 58 |
+| TimeoutError | 3046 |
+| ConnectionRefusedError | 649 |
+| gaierror | 412 |
+| OSError | 65 |
 
 ## Best Sources By Score
 
 | Source | Score | Recommendation | Tested | Pass Rate | Parsed |
 | --- | --- | --- | --- | --- | --- |
+| Surfboard-tg-mixed | 0.985 | prefer | 344 | 0.907 | 4586 |
 | snakem982 | 0.966 | prefer | 25 | 1.0 | 73 |
-| Surfboard-tg-mixed | 0.95 | prefer | 345 | 0.872 | 4586 |
-| mheidari-all | 0.86 | prefer | 212 | 0.783 | 13927 |
-| Au1rxx-base64 | 0.855 | prefer | 78 | 0.859 | 126 |
-| DeltaKronecker-all | 0.52 | observe | 139 | 0.439 | 7763 |
+| Au1rxx-base64 | 0.866 | prefer | 77 | 0.87 | 126 |
+| mheidari-all | 0.856 | prefer | 212 | 0.778 | 13927 |
+| DeltaKronecker-all | 0.608 | observe | 121 | 0.529 | 7763 |
 | Barabama-yudou | 0.318 | observe | 2 | 1.0 | 166 |
+| xiaoji235-airport-v2ray-all | 0.289 | observe | 1 | 1.0 | 847 |
 | 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | None | 4274 |
 | Epodonios-all | 0.255 | observe | 0 | None | 6401 |
 | MatinGhanbari-all-sub | 0.255 | observe | 0 | None | 3977 |
-| SoliSpirit-all | 0.255 | observe | 0 | None | 5959 |
 
 ## Sources Needing Attention
 
 | Source | Score | Recommendation | Tested | Pass Rate | Dead | Parsed |
 | --- | --- | --- | --- | --- | --- | --- |
-| ninja-vless | 0.145 | downweight | 5 | 0.0 | 0 | 1791 |
+| ninja-vless | 0.152 | observe | 4 | 0.0 | 0 | 1791 |
 | ninja-hy2 | 0.175 | observe | 0 | None | 0 | 3 |
 | ninja-tuic | 0.175 | observe | 0 | None | 0 | 1 |
-| tonykong-base64 | 0.175 | observe | 0 | None | 0 | 5 |
-| tonykong-clash | 0.175 | observe | 0 | None | 0 | 5 |
-| Barabama-we | 0.176 | observe | 0 | None | 0 | 23 |
-| Mr8AHAL | 0.176 | observe | 0 | None | 0 | 26 |
-| Pawdroid | 0.176 | observe | 0 | None | 0 | 20 |
-| abc-configs-readme-latest30 | 0.176 | observe | 0 | None | 0 | 22 |
-| barabama-nodefree | 0.176 | observe | 0 | None | 0 | 23 |
-
-## Source Cleanup Suggestions
-
-| Bucket | Source | Score | Tested | Pass Rate | Dead | Reason |
-| --- | --- | --- | --- | --- | --- | --- |
-| downweight | ninja-vless | 0.145 | 5 | 0.0 | 0 | low score with tested >= 5 |
+| tg-Ahmedhamoomi_Servers | 0.175 | observe | 0 | None | 0 | 2 |
+| tg-ArV2ray | 0.175 | observe | 0 | None | 0 | 7 |
+| tg-AzadNet | 0.175 | observe | 0 | None | 0 | 3 |
+| tg-BESTFORBEST66 | 0.175 | observe | 0 | None | 0 | 8 |
+| tg-CaV2ray | 0.175 | observe | 0 | None | 0 | 12 |
+| tg-GrizzlyVPN | 0.175 | observe | 0 | None | 0 | 1 |
+| tg-ISVvpn | 0.175 | observe | 0 | None | 0 | 8 |
 
 ## Worst Sources By Real-Test Pass Rate
 
 | Source | Pass Rate | Passed | Failed | Tested |
 | --- | --- | --- | --- | --- |
-| ninja-vless | 0.0 | 0 | 5 | 5 |
-| DeltaKronecker-all | 0.439 | 61 | 78 | 139 |
-| mheidari-all | 0.783 | 166 | 46 | 212 |
-| Au1rxx-base64 | 0.859 | 67 | 11 | 78 |
-| Surfboard-tg-mixed | 0.872 | 301 | 44 | 345 |
+| ninja-vless | 0.0 | 0 | 4 | 4 |
+| DeltaKronecker-all | 0.529 | 64 | 57 | 121 |
+| mheidari-all | 0.778 | 165 | 47 | 212 |
+| Au1rxx-base64 | 0.87 | 67 | 10 | 77 |
+| Surfboard-tg-mixed | 0.907 | 312 | 32 | 344 |
+| xiaoji235-airport-v2ray-all | 1.0 | 1 | 0 | 1 |
 | Barabama-yudou | 1.0 | 2 | 0 | 2 |
 | snakem982 | 1.0 | 25 | 0 | 25 |
 
@@ -115,16 +113,16 @@ Generated at: 2026-06-18 04:53:22
 
 | Source | Nodes | OK | Duration | Consecutive Dead |
 | --- | --- | --- | --- | --- |
-| mheidari-all | 13927 | yes | 3.49 | 0 |
-| DeltaKronecker-all | 7763 | yes | 3.58 | 0 |
-| Epodonios-all | 6401 | yes | 2.32 | 0 |
-| SoliSpirit-all | 5959 | yes | 2.03 | 0 |
-| Surfboard-tg-mixed | 4586 | yes | 2.03 | 0 |
-| mahdibland-V2RayAggregator | 4541 | yes | 1.4 | 0 |
-| 10ium-ScrapeCategorize-Vless | 4274 | yes | 1.56 | 0 |
-| barry-far-vless | 4240 | yes | 1.76 | 0 |
-| MatinGhanbari-all-sub | 3977 | yes | 0.76 | 0 |
-| Surfboard-tg-vless | 3590 | yes | 2.14 | 0 |
+| mheidari-all | 13927 | yes | 3.35 | 0 |
+| DeltaKronecker-all | 7763 | yes | 3.41 | 0 |
+| Epodonios-all | 6401 | yes | 2.05 | 0 |
+| SoliSpirit-all | 5959 | yes | 1.53 | 0 |
+| Surfboard-tg-mixed | 4586 | yes | 2.19 | 0 |
+| mahdibland-V2RayAggregator | 4541 | yes | 1.54 | 0 |
+| 10ium-ScrapeCategorize-Vless | 4274 | yes | 1.21 | 0 |
+| barry-far-vless | 4240 | yes | 1.03 | 0 |
+| MatinGhanbari-all-sub | 3977 | yes | 1.28 | 0 |
+| Surfboard-tg-vless | 3590 | yes | 1.76 | 0 |
 
 ## Trend Alerts
 
@@ -135,7 +133,8 @@ No trend alerts.
 ### Real-test error alerts
 | Error | Count |
 | --- | --- |
-| general | 176 |
-| geo | 4 |
-| cn-block | 2 |
-| 204 | 2 |
+| geo | 66 |
+| speed | 44 |
+| general | 27 |
+| 204 | 8 |
+| cn-block | 5 |
