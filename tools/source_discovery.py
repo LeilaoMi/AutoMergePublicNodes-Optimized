@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Discover new subscription sources from other public node projects.
+"""从其他公开节点项目发现新订阅源。
 
-Scans several high-star free-node repositories, extracts their source URLs,
-and reports which ones are NOT already in our config/sources.yaml.
+扫描若干高 star 的免费节点仓库，提取它们的订阅 URL，列出尚未收录到 config/sources.yaml 的源。
 """
 from __future__ import annotations
 

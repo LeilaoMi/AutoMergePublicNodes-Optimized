@@ -1,4 +1,4 @@
-"""Sampling helpers for real proxy tests."""
+"""真测采样助手。"""
 from __future__ import annotations
 
 from typing import Dict, List, Tuple

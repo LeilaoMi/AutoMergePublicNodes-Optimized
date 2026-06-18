@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Prepare latest output files for publishing on a separate artifact branch.
+"""整理最新输出文件，供单独的 artifact 分支发布使用。
 
-This script is intentionally local-only: it copies generated output files into a
-clean directory that a workflow or maintainer can publish to an artifact/data
-branch later. It does not run git commands and does not mutate output/.
+本脚本仅本地操作：把生成的输出文件复制到一个干净目录，方便后续由 workflow 或维护者发布到 artifact/data 分支。不执行 git 命令、不修改 output/。
 """
 from __future__ import annotations
 

@@ -4,7 +4,7 @@
 
 `AutoMergePublicNodes-Optimized` 是一个**公开订阅源聚合 + 真测 + 重新分发**的工具。我们：
 
-- **不存储任何用户流量**。所有真测目标都是公开测速/解锁检测站（youtube/generate_204, cloudflare, ipinfo.io, baidu/robots.txt 等）。
+- **不存储任何用户流量**。所有真测目标都是公开测速/解锁检测站（youtube/generate_204, cloudflare, www.cloudflare.com/cdn-cgi/trace, baidu/robots.txt 等）。
 - **不记录任何用户行为**。本仓库不收集订阅者的 IP、访问时间、使用习惯。
 - **不代理任何用户流量**。本仓库的 CI 只跑真测流水线，不提供任何"代理服务"。
 

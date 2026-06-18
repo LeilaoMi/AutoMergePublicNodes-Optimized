@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a Markdown source quality score report from output/stats.json."""
+"""从 output/stats.json 生成 Markdown 源质量评分报告。"""
 from __future__ import annotations
 
 import argparse

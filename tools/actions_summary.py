@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a GitHub Actions job summary from output/stats.json."""
+"""从 output/stats.json 生成 GitHub Actions 任务摘要。"""
 from __future__ import annotations
 
 import argparse

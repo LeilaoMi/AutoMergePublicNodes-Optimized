@@ -1,7 +1,6 @@
-"""Weighted node scoring helpers.
+"""节点加权评分助手。
 
-The real proxy test decides whether a node is usable. This module only ranks usable
-nodes by combining current test metrics with historical protocol/source quality.
+真测决定节点是否可用；本模块仅对可用节点排序，综合当次测试指标与历史协议/来源质量。
 """
 from __future__ import annotations
 

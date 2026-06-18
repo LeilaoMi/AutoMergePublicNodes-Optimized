@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Generate a human-readable daily status report from output/*.json.
+"""从 output/*.json 生成人类可读的每日状态报告。
 
-The report is intentionally Markdown so it can be viewed directly on GitHub or
-included in workflow artifacts. It does not mutate subscriptions; it only reads
-existing output files and writes daily_report.md.
+输出 Markdown 格式，可直接在 GitHub 查看，或纳入 workflow 产物。脚本只读输出文件、不修改订阅，最终写入 daily_report.md。
 """
 from __future__ import annotations
 

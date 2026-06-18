@@ -1,6 +1,6 @@
-"""Node quality filtering helpers.
+"""节点质量过滤助手。
 
-Keeps configurable quality rules and server-level prefiltering outside main.py.
+保留可配置的质量规则与服务器级预筛选逻辑，避免 main.py 臃肿。
 """
 from __future__ import annotations
 

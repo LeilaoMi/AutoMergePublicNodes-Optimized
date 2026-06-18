@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a Markdown comparison report for scoring profiles."""
+"""生成评分模板对比 Markdown 报告。"""
 from __future__ import annotations
 
 import argparse

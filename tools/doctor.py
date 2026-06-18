@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local environment doctor for AutoMergePublicNodes-Optimized."""
+"""AutoMergePublicNodes-Optimized 本地环境诊断。"""
 from __future__ import annotations
 
 import argparse

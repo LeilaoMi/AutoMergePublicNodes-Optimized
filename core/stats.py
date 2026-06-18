@@ -1,7 +1,6 @@
-"""Statistics helpers for sampling, source quality, trend history, and node stability.
+"""统计助手：采样、源质量、趋势历史与节点稳定性。
 
-This module keeps reporting/health logic out of main.py so the pipeline entrypoint
-can stay focused on orchestration.
+本模块把报告/健康度逻辑从 main.py 中抽出来，让流水线入口专注于编排。
 
 [P1-2] 历史通过率改用 EWMA（指数加权移动平均）：
   - 旧实现把全轮平均，老节点统治

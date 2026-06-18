@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Suggest source cleanup actions from output/stats.json and output/source_audit.json.
+"""根据 output/stats.json 与 output/source_audit.json 提出订阅源清理建议。
 
-This tool is intentionally read-only by default. It produces a Markdown report and,
-optionally, a YAML patch preview showing which sources would be disabled after
-human review.
+默认只读：产出 Markdown 报告，并可选地生成 YAML 补丁预览，展示人工复核后会被禁用的源。
 """
 from __future__ import annotations
 

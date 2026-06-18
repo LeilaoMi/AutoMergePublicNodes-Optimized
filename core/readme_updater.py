@@ -1,6 +1,6 @@
-"""README status block updater.
+"""README 状态区更新器。
 
-Keeps the repository homepage synchronized with the latest pipeline stats.
+保持仓库主页 synchronized with the latest pipeline stats.
 
 [P0-4] 新增 stale 检测：当 stats.json 的 timestamp 超过 24h 没更新时，
 在 README 状态区顶部追加 ⚠️ 数据可能已过期 提示，避免 CI 失败时

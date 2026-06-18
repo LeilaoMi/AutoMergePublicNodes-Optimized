@@ -1,8 +1,8 @@
-# Release Notes
+# 发布说明
 
-This directory contains user-facing release notes for notable project versions.
+本目录存放面向用户的项目版本发布说明。
 
-| Version | Date | Summary |
+| 版本 | 日期 | 摘要 |
 |---|---|---|
 | [2.4.0](2.4.0.md) | 2026-06-14 | 分块输出、协议分文件、节点稳定性追踪、解锁检测、降级容错、CI 通知、源发现 |
 | [2.3.0](2.3.0.md) | 2026-06-12 | 可配置评分模板、评分分项拆解、可观测报告、Actions Summary、README 状态自动化 |
