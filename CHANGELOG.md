@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 Release notes index: [`docs/releases/`](docs/releases/)
 
+## 2.9.1 - 2026-06-18
+
+### ✨ Features
+
+- **合并上游 2.4.0**：geo 检测从 ipinfo.io 换成 cloudflare trace（消除 429 限流）、workflow 调优、分块/按协议输出
+- **两阶段探活**（从上游移植）：先 100 并发轻量探活筛掉不可达节点（3000→1150），再 50 并发完整真测，CI 总时长从 60+ 分钟降到 8 分钟
+- **进程池门修复**：v2.5 ProcessPoolGate 在 GitHub runner 上是反优化（30 并发排队抢 2 进程槽），全部模式跳过，对齐上游无进程池门的并发模型
+
+### 🔧 Technical
+
+- `core/tester.py`：加 `probe_only` 参数，探活只测 204；移除进程池门限制
+- `main.py`：加 4.5 轻量探活步骤 + 4 个 CLI 参数（`--lightweight-probe`/`--probe-concurrency`/`--probe-timeout`/`--probe-startup-wait`）；真测并发 30→50
+- `.github/workflows/update.yml`：17 个 step name 中文化；timeout 30→15 分钟；显式传 `--lightweight-probe --probe-concurrency 100`
+
+### 📝 Documentation
+
+- 全部说明文档中文化：SECURITY.md、9 个 Python 模块 docstring、`docs/releases/2.3.0.md`、`docs/releases/README.md`
+- README 流程概览加入两阶段探活；评分策略表更新为 7 因子；项目结构补全 22 个 `_[a-z]*.py` 模块；GitHub Actions 参数同步实际值
+
+### 🧪 Tests
+
+- 回归测试 221 passed，配置校验通过
+- 修复 2 个因新增 `lightweight_probe` 参数导致的测试失败（补全 mock Args 字段）
+
+---
+
 ## 2.9.0 - 2026-06-16
 
 ### ✨ Features

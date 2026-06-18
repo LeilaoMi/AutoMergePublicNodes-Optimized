@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)]()
-[![节点更新](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
+[![更新节点](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
 > 自动聚合公开代理订阅源，使用 sing-box 真实代理测试，输出可直接导入主流客户端的订阅文件，并生成健康报告、源评分与清理建议。
 
@@ -68,12 +68,15 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
   → 质量预过滤
   → TCP 预筛选
   → 历史权重下采样
-  → sing-box 真实代理测试
+  → [4.5] 轻量探活（100 并发只测 204，快速筛掉不可达节点）
+  → [5] sing-box 真实代理测试（50 并发，完整目标）
   → 综合评分排序输出
   → 生成健康报告、日报、源评分与清理建议
 ```
 
-真实测试包含：海外 204 检测、出口地理检测、中国站点连通检测、小文件下载测速、可疑低延迟过滤。
+两阶段测试是性能关键：先用高并发探活把 3000 候选筛到 ~1000，再对剩余节点做完整真测，总耗时从 60+ 分钟降到 ~8 分钟。
+
+完整真测包含：海外 204 检测、出口地理检测（cloudflare trace，避免 ipinfo 限流）、中国站点连通检测（baidu）、小文件下载测速、可疑低延迟过滤、Netflix/ChatGPT/Disney 解锁检测、DNS 泄露检测。
 
 ---
 
@@ -83,13 +86,15 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 
 | 因子 | 默认权重 | 说明 |
 |---|---:|---|
-| `latency` | 35 | sing-box 真实代理测试延迟，越低越好 |
+| `latency` | 25 | sing-box 真实代理测试延迟，越低越好 |
 | `jitter` | 15 | 多目标测试抖动，越低越稳定 |
 | `tcp` | 10 | TCP 预筛选延迟，用作基础可达性参考 |
-| `protocol_history` | 20 | 协议历史通过率，降低长期低质协议权重 |
+| `speed` | 10 | 小文件下载测速，反映实际带宽 |
+| `fingerprint_resistance` | 5 | 指纹抗识别评分，优先不易被识别的节点 |
+| `protocol_history` | 15 | 协议历史通过率，降低长期低质协议权重 |
 | `source_history` | 20 | 订阅源历史通过率，优先稳定来源 |
 
-配置校验会检查字段、阈值和默认值范围。权重总和不等于 100 时只给 warning，不阻断 CI；建议保持 100，便于分数解释和跨轮对比。
+权重总和 100，便于分数解释和跨轮对比。配置校验会检查字段、阈值和默认值范围。
 
 可选评分模板：
 
@@ -118,8 +123,14 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 | `global.txt/yaml/json/urls` | 海外可用的扩展节点 |
 | `all.txt/yaml/json/urls` | 全量去重候选节点 |
 | `chunks/verified_*.txt` | 分块订阅（每 100 节点一块，避免单文件过大） |
-| `by_protocol/verified_*.txt` | 按协议分文件（vmess/vless/trojan/ss 独立订阅） |
-| `stats.json` | 数量、耗时、协议通过率、错误明细、缩水守门结果、节点速度和解锁状态 |
+| `by_protocol/verified_*.txt` | 按协议分文件（vmess/vless/trojan/ss/hysteria2 独立订阅） |
+| `by_region/{region}.txt/yaml/urls` | 按地区分文件（HK/JP/US/SG 等） |
+| `by_capability/{cap}.txt/yaml/urls` | 按解锁能力分文件（netflix/chatgpt/disney 等） |
+| `recommended/clash.yaml` | 推荐 Clash 配置（精选节点 + 分组规则） |
+| `recommended/singbox.json` | 推荐 sing-box 配置 |
+| `recommended/mobile.yaml` | 移动端推荐配置 |
+| `recommended/streaming.yaml` | 流媒体推荐配置 |
+| `stats.json` | 数量、耗时、协议通过率、错误明细、探活/真测阶段数据、节点速度和解锁状态 |
 | `health_report.md` | 当前流水线健康报告，包含评分、来源质量、失败原因与输出保护 |
 | `health_report.json` | 输出完整性、重复项、报警、源清理摘要 |
 | `daily_report.md` | 面向人工阅读的每日摘要 |
@@ -129,6 +140,8 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 | `source_discovery.json` | 从其他项目扫描发现的候选节点统计 |
 | `node_stability.json` | 节点跨轮稳定性追踪（连续通过/失败计数） |
 | `trend_history.json` | 最近 30 轮核心趋势 |
+| `signature_manifest.json` | 输出文件签名清单（完整性校验） |
+| `api_docs.json` | Open API 平台接口文档 |
 
 健康状态说明：
 
@@ -198,10 +211,13 @@ python tools/local_filter.py --input output/global.urls --output-prefix local_ve
 ## GitHub Actions
 
 - 自动运行：每 6 小时一次。
-- 手动运行：`Actions → 节点更新 → Run workflow`。
+- 手动运行：`Actions → 更新节点 → Run workflow`。
 - `top_n`：`verified.*` 输出上限，默认 300，最大 1000。
-- `test_limit`：进入真测的节点上限，默认 1500，最大 3000。
+- `test_limit`：进入下采样的节点上限，默认 3000，最大 5000。
 - `min_retain_ratio`：缩水守门比例，默认 0 表示关闭。
+- 轻量探活：默认启用（`--lightweight-probe`），100 并发先筛不可达节点，再真测剩余。
+- 真测并发：50（`--test-concurrency 50`），完整目标测试。
+- 超时上限：15 分钟（`timeout-minutes: 15`）。
 
 CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`health_report.json`、`daily_report.md`、`source_scores.md`、`scoring_profiles.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
 
@@ -215,15 +231,36 @@ AutoMergePublicNodes-Optimized/
 ├── core/
 │   ├── fetcher.py                  # 异步抓取、重试、CDN 回退
 │   ├── parser.py                   # 多协议解析
-│   ├── tester.py                   # sing-box 真实代理测试
+│   ├── tester.py                   # sing-box 真实代理测试（两阶段：探活 + 真测）
 │   ├── filtering.py                # 质量预过滤与同源降噪
 │   ├── sampling.py                 # 真测下采样与历史权重排序
-│   ├── generator.py                # 多格式订阅输出
-│   ├── scoring.py                  # 综合节点评分
+│   ├── generator.py                # 多格式订阅输出（含分块/按协议/按地区/按能力切片）
+│   ├── scoring.py                  # 综合节点评分（7 因子加权）
 │   ├── report.py                   # Markdown 健康报告
-│   ├── readme_updater.py           # README 状态区更新
-│   ├── stats.py                    # 源评分、趋势与报警统计
-│   └── geo.py                      # GeoIP 标记与缓存
+│   ├── readme_updater.py           # README 状态区自动更新
+│   ├── stats.py                    # 源评分、趋势与报警统计（EWMA 历史通过率）
+│   ├── geo.py                      # GeoIP 标记与缓存
+│   ├── _incremental_cache.py       # [v2.5] 增量测试缓存，跳过未变更节点
+│   ├── _latency_trend.py           # [v2.5] 节点延迟趋势持久化与告警
+│   ├── _lifetime_predictor.py      # [v2.5] 节点剩余寿命预测
+│   ├── _time_aware.py              # [v2.5] 时段感知评分加成
+│   ├── _recommended_configs.py     # [v2.5] 推荐配置生成（Clash/sing-box/移动端/流媒体）
+│   ├── _tester_concurrency.py      # [v2.5] 进程池/IO 并发解耦层
+│   ├── _logging.py                 # [v2.5] 结构化日志
+│   ├── _fingerprint_test.py        # [v2.6] 指纹抗识别检测
+│   ├── _self_healing.py            # [v2.6] 流水线自愈（源失败自动降级/重试）
+│   ├── _predictive_monitoring.py   # [v2.6] 预测性监控（提前识别风险节点）
+│   ├── _smart_failover.py          # [v2.6] 智能故障转移链生成
+│   ├── _node_dna.py                # [v2.7] 节点 DNA 分析（特征聚类）
+│   ├── _use_case_optimizer.py      # [v2.8] 使用场景优化器
+│   ├── _personalized_recommender.py# [v2.8] 个性化推荐
+│   ├── _data_insight_service.py    # [v2.8] 数据洞察服务
+│   ├── _quality_map.py             # [v2.9] 节点质量地图（地区/协议级统计）
+│   ├── _adaptive_learning.py       # [v2.9] 自适应学习引擎（权重/采样/过滤优化建议）
+│   ├── _community_driven.py        # [v2.9] 社区驱动系统（需外部成员参与）
+│   ├── _federated_test_network.py  # [v2.9] 联邦测试网络（需外部贡献者参与）
+│   ├── _open_api_platform.py       # [v2.9] Open API 平台（接口文档生成）
+│   └── _test_farm_client.py        # [v2.9] 测试农场客户端（接口已定义，待实施）
 ├── tools/
 │   ├── audit_sources.py            # 源健康审计
 │   ├── health_report.py            # 输出健康报告
@@ -232,17 +269,23 @@ AutoMergePublicNodes-Optimized/
 │   ├── scoring_profiles_report.py  # 评分模板对比报告
 │   ├── source_discovery.py         # 从其他项目发现新源
 │   ├── suggest_source_cleanup.py   # 源清理建议与安全应用
+│   ├── source_proposal_validator.py# 新源提案验证
 │   ├── validate_config.py          # 配置静态校验
 │   ├── doctor.py                   # 本地环境诊断
 │   ├── local_filter.py             # 本地二次筛选
+│   ├── notify.py                   # Telegram/Webhook 通知
+│   ├── sign_output.py              # 输出文件签名
+│   ├── actions_summary.py          # GitHub Actions 运行摘要
 │   └── prepare_artifact_output.py  # 发布产物整理
 ├── config/                         # 源配置与过滤规则
-├── tests/                          # 回归测试与协议样例
+├── tests/                          # 回归测试（221 用例）与协议样例
 ├── output/                         # CI 输出文件
 ├── docs/                           # 使用指南、资源与历史报告
 ├── CHANGELOG.md                    # 版本变更记录
 └── .github/workflows/update.yml    # 自动更新流程
 ```
+
+> 标注 `[v2.9]` 的社区驱动/联邦测试网络/测试农场需要外部用户或基础设施参与，单仓库运行时这些模块的统计字段为 0，不影响主流程。
 
 ---
 
@@ -270,8 +313,8 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-18 03:56:43 |
-| 版本 | 2.8.0 |
+| 更新时间 | 2026-06-18 04:14:56 |
+| 版本 | 2.9.1 |
 | 订阅源 | 1/1 |
 | 原始节点 | 1 |
 | 去重后 | 1 |
