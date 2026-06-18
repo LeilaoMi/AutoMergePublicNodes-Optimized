@@ -1,0 +1,60 @@
+name: 推荐新订阅源
+description: 推荐一个公开免费节点订阅源加入项目
+title: "[新源推荐] "
+labels: ["new-source"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢推荐新订阅源！请填写以下信息，维护者会审核后加入 `config/sources.yaml`。
+
+  - type: input
+    id: url
+    attributes:
+      label: 订阅源 URL
+      description: 直接可访问的订阅链接（base64/txt/yaml/clash 均可）
+      placeholder: "https://example.com/sub.txt"
+    validations:
+      required: true
+
+  - type: input
+    id: name
+    attributes:
+      label: 来源名称
+      description: 给这个源起个简短的名字
+      placeholder: "example-nodes"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: format
+    attributes:
+      label: 订阅格式
+      options:
+        - base64 (v2ray txt)
+        - Clash YAML
+        - sing-box JSON
+        - 不确定
+    validations:
+      required: true
+
+  - type: input
+    id: node-count
+    attributes:
+      label: 预估节点数
+      description: 打开后大约有多少个节点？
+      placeholder: "50"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 确认
+      options:
+        - label: 该源是公开免费的，不涉及付费机场
+          required: true
+        - label: 该源 URL 可以直接访问，不需要登录
+          required: true
+        - label: 该源提供的节点是公开免费节点，非私人服务器
+          required: true

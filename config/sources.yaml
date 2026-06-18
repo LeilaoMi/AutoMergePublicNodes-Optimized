@@ -1,0 +1,160 @@
+# ============================================================
+# 订阅源配置 - 经过审计的活跃源（2026 年仍在更新）
+# ============================================================
+# 字段说明：
+#   url:               订阅 URL，支持 %Y/%m/%d 动态日期模板
+#   name:              来源标识（用于审计报告）
+#   kind:              url(单订阅) | list(订阅列表) | dynamic(动态URL)
+#   enabled:           是否启用
+#   ignore_protocols: 忽略的协议（例如 [ssr, ss]）
+#   max_nodes:         单源最大节点数（0=不限）
+# ============================================================
+
+sources:
+- url: https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt
+  name: Au1rxx-base64
+  kind: url
+- url: https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/clash.yaml
+  name: Au1rxx-clash
+  kind: url
+- url: https://raw.githubusercontent.com/tonykongcn/free-vpn-subscriptions/main/output/clash.yaml
+  name: tonykong-clash
+  kind: url
+- url: https://raw.githubusercontent.com/tonykongcn/free-vpn-subscriptions/main/output/v2ray-base64.txt
+  name: tonykong-base64
+  kind: url
+- url: https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/vless.txt
+  name: ninja-vless
+  kind: url
+- url: https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/hysteria.txt
+  name: ninja-hy2
+  kind: url
+- url: https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/tuic.txt
+  name: ninja-tuic
+  kind: url
+- url: https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/mixed
+  name: Surfboard-tg-mixed
+  kind: url
+- url: https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/vless
+  name: Surfboard-tg-vless
+  kind: url
+- url: https://raw.githubusercontent.com/mheidari98/.proxy/main/all
+  name: mheidari-all
+  kind: url
+  max_nodes: 2000
+- url: https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/wenode.txt
+  name: Barabama-we
+  kind: url
+- url: https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/yudou66.txt
+  name: Barabama-yudou
+  kind: url
+- url: https://raw.githubusercontent.com/snakem982/proxypool/main/source/clash-meta.yaml
+  name: snakem982
+  kind: url
+- url: https://cdn.jsdelivr.net/gh/vxiaov/free_proxies@main/clash/clash.provider.yaml
+  name: vxiaov
+  kind: url
+- url: https://raw.githubusercontent.com/freefq/free/master/v2
+  name: freefq
+  kind: url
+- url: https://raw.githubusercontent.com/ts-sf/fly/main/clash
+  name: ts-sf
+  kind: url
+- url: https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub
+  name: Pawdroid
+  kind: url
+- url: https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt
+  name: ermaozi
+  kind: url
+- url: https://raw.githubusercontent.com/zhangkaiitugithub/passcro/main/speednodes.yaml
+  name: zhangkai
+  kind: url
+- url: https://raw.githubusercontent.com/Mr8AHAL/v2ray/main/SERVER.txt
+  name: Mr8AHAL
+  kind: url
+
+# ===== v3.1: 10 个新增高质量源 (2026-05 调研) =====
+- url: https://raw.githubusercontent.com/Misaka-blog/chromego_merge/main/sub/merged_proxies_new.yaml
+  name: chromego_merge
+  kind: url
+- url: https://raw.githubusercontent.com/ts-sf/Fly/main/v2
+  name: ts-sf-Fly
+  kind: url
+- url: https://raw.githubusercontent.com/mfuu/v2ray/master/v2ray
+  name: mfuu-v2ray
+  kind: url
+- url: https://raw.githubusercontent.com/ripaojiedian/freenode/main/clash
+  name: ripaojiedian-freenode
+  kind: url
+- url: https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/yudou66.yaml
+  name: barabama-yudou66
+  kind: url
+- url: https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/nodefree.yaml
+  name: barabama-nodefree
+  kind: url
+- url: https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/sub/sub_merge.txt
+  name: mahdibland-V2RayAggregator
+  kind: url
+- url: https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/clash.yml
+  name: ermaozi-get_subscribe
+  kind: url
+- url: https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.yml
+  name: peasoft-NoMoreWalls
+  kind: url
+
+# ===== v3.2: 本地验证新增源 (2026-06) =====
+- url: https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/All_Configs_Sub.txt
+  name: Epodonios-all
+  kind: url
+  max_nodes: 3000
+- url: https://raw.githubusercontent.com/roosterkid/openproxylist/main/V2RAY_RAW.txt
+  name: roosterkid-openproxylist-v2ray
+  kind: url
+
+# ===== v3.3: 深挖验证新增源 (2026-06) =====
+- url: https://github.com/Delta-Kronecker/V2ray-Config/raw/refs/heads/main/config/all_configs.txt
+  name: DeltaKronecker-all
+  kind: url
+- url: https://raw.githubusercontent.com/moneyfly1/collectSub/refs/heads/main/config_all_merged_nodes.txt
+  name: moneyfly1-collectSub
+  kind: url
+- url: https://raw.githubusercontent.com/nscl5/5/refs/heads/main/configs/all.txt
+  name: nscl5-all
+  kind: url
+- url: https://raw.githubusercontent.com/10ium/free-config/refs/heads/main/HighSpeed.txt
+  name: 10ium-HighSpeed
+  kind: url
+- url: https://raw.githubusercontent.com/SoliSpirit/v2ray-configs/refs/heads/main/all_configs.txt
+  name: SoliSpirit-all
+  kind: url
+  max_nodes: 3000
+- url: https://raw.githubusercontent.com/10ium/ScrapeAndCategorize/refs/heads/main/output_configs/Vless.txt
+  name: 10ium-ScrapeCategorize-Vless
+  kind: url
+  max_nodes: 2000
+
+# ===== v3.4: 补充遗漏订阅源 (2026-06) =====
+- url: https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/refs/heads/main/subscriptions/v2ray/all_sub.txt
+  name: MatinGhanbari-all-sub
+  kind: url
+  max_nodes: 3000
+- url: https://raw.githubusercontent.com/barry-far/V2ray-config/main/Splitted-By-Protocol/vless.txt
+  name: barry-far-vless
+  kind: url
+  max_nodes: 2000
+- url: https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub2.txt
+  name: barry-far-Sub2
+  kind: url
+- url: https://raw.githubusercontent.com/barry-far/V2ray-config/main/Sub1.txt
+  name: barry-far-Sub1
+  kind: url
+- url: https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/refs/heads/main/subscriptions/v2ray/super-sub.txt
+  name: MatinGhanbari-super-sub
+  kind: url
+  max_nodes: 3000
+- url: https://raw.githubusercontent.com/xiaoji235/airport-free/main/v2ray.txt
+  name: xiaoji235-airport-v2ray-all
+  kind: url
+- url: https://raw.githubusercontent.com/FreeFolksOn/abc-configs-free-vpn-proxy-list/main/README.md
+  name: abc-configs-readme-latest30
+  kind: url
