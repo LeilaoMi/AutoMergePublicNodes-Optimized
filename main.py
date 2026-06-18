@@ -293,6 +293,39 @@ async def run(args):
         nodes = sample_for_real_test_weighted(nodes, tcp_latency, args.test_limit, node_source_map, protocol_rates, source_rates)
         print(f"      下采样: {before_sample} -> {len(nodes)}（协议基础探索 + 历史通过率加权）")
 
+    # 4.5) 轻量探活（可选）— 先用高并发快速探活筛掉 50%+ 不可达节点，再真测剩余
+    # 关键性能优化：3000 节点全量真测需 60 分钟，探活筛到 ~1300 后真测只需 ~5 分钟
+    nodes_before_probe = len(nodes)
+    probe_error_top: List[tuple] = []
+    if args.lightweight_probe and args.real_test and nodes:
+        from core.tester import SingBoxTester as _SBT
+        print(f"[4.5/6] 轻量探活（并发 {args.probe_concurrency}, 超时 {args.probe_timeout}s）...")
+        probe_tester = _SBT(
+            sb_path=args.singbox,
+            concurrency=args.probe_concurrency,
+            startup_wait=args.probe_startup_wait,
+            request_timeout=args.probe_timeout,
+            min_latency_ms=0,
+            probe_only=True,
+        )
+        probe_results = await probe_tester.test_all(nodes, progress_every=100)
+        probe_pass_fps = {r.node.fingerprint() for r in probe_results if r.success}
+        before_probe = len(nodes)
+        nodes = [n for n in nodes if n.fingerprint() in probe_pass_fps]
+        stage_durations["probe"] = round(time.time() - stage_start, 1)
+        stage_start = time.time()
+        print(f"      探活通过: {len(nodes)}/{before_probe}")
+        # 记录 probe 失败原因分布
+        probe_error_counts: Dict[str, int] = {}
+        for r in probe_results:
+            if not r.success and r.error:
+                key = r.error.split(":")[0] if ":" in r.error else r.error
+                probe_error_counts[key] = probe_error_counts.get(key, 0) + 1
+        probe_error_top = sorted(probe_error_counts.items(), key=lambda x: -x[1])[:10]
+        if probe_error_top:
+            print(f"      探活失败 Top: {', '.join(f'{k}={v}' for k, v in probe_error_top)}")
+    nodes_after_probe = len(nodes)
+
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
     scored_valid: List[tuple] = []  # [(node, latency_ms, jitter_ms, score, source, breakdown)]
@@ -1142,6 +1175,15 @@ def main():
     p.add_argument("--test-timeout", type=float, default=6.0)
     p.add_argument("--startup-wait", type=float, default=0.6)
     p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
+    # 轻量探活参数（两阶段测试优化）
+    p.add_argument("--lightweight-probe", action=argparse.BooleanOptionalAction, default=True,
+                   help="启用轻量探活：先用高并发快速探活筛掉不可达节点，再真测剩余")
+    p.add_argument("--probe-concurrency", type=int, default=100,
+                   help="轻量探活并发数（默认 100，远高于真测并发，因为只测 204）")
+    p.add_argument("--probe-timeout", type=float, default=4.0,
+                   help="轻量探活超时秒数（默认 4s，比真测短）")
+    p.add_argument("--probe-startup-wait", type=float, default=0.4,
+                   help="轻量探活 sing-box 启动等待秒数（默认 0.4s，比真测短）")
     p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=True,
                    help="启用质量预过滤（配置规则 + 同 server/type 降噪）")
     p.add_argument("--filter-rules", default="config/filter_rules.yaml",

@@ -375,6 +375,10 @@ class RegressionTests(unittest.TestCase):
             tcp_timeout = 0.1
             test_limit = 0
             real_test = False
+            lightweight_probe = False
+            probe_concurrency = 100
+            probe_timeout = 4.0
+            probe_startup_wait = 0.4
             top_n = 10
             global_output = False
             min_retain_ratio = 0.7
@@ -428,6 +432,10 @@ class RegressionTests(unittest.TestCase):
             tcp_timeout = 0.1
             test_limit = 0
             real_test = True
+            lightweight_probe = False
+            probe_concurrency = 100
+            probe_timeout = 4.0
+            probe_startup_wait = 0.4
             top_n = 10
             global_output = True
             min_retain_ratio = 0.7
