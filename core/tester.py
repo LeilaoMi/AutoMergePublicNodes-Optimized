@@ -214,6 +214,10 @@ class SingBoxTester:
 
     async def test_one(self, node: Node) -> TestResult:
         # [P0-1] 进程池门：抢到进程槽后才能启动 sing-box 子进程
+        # probe_only 模式跳过进程池门：探活只测 204，sing-box 生命周期极短，
+        # 100 并发直接全开比排队抢 4 个进程槽快 20+ 倍
+        if self.probe_only:
+            return await self._test_one_inner(node)
         proc_gate = self._acquire_proc()
         async with proc_gate:
             return await self._test_one_inner(node)
