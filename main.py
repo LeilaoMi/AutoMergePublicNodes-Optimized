@@ -24,7 +24,7 @@ from typing import Dict, List, Tuple, Any
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-__version__ = "2.8.0"  # + use-case optimization + personalized recommender + node DNA + failover + insights
+__version__ = "2.9.1"  # 合并上游 2.4.0 + 两阶段探活 + 进程池门修复 + 全文档中文化
 
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
