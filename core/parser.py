@@ -620,6 +620,11 @@ def parse_content(text: str) -> List[Node]:
     if not text:
         return []
 
+    # Telegram 网页预览 (t.me/s/xxx) 里的链接参数用 HTML 实体编码
+    # (e.g. security=tls&amp;encryption=none)，解码成正常 & 否则参数解析失败
+    if "&amp;" in text:
+        text = text.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"').replace("&#39;", "'")
+
     # §2.3 防止恶意大文件把整篇 base64 一次性 decode 到内存
     if len(text) > MAX_PARSE_BYTES:
         logger.warning("parse_content: input too large (%d bytes), truncate to %d", len(text), MAX_PARSE_BYTES)
