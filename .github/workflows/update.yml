@@ -29,7 +29,7 @@ on:
       audit:
         description: '同时跑订阅源审计'
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: write
@@ -45,7 +45,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
