@@ -75,7 +75,6 @@ class TestUseCaseOptimizer:
 
     def test_recommend_for_streaming(self):
         """测试流媒体场景推荐"""
-        from core._use_case_optimizer import UseCaseOptimizer
         optimizer = UseCaseOptimizer()
         
         # 创建模拟节点
@@ -107,7 +106,6 @@ class TestUseCaseOptimizer:
 
     def test_recommend_for_gaming(self):
         """测试游戏场景推荐"""
-        from core._use_case_optimizer import UseCaseOptimizer
         optimizer = UseCaseOptimizer()
         
         nodes = []
@@ -139,7 +137,6 @@ class TestPersonalizedRecommender:
 
     def test_recommend_new_user(self):
         """测试新用户推荐"""
-        from core._personalized_recommender import PersonalizedRecommender
         recommender = PersonalizedRecommender()
         
         nodes = []
@@ -163,7 +160,6 @@ class TestPersonalizedRecommender:
 
     def test_profile_creation(self):
         """测试用户画像创建"""
-        from core._personalized_recommender import PersonalizedRecommender
         recommender = PersonalizedRecommender()
         
         profile = recommender.get_or_create_profile("user1")
@@ -177,7 +173,6 @@ class TestOpenAPIPlatform:
 
     def test_generate_api_docs(self):
         """测试API文档生成"""
-        from core._open_api_platform import OpenAPIPlatform
         platform = OpenAPIPlatform()
         
         docs = platform.generate_api_docs()
@@ -189,7 +184,6 @@ class TestOpenAPIPlatform:
 
     def test_get_api_summary(self):
         """测试API摘要"""
-        from core._open_api_platform import OpenAPIPlatform
         platform = OpenAPIPlatform()
         
         summary = platform.get_api_summary()
@@ -203,7 +197,6 @@ class TestSmartFailover:
 
     def test_build_failover_chain(self):
         """测试构建故障转移链"""
-        from core._smart_failover import SmartFailoverManager
         manager = SmartFailoverManager()
         
         # 创建主节点和备选节点
@@ -236,7 +229,6 @@ class TestDataInsightService:
 
     def test_record_run(self):
         """测试记录运行数据"""
-        from core._data_insight_service import DataInsightService
         service = DataInsightService()
         
         stats = {
@@ -252,7 +244,6 @@ class TestDataInsightService:
 
     def test_analyze_insufficient_data(self):
         """测试数据不足时的分析"""
-        from core._data_insight_service import DataInsightService
         service = DataInsightService()
         
         report = service.analyze()
@@ -265,7 +256,6 @@ class TestFederatedTestNetwork:
 
     def test_register_contributor(self):
         """测试注册贡献者"""
-        from core._federated_test_network import FederatedTestNetwork
         network = FederatedTestNetwork()
         
         contributor = network.register_contributor(
@@ -279,7 +269,6 @@ class TestFederatedTestNetwork:
 
     def test_generate_report(self):
         """测试生成报告"""
-        from core._federated_test_network import FederatedTestNetwork
         network = FederatedTestNetwork()
         
         report = network.generate_report()
@@ -293,7 +282,6 @@ class TestCommunityDriven:
 
     def test_register_member(self):
         """测试注册成员"""
-        from core._community_driven import CommunityDrivenSystem
         system = CommunityDrivenSystem()
         
         member = system.register_member("m1", "TestUser")
@@ -304,7 +292,6 @@ class TestCommunityDriven:
 
     def test_generate_report(self):
         """测试生成报告"""
-        from core._community_driven import CommunityDrivenSystem
         system = CommunityDrivenSystem()
         
         report = system.generate_report()
@@ -318,7 +305,6 @@ class TestQualityMap:
 
     def test_generate_empty(self):
         """测试空数据生成"""
-        from core._quality_map import QualityMapGenerator
         generator = QualityMapGenerator()
         
         report = generator.generate([], {}, {})
@@ -328,7 +314,6 @@ class TestQualityMap:
 
     def test_generate_with_data(self):
         """测试有数据时生成"""
-        from core._quality_map import QualityMapGenerator
         generator = QualityMapGenerator()
         
         scored_valid = []
@@ -358,7 +343,6 @@ class TestAdaptiveLearning:
 
     def test_record_run(self):
         """测试记录运行数据"""
-        from core._adaptive_learning import AdaptiveLearningEngine
         engine = AdaptiveLearningEngine()
         
         stats = {
@@ -373,7 +357,6 @@ class TestAdaptiveLearning:
 
     def test_learn_insufficient_data(self):
         """测试数据不足时的学习"""
-        from core._adaptive_learning import AdaptiveLearningEngine
         engine = AdaptiveLearningEngine()
         
         report = engine.learn({"latency": 30})
