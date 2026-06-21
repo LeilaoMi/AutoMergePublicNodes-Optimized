@@ -382,7 +382,7 @@ class RegressionTests(unittest.TestCase):
             lightweight_probe = False
 
         source = Source(url="https://example.com/sub.txt", name="mock-source")
-        node = Node("http", "mock", "127.0.0.1", 8080, {})
+        node = Node("http", "mock", "8.8.8.8", 8080, {})
         fetch_result = type("FetchResult", (), {
             "source": source,
             "success": True,
@@ -441,8 +441,8 @@ class RegressionTests(unittest.TestCase):
             min_latency = 0
 
         source = Source(url="https://example.com/sub.txt", name="mock-source")
-        strict_node = Node("http", "strict", "127.0.0.1", 8080, {})
-        global_node = Node("http", "global", "127.0.0.2", 8080, {})
+        strict_node = Node("http", "strict", "8.8.8.8", 8080, {})
+        global_node = Node("http", "global", "8.8.8.9", 8080, {})
         fetch_result = type("FetchResult", (), {
             "source": source,
             "success": True,

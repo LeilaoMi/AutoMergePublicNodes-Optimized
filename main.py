@@ -29,7 +29,7 @@ __version__ = "2.4.0"  # chunked output + protocol split + node stability + unlo
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
 from core.parser import Node
-from core.filtering import load_filter_rules, quality_prefilter
+from core.filtering import load_filter_rules, quality_prefilter, filter_ssrf
 from core.sampling import protocol_priority, sample_for_real_test, sample_for_real_test_weighted
 from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history, update_node_stability, load_node_stability, get_stable_nodes
 from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
@@ -192,6 +192,11 @@ async def run(args):
     print(f"[3/6] 去重: {len(all_nodes)} -> {len(nodes)}")
     for k, v in sorted(proto_count.items(), key=lambda x: -x[1]):
         print(f"        {k:14s}: {v}")
+
+    # 3.4) SSRF 防投毒（无条件执行，不受 --no-quality-filter 影响）
+    nodes, ssrf_dropped = filter_ssrf(nodes)
+    if ssrf_dropped > 0:
+        print(f"[3.4] SSRF 拦截: 剔除 {ssrf_dropped} 个指向私有/元数据地址的节点")
 
     filter_rule_hits: Dict[str, int] = {}
     # 3.5) 质量预过滤 (可选)

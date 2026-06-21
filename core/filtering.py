@@ -4,6 +4,7 @@ Keeps configurable quality rules and server-level prefiltering outside main.py.
 """
 from __future__ import annotations
 
+import ipaddress
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -130,3 +131,36 @@ def quality_prefilter(
         lst.sort(key=lambda n: priority(n.type))
         out.extend(lst[:max_per_server])
     return out, reason_counts
+
+
+# SSRF 防投毒：拦截指向私有地址 / 云元数据端点的节点 server。
+# 威胁模型：恶意订阅源把 server 设为 169.254.169.254（云元数据）或 10.x 内网，
+# CI runner 通过 TCP 探活连这些地址可能触达云内部网络。
+_CGNAT_RANGE = ipaddress.ip_network("100.64.0.0/10")
+
+
+def is_ssrf_target(server: str) -> bool:
+    """判断 server 是否指向私有/回环/链路本地/CGNAT 地址。域名不在此层拦截。"""
+    if not server:
+        return False
+    try:
+        ip = ipaddress.ip_address(server)
+    except ValueError:
+        return False  # 域名交给 TCP 层 DNS 解析后的连接处理
+    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_unspecified:
+        return True
+    if isinstance(ip, ipaddress.IPv4Address) and ip in _CGNAT_RANGE:
+        return True
+    return False
+
+
+def filter_ssrf(nodes: List[Node]) -> Tuple[List[Node], int]:
+    """无条件拦截指向私有/元数据地址的节点。返回 (安全节点, 拦截数)。"""
+    safe: List[Node] = []
+    dropped = 0
+    for n in nodes:
+        if is_ssrf_target(n.server):
+            dropped += 1
+            continue
+        safe.append(n)
+    return safe, dropped

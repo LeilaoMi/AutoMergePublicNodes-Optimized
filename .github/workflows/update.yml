@@ -111,6 +111,8 @@ jobs:
 
       - name: Compile check
         run: python -m compileall -q main.py core tools tests
+      - name: Import contract
+        run: python tools/import_contract.py
 
       - name: Config validation
         run: python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules 'config/scoring*.yaml'
