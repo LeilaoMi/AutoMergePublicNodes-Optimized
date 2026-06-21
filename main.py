@@ -61,29 +61,6 @@ class UseCaseOptimizer:
     def __getattr__(self, name): return lambda *args, **kwargs: None
     def __call__(self, *args, **kwargs): return self
 
-# [v3.0] 僵尸模块动态 Mock 拦截器
-# 防止已删除的伪 AI/联邦模块导致 ModuleNotFoundError
-import sys
-from unittest.mock import MagicMock
-
-class ZombieModuleMock(MagicMock):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.return_value = self
-    def __call__(self, *args, **kwargs):
-        return self
-    def __getattr__(self, name):
-        return self
-
-ZOMBIE_MODULES = [
-    "core._use_case_optimizer", "core._personalized_recommender",
-    "core._open_api_platform", "core._smart_failover",
-    "core._data_insight_service", "core._federated_test_network",
-    "core._community_driven", "core._quality_map",
-    "core._adaptive_learning", "core._test_farm_client",
-]
-for mod in ZOMBIE_MODULES:
-    sys.modules[mod] = ZombieModuleMock()
 
 import argparse
 import asyncio
