@@ -56,47 +56,16 @@ class Node:
     server_port: int           # 端口
     raw: Dict[str, Any] = field(default_factory=dict)  # sing-box 完整 outbound
 
-    def fingerprint(self, strong: bool = False) -> str:
-        """节点指纹（用于去重）。
-
-        [P1-1] strong=True 时把 SNI / host / path 纳入指纹，避免
-        "同 server:port 配不同 sni 实际是不同出口" 被合并。
-        兼容老调用：默认仍走弱指纹（fingerprint 不变），调用方显式传 strong=True。
-        """
-        base = f"{self.type}|{self.server}|{self.server_port}|{self._key()}"
-        if not strong:
-            return base
-        r = self.raw or {}
-        sni = ""
-        tls = r.get("tls") or {}
-        if isinstance(tls, dict):
-            sni = tls.get("server_name") or ""
-        host = ""
-        path = ""
-        transport = r.get("transport") or {}
-        if isinstance(transport, dict):
-            t_type = transport.get("type", "")
-            path = transport.get("path", "") or ""
-            if t_type == "ws":
-                headers = transport.get("headers") or {}
-                if isinstance(headers, dict):
-                    host = headers.get("Host", "") or headers.get("host", "")
-            elif t_type == "http":
-                host_list = transport.get("host") or []
-                if isinstance(host_list, list) and host_list:
-                    host = host_list[0]
-        return f"{base}|{sni}|{host}|{path}"
+    def fingerprint(self) -> str:
+        """节点指纹（用于去重）"""
+        return f"{self.type}|{self.server}|{self.server_port}|{self._key()}"
 
     def _key(self) -> str:
         r = self.raw
         if self.type in ("vmess", "vless"):
             return r.get("uuid", "")
-        if self.type in ("trojan", "shadowsocks", "hysteria", "hysteria2", "tuic", "anytls"):
+        if self.type in ("trojan", "shadowsocks", "hysteria", "hysteria2", "tuic"):
             return r.get("password", "") or r.get("uuid", "")
-        if self.type in ("socks", "http"):
-            # [v2.5] 修复指纹碰撞：socks/http 必须把认证信息纳入指纹
-            # 否则同一台服务器上所有 socks/http 节点指纹相同，去重时只保留第一个
-            return f"{r.get('username','')}:{r.get('password','')}"
         return ""
 
     def to_singbox(self) -> Dict[str, Any]:
@@ -619,11 +588,6 @@ def parse_content(text: str) -> List[Node]:
     text = text.strip()
     if not text:
         return []
-
-    # Telegram 网页预览 (t.me/s/xxx) 里的链接参数用 HTML 实体编码
-    # (e.g. security=tls&amp;encryption=none)，解码成正常 & 否则参数解析失败
-    if "&amp;" in text:
-        text = text.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"').replace("&#39;", "'")
 
     # §2.3 防止恶意大文件把整篇 base64 一次性 decode 到内存
     if len(text) > MAX_PARSE_BYTES:

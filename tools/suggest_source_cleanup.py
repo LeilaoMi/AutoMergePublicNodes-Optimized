@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""根据 output/stats.json 与 output/source_audit.json 提出订阅源清理建议。
+"""根据 output/stats.json 和 output/source_audit.json 生成订阅源清理建议。
 
-默认只读：产出 Markdown 报告，并可选地生成 YAML 补丁预览，展示人工复核后会被禁用的源。
+默认只读；可输出 Markdown 报告、机器可读 JSON，以及禁用源的 YAML 预览。
 """
 from __future__ import annotations
 
@@ -73,16 +73,16 @@ def build_cleanup_suggestions(
             "reason": "",
         }
         if consecutive_dead >= disable_dead_threshold or rec == "disable-candidate":
-            row["reason"] = f"consecutive_dead >= {disable_dead_threshold}"
+            row["reason"] = f"连续死亡次数 >= {disable_dead_threshold}"
             disable.append(row)
         elif rec == "downweight" or (tested >= min_tested and score < 0.25):
-            row["reason"] = f"low score with tested >= {min_tested}"
+            row["reason"] = f"已测数量 >= {min_tested} 且评分偏低"
             downweight.append(row)
         elif rec == "prefer":
-            row["reason"] = "high source score"
+            row["reason"] = "源评分较高"
             prefer.append(row)
         else:
-            row["reason"] = "insufficient evidence or neutral score"
+            row["reason"] = "证据不足或评分中性"
             observe.append(row)
 
     disable.sort(key=lambda r: (-int(r.get("consecutive_dead", 0)), float(r.get("score", 0))))
@@ -132,35 +132,35 @@ def build_cleanup_report(
     suggestions = payload["suggestions"]
 
     lines: List[str] = [
-        "# Source Cleanup Suggestions",
+        "# 订阅源清理建议",
         "",
-        f"Generated at: {payload['generated_at']}",
+        f"生成时间：{payload['generated_at']}",
         "",
-        "This report is read-only guidance. Review entries before editing `config/sources.yaml`.",
+        "本报告默认只读。修改 `config/sources.yaml` 前请人工复核。",
         "",
-        "## Summary",
+        "## 摘要",
         "",
     ]
-    lines.extend(_md_table(["Bucket", "Count"], [[k, len(v)] for k, v in suggestions.items()]))
+    lines.extend(_md_table(["分类", "数量"], [[k, len(v)] for k, v in suggestions.items()]))
 
-    headers = ["Source", "Score", "Tested", "Pass Rate", "Parsed", "Dead", "Reason", "URL"]
+    headers = ["订阅源", "评分", "已测", "通过率", "解析数", "连续死亡", "原因", "URL"]
     for title, key in [
-        ("Disable Candidates", "disable"),
-        ("Downweight Candidates", "downweight"),
-        ("Prefer / Keep Priority", "prefer"),
-        ("Observe", "observe"),
+        ("建议禁用", "disable"),
+        ("建议降权", "downweight"),
+        ("建议优先保留", "prefer"),
+        ("继续观察", "observe"),
     ]:
         rows = suggestions[key]
         lines += ["", f"## {title}", ""]
         if rows:
             lines.extend(_md_table(headers, _format_rows(rows)))
         else:
-            lines.append("No rows.")
+            lines.append("无记录。")
     return "\n".join(lines) + "\n"
 
 
 def filter_names(names: Set[str], only: Set[str] | None = None, exclude: Set[str] | None = None) -> Set[str]:
-    """Apply optional allow/deny filters to cleanup source names."""
+    """根据白名单/黑名单过滤待处理订阅源名称。"""
     filtered = set(names)
     if only:
         filtered &= set(only)
@@ -210,22 +210,22 @@ def main() -> None:
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--sources", default="config/sources.yaml")
     parser.add_argument("--output", default="output/source_cleanup_suggestions.md")
-    parser.add_argument("--json-output", default="", help="optional machine-readable JSON output path")
-    parser.add_argument("--patch-preview", default="", help="optional path for YAML disable preview")
-    parser.add_argument("--apply", action="store_true", help="apply disable suggestions to sources.yaml; requires --confirm-disable")
-    parser.add_argument("--confirm-disable", action="store_true", help="required safety confirmation for --apply")
-    parser.add_argument("--only", default="", help="comma-separated source names allowed for patch/apply; empty means all disable suggestions")
-    parser.add_argument("--exclude", default="", help="comma-separated source names to exclude from patch/apply")
+    parser.add_argument("--json-output", default="", help="可选：机器可读 JSON 输出路径")
+    parser.add_argument("--patch-preview", default="", help="可选：禁用源 YAML 预览输出路径")
+    parser.add_argument("--apply", action="store_true", help="将禁用建议应用到 sources.yaml；必须同时传 --confirm-disable")
+    parser.add_argument("--confirm-disable", action="store_true", help="--apply 的安全确认开关")
+    parser.add_argument("--only", default="", help="逗号分隔的允许处理源名称；为空表示允许全部禁用建议")
+    parser.add_argument("--exclude", default="", help="逗号分隔的排除源名称")
     parser.add_argument("--min-tested", type=int, default=5)
     parser.add_argument("--disable-dead-threshold", type=int, default=2)
     args = parser.parse_args()
 
     if args.min_tested < 0:
-        parser.error("--min-tested must be >= 0")
+        parser.error("--min-tested 必须 >= 0")
     if args.disable_dead_threshold < 1:
-        parser.error("--disable-dead-threshold must be >= 1")
+        parser.error("--disable-dead-threshold 必须 >= 1")
     if args.apply and not args.confirm_disable:
-        parser.error("--apply requires --confirm-disable")
+        parser.error("--apply 必须同时传 --confirm-disable")
 
     only_names = _parse_name_set(args.only)
     exclude_names = _parse_name_set(args.exclude)
@@ -234,14 +234,14 @@ def main() -> None:
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(report, encoding="utf-8")
-    print(f"source cleanup suggestions written to {output}")
+    print(f"订阅源清理建议已写入：{output}")
 
     if args.json_output:
         payload = build_cleanup_payload(args.output_dir, args.min_tested, args.disable_dead_threshold)
         json_path = Path(args.json_output)
         json_path.parent.mkdir(parents=True, exist_ok=True)
         json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"source cleanup JSON written to {json_path}")
+        print(f"订阅源清理 JSON 已写入：{json_path}")
 
     if args.patch_preview:
         stats = _load_json(Path(args.output_dir) / "stats.json", {})
@@ -252,7 +252,7 @@ def main() -> None:
         patch_path = Path(args.patch_preview)
         patch_path.parent.mkdir(parents=True, exist_ok=True)
         patch_path.write_text(preview, encoding="utf-8")
-        print(f"disable patch preview written to {patch_path}")
+        print(f"禁用源预览已写入：{patch_path}")
 
     if args.apply:
         stats = _load_json(Path(args.output_dir) / "stats.json", {})
@@ -260,7 +260,7 @@ def main() -> None:
         suggestions = build_cleanup_suggestions(stats, audit, args.min_tested, args.disable_dead_threshold)
         disable_names = filter_names({str(r["name"]) for r in suggestions["disable"] if r.get("name")}, only_names, exclude_names)
         changed = apply_disable_suggestions(args.sources, disable_names)
-        print(f"applied disable suggestions to {args.sources}; changed={changed}")
+        print(f"已应用禁用建议到 {args.sources}；变更数量={changed}")
 
 
 if __name__ == "__main__":
