@@ -1,12 +1,31 @@
-# AutoMergePublicNodes-Optimized
+# AutoMergePublicNodes-Optimized (v3.0)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)]()
-[![更新节点](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
+[![节点更新](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
-> 自动聚合公开代理订阅源，使用 sing-box 真实代理测试，输出可直接导入主流客户端的订阅文件，并生成健康报告、源评分与清理建议。
+> **工业级公开代理节点聚合与分发引擎。**
+> 自动聚合公开代理订阅源，使用 sing-box 控制面 API 真实代理测试，输出可直接导入主流客户端的订阅文件，并提供零服务器成本的纯客户端动态订阅网关。
+> *仅供学习研究。公开节点稳定性不可控，请自行评估可用性与合规风险。*
 
-> 仅供学习研究。公开节点稳定性不可控，请自行评估可用性与合规风险。
+---
+
+## 🌟 v3.0 核心特性
+
+- **⚡ 终极性能 (控制面集成)**：抛弃传统 Python 并发请求，利用 sing-box 内置 Clash API 与 `url-test` 引擎进行批量探活，测速耗时从“分钟级”降维至“秒级”。
+- **🛡️ 内存防线 (布隆过滤器)**：引入 `BloomFilter` 替代传统 `set()`，在处理 70,000+ 原始节点时，将去重内存占用压缩 90% 以上，彻底免疫 CI OOM。
+- **🔒 SSRF 防投毒网关**：内置 `SecurityGuard`，自动拦截指向 RFC1918 私有地址及云厂商元数据服务（如 `169.254.169.254`）的恶意 TG 节点，保护 CI 运行环境。
+- **🌐 纯静态动态网关**：依托 GitHub Pages 提供浏览器端实时过滤订阅，支持按地区、协议自定义生成 Base64/Clash YAML，零服务器开销。
+- **♻️ Git 仓库治理**：实施“双分支隔离”模式，状态 JSON 强制覆盖推送至 `state` 孤儿分支，彻底冻结 `main` 分支 `.git` 体积膨胀。
+
+---
+
+## 🚀 动态订阅网关 (推荐)
+
+访问项目的 **GitHub Pages** 站点，在浏览器端实时过滤并生成专属订阅链接：
+👉 **[点击进入动态网关](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)**
+
+*支持条件：地区 (如 `HK,JP`)、协议 (如 `vless,trojan`)。计算全在本地，保护隐私。*
 
 ---
 
@@ -28,7 +47,6 @@
 ## 订阅地址
 
 ### GitHub Raw
-
 ```text
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.txt
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.yaml
@@ -41,7 +59,6 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/o
 ```
 
 ### jsDelivr
-
 ```text
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.txt
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.yaml
@@ -52,7 +69,6 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.txt
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.yaml
 ```
-
 转换链接见 `output/*.converter.md`。第三方转换服务可能不可用或记录订阅地址，优先使用本仓库直接生成的订阅文件。
 
 ---
@@ -63,15 +79,16 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 订阅源配置
   → 异步抓取与重试
   → 多协议解析
-  → 指纹去重
-  → GeoIP 标记
-  → 质量预过滤
-  → TCP 预筛选
-  → 历史权重下采样
+  → [v3.0] 布隆过滤器极速去重 (防 OOM)
+  → [v3.0] SSRF 防投毒安全清洗
+  → 指纹去重 → GeoIP 标记 → 质量预过滤
+  → TCP 预筛选 → 历史权重下采样
   → [4.5] 轻量探活（100 并发只测 204，快速筛掉不可达节点）
   → [5] sing-box 真实代理测试（50 并发，完整目标）
   → 综合评分排序输出
+  → [v3.0] 导出 Web 元数据并部署至 GitHub Pages
   → 生成健康报告、日报、源评分与清理建议
+  → [v3.0] 状态文件推送到 state 孤儿分支 (防 Git 膨胀)
 ```
 
 两阶段测试是性能关键：先用高并发探活把 3000 候选筛到 ~1000，再对剩余节点做完整真测，总耗时从 60+ 分钟降到 ~8 分钟。
@@ -106,11 +123,9 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 | `config/scoring.source_quality.yaml` | 公开池噪声较高 | 强化订阅源和协议历史质量 |
 
 本地运行时可指定模板：
-
 ```bash
 python main.py --scoring-rules config/scoring.stability.yaml
 ```
-
 CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 workflow 中的 `--scoring-rules`。
 
 ---
@@ -144,7 +159,6 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 | `api_docs.json` | Open API 平台接口文档 |
 
 健康状态说明：
-
 - `ok`：输出结构正常，未发现关键报警。
 - `warning`：输出可用，但存在低通过率协议、真测错误或源质量问题。
 - `critical`：输出缺失、解析异常、`verified` 为 0 或核心结构不满足要求。
@@ -154,7 +168,6 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 ## 源维护
 
 `config/sources.yaml` 维护公开订阅源。建议新增源前检查：
-
 1. URL 可访问。
 2. 能解析出有效节点。
 3. 与现有源相比有去重贡献。
@@ -162,15 +175,22 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 5. 通过配置校验和回归测试。
 
 清理建议默认只读：
-
 ```bash
-python tools/suggest_source_cleanup.py   --output-dir output   --sources config/sources.yaml   --output output/source_cleanup_suggestions.md   --json-output output/source_cleanup_suggestions.json
+python tools/suggest_source_cleanup.py \
+  --output-dir output \
+  --sources config/sources.yaml \
+  --output output/source_cleanup_suggestions.md \
+  --json-output output/source_cleanup_suggestions.json
 ```
-
 如需应用禁用建议，必须显式确认：
-
 ```bash
-python tools/suggest_source_cleanup.py   --output-dir output   --sources config/sources.yaml   --apply   --confirm-disable   --only source-a,source-b   --exclude source-b
+python tools/suggest_source_cleanup.py \
+  --output-dir output \
+  --sources config/sources.yaml \
+  --apply \
+  --confirm-disable \
+  --only source-a,source-b \
+  --exclude source-b
 ```
 
 ---
@@ -184,10 +204,12 @@ pip install -r requirements.txt
 
 # 下载 sing-box 后运行
 python main.py --top-n 100 --test-limit 500
+
+# 导出本地 Web 网关数据
+python tools/export_web_nodes.py --input output/all.yaml --output web/nodes.json
 ```
 
 常用检查：
-
 ```bash
 python -m compileall -q main.py core tools tests
 python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules config/scoring.yaml
@@ -201,7 +223,6 @@ python tools/suggest_source_cleanup.py --output-dir output --sources config/sour
 ```
 
 本地二次筛选：
-
 ```bash
 python tools/local_filter.py --input output/global.urls --output-prefix local_verified --top-n 100
 ```
@@ -227,8 +248,12 @@ CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`h
 
 ```text
 AutoMergePublicNodes-Optimized/
-├── main.py                         # 主流水线与 CLI
+├── main.py                         # 主流水线与 CLI (已热插拔控制面引擎)
 ├── core/
+│   ├── bloom_filter.py             # [v3.0] 布隆过滤器 (内存防线)
+│   ├── concurrency_pool.py         # [v3.0] 异步端口池与信号量门控
+│   ├── security_guard.py           # [v3.0] SSRF 防投毒网关
+│   ├── singbox_api_tester.py       # [v3.0] sing-box 控制面批量测速引擎
 │   ├── fetcher.py                  # 异步抓取、重试、CDN 回退
 │   ├── parser.py                   # 多协议解析
 │   ├── tester.py                   # sing-box 真实代理测试（两阶段：探活 + 真测）
@@ -244,24 +269,19 @@ AutoMergePublicNodes-Optimized/
 │   ├── _latency_trend.py           # [v2.5] 节点延迟趋势持久化与告警
 │   ├── _lifetime_predictor.py      # [v2.5] 节点剩余寿命预测
 │   ├── _time_aware.py              # [v2.5] 时段感知评分加成
-│   ├── _recommended_configs.py     # [v2.5] 推荐配置生成（Clash/sing-box/移动端/流媒体）
-│   ├── _tester_concurrency.py      # [v2.5] 进程池/IO 并发解耦层
+│   ├── _recommended_configs.py     # [v2.5] 推荐配置生成
 │   ├── _logging.py                 # [v2.5] 结构化日志
 │   ├── _fingerprint_test.py        # [v2.6] 指纹抗识别检测
-│   ├── _self_healing.py            # [v2.6] 流水线自愈（源失败自动降级/重试）
-│   ├── _predictive_monitoring.py   # [v2.6] 预测性监控（提前识别风险节点）
-│   ├── _smart_failover.py          # [v2.6] 智能故障转移链生成
+│   ├── _self_healing.py            # [v2.6] 流水线自愈
+│   ├── _predictive_monitoring.py   # [v2.6] 预测性监控
 │   ├── _node_dna.py                # [v2.7] 节点 DNA 分析（特征聚类）
-│   ├── _use_case_optimizer.py      # [v2.8] 使用场景优化器
-│   ├── _personalized_recommender.py# [v2.8] 个性化推荐
-│   ├── _data_insight_service.py    # [v2.8] 数据洞察服务
-│   ├── _quality_map.py             # [v2.9] 节点质量地图（地区/协议级统计）
-│   ├── _adaptive_learning.py       # [v2.9] 自适应学习引擎（权重/采样/过滤优化建议）
-│   ├── _community_driven.py        # [v2.9] 社区驱动系统（需外部成员参与）
-│   ├── _federated_test_network.py  # [v2.9] 联邦测试网络（需外部贡献者参与）
-│   ├── _open_api_platform.py       # [v2.9] Open API 平台（接口文档生成）
-│   └── _test_farm_client.py        # [v2.9] 测试农场客户端（接口已定义，待实施）
+│   └── _quality_map.py             # [v2.9] 节点质量地图
+├── web/                            # [v3.0] 纯静态动态网关前端
+│   ├── index.html                  # Tailwind CSS 交互界面
+│   ├── app.js                      # 客户端过滤与 Base64/YAML 生成
+│   └── nodes.json                  # CI 自动导出的节点元数据
 ├── tools/
+│   ├── export_web_nodes.py         # [v3.0] Web 网关数据导出工具
 │   ├── audit_sources.py            # 源健康审计
 │   ├── health_report.py            # 输出健康报告
 │   ├── daily_report.py             # Markdown 日报
@@ -282,10 +302,8 @@ AutoMergePublicNodes-Optimized/
 ├── output/                         # CI 输出文件
 ├── docs/                           # 使用指南、资源与历史报告
 ├── CHANGELOG.md                    # 版本变更记录
-└── .github/workflows/update.yml    # 自动更新流程
+└── .github/workflows/update.yml    # 自动更新流程 (含 Pages 部署与双分支隔离)
 ```
-
-> 标注 `[v2.9]` 的社区驱动/联邦测试网络/测试农场需要外部用户或基础设施参与，单仓库运行时这些模块的统计字段为 0，不影响主流程。
 
 ---
 
@@ -304,7 +322,6 @@ AutoMergePublicNodes-Optimized/
 MIT
 
 ## 致谢
-
 - [sing-box](https://github.com/SagerNet/sing-box)
 - 所有公开订阅源维护者与社区贡献者
 
@@ -313,39 +330,6 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-06-21 20:00:03 |
-| 版本 | 2.9.1 |
-| 订阅源 | 105/107 |
-| 原始节点 | 72909 |
-| 去重后 | 22018 |
-| TCP 可达 | 845 |
-| 真实可用 | 622 |
-| 真测通过率 | 73.6% |
-| Verified 输出 | 300 |
-| Global 输出 | 300 |
-| All 输出 | 22018 |
-
-> 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
-
-### Top 节点评分
-
-| 评分 | 协议 | 延迟(ms) | 来源 |
-| --- | --- | --- | --- |
-| 78.75 | vless | 304.8 | Au1rxx-base64 |
-| 78.39 | vless | 320.3 | Au1rxx-base64 |
-| 78.09 | vless | 191.0 | Au1rxx-base64 |
-| 77.68 | shadowsocks | 211.5 | Au1rxx-base64 |
-| 76.62 | shadowsocks | 257.3 | Au1rxx-base64 |
-
-### Top 来源质量
-
-| 来源 | 评分 | 测试数 | 建议 |
-| --- | --- | --- | --- |
-| snakem982 | 0.991 | 69 | prefer |
-| Au1rxx-base64 | 0.885 | 89 | prefer |
-| mheidari-all | 0.818 | 284 | prefer |
-| Surfboard-tg-mixed | 0.759 | 350 | prefer |
-| DeltaKronecker-all | 0.549 | 47 | observe |
-
+| 更新时间 | _等待 CI 更新_ |
+| 版本 | 3.0.0 |
 <!-- AUTONODES_STATS_END -->
-

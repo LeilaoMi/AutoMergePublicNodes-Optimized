@@ -24,11 +24,13 @@ from typing import Dict, List, Tuple, Any
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-__version__ = "2.9.1"  # 合并上游 2.4.0 + 两阶段探活 + 进程池门修复 + 全文档中文化
+__version__ = "2.8.0"  # + use-case optimization + personalized recommender + node DNA + failover + insights
 
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
 from core.parser import Node
+from core.bloom_filter import BloomFilter
+from core.security_guard import check_ssrf_risk
 from core.filtering import load_filter_rules, quality_prefilter
 from core.sampling import protocol_priority, sample_for_real_test, sample_for_real_test_weighted
 from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history, update_node_stability, load_node_stability, get_stable_nodes
@@ -72,7 +74,8 @@ from core._adaptive_learning import AdaptiveLearningEngine
 
 
 def dedupe(nodes: List[Node]) -> List[Node]:
-    seen = set()
+    # [Optimized] 使用布隆过滤器替代 set，防止 7万+ 节点导致 CI OOM
+    seen = BloomFilter(expected_count=max(len(nodes) * 2, 100000), error_rate=0.001)
     out = []
     for n in nodes:
         fp = n.fingerprint()
@@ -85,6 +88,12 @@ def dedupe(nodes: List[Node]) -> List[Node]:
 
 
 def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int) -> List[Node]:
+    # [v3.0] 最终安全清洗：拦截 SSRF 与恶意元数据节点
+    original_count = len(valid)
+    valid = [(n, lat, jit) for n, lat, jit in valid if not check_ssrf_risk(n.server)]
+    blocked = original_count - len(valid)
+    if blocked > 0:
+        print(f"[Security] Blocked {blocked} malicious nodes (SSRF/Metadata risk).")
     output_nodes: List[Node] = []
     for i, (n, lat, jit) in enumerate(valid[:top_n], 1):
         flag = flag_for_server(n.server, flag_map)
@@ -293,39 +302,6 @@ async def run(args):
         nodes = sample_for_real_test_weighted(nodes, tcp_latency, args.test_limit, node_source_map, protocol_rates, source_rates)
         print(f"      下采样: {before_sample} -> {len(nodes)}（协议基础探索 + 历史通过率加权）")
 
-    # 4.5) 轻量探活（可选）— 先用高并发快速探活筛掉 50%+ 不可达节点，再真测剩余
-    # 关键性能优化：3000 节点全量真测需 60 分钟，探活筛到 ~1300 后真测只需 ~5 分钟
-    nodes_before_probe = len(nodes)
-    probe_error_top: List[tuple] = []
-    if args.lightweight_probe and args.real_test and nodes:
-        from core.tester import SingBoxTester as _SBT
-        print(f"[4.5/6] 轻量探活（并发 {args.probe_concurrency}, 超时 {args.probe_timeout}s）...")
-        probe_tester = _SBT(
-            sb_path=args.singbox,
-            concurrency=args.probe_concurrency,
-            startup_wait=args.probe_startup_wait,
-            request_timeout=args.probe_timeout,
-            min_latency_ms=0,
-            probe_only=True,
-        )
-        probe_results = await probe_tester.test_all(nodes, progress_every=100)
-        probe_pass_fps = {r.node.fingerprint() for r in probe_results if r.success}
-        before_probe = len(nodes)
-        nodes = [n for n in nodes if n.fingerprint() in probe_pass_fps]
-        stage_durations["probe"] = round(time.time() - stage_start, 1)
-        stage_start = time.time()
-        print(f"      探活通过: {len(nodes)}/{before_probe}")
-        # 记录 probe 失败原因分布
-        probe_error_counts: Dict[str, int] = {}
-        for r in probe_results:
-            if not r.success and r.error:
-                key = r.error.split(":")[0] if ":" in r.error else r.error
-                probe_error_counts[key] = probe_error_counts.get(key, 0) + 1
-        probe_error_top = sorted(probe_error_counts.items(), key=lambda x: -x[1])[:10]
-        if probe_error_top:
-            print(f"      探活失败 Top: {', '.join(f'{k}={v}' for k, v in probe_error_top)}")
-    nodes_after_probe = len(nodes)
-
     # 5) 真实代理测试（sing-box）
     valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
     scored_valid: List[tuple] = []  # [(node, latency_ms, jitter_ms, score, source, breakdown)]
@@ -335,7 +311,8 @@ async def run(args):
     real_test_passed = False
     incremental_reused = 0  # [v2.5] 增量缓存复用计数
     if args.real_test and nodes:
-        from core.tester import SingBoxTester, TestResult
+        from core.tester import TestResult
+        from core.singbox_api_tester import SingBoxAPITester as SingBoxTester # [v3.0] 热插拔控制面引擎
 
         # [v2.5] 增量缓存：跳过配置未变且近期已测过的节点
         test_cache = load_cache(args.output_dir)
@@ -1171,19 +1148,10 @@ def main():
     p.add_argument("--tcp-timeout", type=float, default=3.0)
 
     p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument("--test-concurrency", type=int, default=50)
+    p.add_argument("--test-concurrency", type=int, default=30)
     p.add_argument("--test-timeout", type=float, default=6.0)
     p.add_argument("--startup-wait", type=float, default=0.6)
     p.add_argument("--test-limit", type=int, default=500, help="送入真实测试的最大节点数(0=不限)")
-    # 轻量探活参数（两阶段测试优化）
-    p.add_argument("--lightweight-probe", action=argparse.BooleanOptionalAction, default=True,
-                   help="启用轻量探活：先用高并发快速探活筛掉不可达节点，再真测剩余")
-    p.add_argument("--probe-concurrency", type=int, default=100,
-                   help="轻量探活并发数（默认 100，远高于真测并发，因为只测 204）")
-    p.add_argument("--probe-timeout", type=float, default=4.0,
-                   help="轻量探活超时秒数（默认 4s，比真测短）")
-    p.add_argument("--probe-startup-wait", type=float, default=0.4,
-                   help="轻量探活 sing-box 启动等待秒数（默认 0.4s，比真测短）")
     p.add_argument("--quality-filter", action=argparse.BooleanOptionalAction, default=True,
                    help="启用质量预过滤（配置规则 + 同 server/type 降噪）")
     p.add_argument("--filter-rules", default="config/filter_rules.yaml",
