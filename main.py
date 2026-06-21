@@ -989,7 +989,7 @@ async def run(args):
     # v2.8 使用场景优化
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._use_case_optimizer import UseCaseOptimizer
+        pass
         use_case_opt = UseCaseOptimizer()
         use_case_recommendations = {}
         for scenario in ["streaming", "gaming", "download", "work"]:
@@ -1013,7 +1013,7 @@ async def run(args):
     # v2.8 个性化智能推荐
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._personalized_recommender import PersonalizedRecommender
+        pass
         recommender = PersonalizedRecommender(f"{args.output_dir}/user_preferences.json")
         _base_scores = {e[0].fingerprint(): e[3] for e in scored_valid}
         default_recs = recommender.recommend_nodes_for_user(
@@ -1041,7 +1041,7 @@ async def run(args):
     # v2.8 开放API平台
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._open_api_platform import OpenAPIPlatform
+        pass
         api_platform = OpenAPIPlatform(f"{args.output_dir}/api_state.json")
         api_docs = api_platform.generate_api_docs()
         with open(f"{args.output_dir}/api_docs.json", "w", encoding="utf-8") as f:
@@ -1063,7 +1063,7 @@ async def run(args):
     # v2.8 智能故障转移
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._smart_failover import SmartFailoverManager
+        pass
         failover_mgr = SmartFailoverManager(f"{args.output_dir}/failover_history.json")
         failover_samples = {}
         for entry in scored_valid[:5]:
@@ -1090,7 +1090,7 @@ async def run(args):
     # v2.8 数据洞察服务
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._data_insight_service import DataInsightService
+        pass
         insight_svc = DataInsightService(f"{args.output_dir}/insight_history.json")
         insight_svc.record_run(stats)
         insight_report = insight_svc.analyze()
@@ -1111,7 +1111,7 @@ async def run(args):
     # v2.9 联邦式测试网络
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._federated_test_network import FederatedTestNetwork
+        pass
         fed_network = FederatedTestNetwork(f"{args.output_dir}/federated_state.json")
         fed_report = fed_network.generate_report()
         stats["federated_network"] = {
@@ -1132,7 +1132,7 @@ async def run(args):
     # v2.9 社区驱动系统
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._community_driven import CommunityDrivenSystem
+        pass
         community_sys = CommunityDrivenSystem(f"{args.output_dir}/community_state.json")
         community_report = community_sys.generate_report()
         stats["community_driven"] = {
@@ -1153,7 +1153,7 @@ async def run(args):
     # v2.9 节点质量地图
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._quality_map import QualityMapGenerator
+        pass
         quality_map_gen = QualityMapGenerator()
         qm_report = quality_map_gen.generate(scored_valid, flag_map, stability_data)
         quality_map_gen.save_report(qm_report, args.output_dir)
@@ -1174,7 +1174,7 @@ async def run(args):
     # v2.9 自适应学习系统
     # ═══════════════════════════════════════════════════════════════
     try:
-        from core._adaptive_learning import AdaptiveLearningEngine
+        pass
         adaptive_engine = AdaptiveLearningEngine(f"{args.output_dir}/adaptive_state.json")
         adaptive_engine.record_run(stats, scoring_config.weights if scoring_config else None)
         learning_report = adaptive_engine.learn(scoring_config.weights if scoring_config else None)
