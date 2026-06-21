@@ -1,69 +1,19 @@
-"""统计助手：采样、源质量、趋势历史与节点稳定性。
+"""Statistics helpers for sampling, source quality, trend history, and node stability.
 
-本模块把报告/健康度逻辑从 main.py 中抽出来，让流水线入口专注于编排。
-
-[P1-2] 历史通过率改用 EWMA（指数加权移动平均）：
-  - 旧实现把全轮平均，老节点统治
-  - 新实现 alpha=0.3 → 最近 5 轮权重 ≈ 83%，老数据自然衰减
-  - 同时持久化到 trend_history.json 的 recent_runs 字段，下游消费
+This module keeps reporting/health logic out of main.py so the pipeline entrypoint
+can stay focused on orchestration.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
-
-# [P1-2] EWMA 平滑系数。0.3 表示对最近一轮赋予 30% 权重，历史轮次按 0.7 衰减。
-# 数学上：最近 5 轮累计权重 = 1 - 0.7^5 ≈ 0.832
-EWMA_ALPHA = 0.3
-DEFAULT_HISTORY_WEIGHT = 0.5  # 完全没有历史时的兜底分
+from typing import Dict, List, Tuple
 
 
 def smoothed_pass_rate(stats: Dict[str, int]) -> float:
     passed = int(stats.get("pass", 0) or 0)
     failed = int(stats.get("fail", 0) or 0)
     return (passed + 1) / (passed + failed + 2)
-
-
-def ewma(values: List[float], alpha: float = EWMA_ALPHA, default: float = DEFAULT_HISTORY_WEIGHT) -> float:
-    """[P1-2] 指数加权移动平均。
-
-    Args:
-        values: 时间序列（最早 → 最新）
-        alpha: 新值权重，0 < alpha <= 1，越大越敏感
-        default: 序列为空时的兜底分
-
-    Returns:
-        平滑后的值，范围 [0, 1]
-    """
-    if not values:
-        return default
-    s = float(values[0])
-    for v in values[1:]:
-        s = alpha * float(v) + (1 - alpha) * s
-    # 兜底夹紧
-    if s != s:  # NaN
-        return default
-    return max(0.0, min(1.0, s))
-
-
-def ewma_from_runs(runs: List[Dict[str, object]], key: str, alpha: float = EWMA_ALPHA) -> Optional[float]:
-    """从 trend_history.json 的 runs 列表提取某字段的 EWMA。"""
-    series: List[float] = []
-    for r in runs:
-        if not isinstance(r, dict):
-            continue
-        v = r.get(key)
-        if v is None:
-            continue
-        try:
-            series.append(float(v))
-        except (TypeError, ValueError):
-            continue
-    if not series:
-        return None
-    return ewma(series, alpha=alpha)
 
 
 def build_source_scores(

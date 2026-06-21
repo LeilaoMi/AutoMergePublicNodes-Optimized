@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""整理最新输出文件，供单独的 artifact 分支发布使用。
+"""Prepare latest output files for publishing on a separate artifact branch.
 
-本脚本仅本地操作：把生成的输出文件复制到一个干净目录，方便后续由 workflow 或维护者发布到 artifact/data 分支。不执行 git 命令、不修改 output/。
+This script is intentionally local-only: it copies generated output files into a
+clean directory that a workflow or maintainer can publish to an artifact/data
+branch later. It does not run git commands and does not mutate output/.
 """
 from __future__ import annotations
 
@@ -35,7 +37,7 @@ def main() -> None:
     source = Path(args.output_dir)
     dest = Path(args.dest_dir)
     if not source.exists():
-        raise SystemExit(f"missing output dir: {source}")
+        raise SystemExit(f"缺少输出目录：{source}")
 
     if dest.exists():
         shutil.rmtree(dest)

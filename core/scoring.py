@@ -1,6 +1,7 @@
-"""节点加权评分助手。
+"""Weighted node scoring helpers.
 
-真测决定节点是否可用；本模块仅对可用节点排序，综合当次测试指标与历史协议/来源质量。
+The real proxy test decides whether a node is usable. This module only ranks usable
+nodes by combining current test metrics with historical protocol/source quality.
 """
 from __future__ import annotations
 
@@ -44,7 +45,7 @@ class ScoreInput:
     protocol_rates: Dict[str, float]
     source_rates: Dict[str, float]
     speed_kbps: float = 0.0
-    fingerprint_resistance: float = 0.0  # [v2.5.1] 0~1 抗检测评分
+    fingerprint_resistance: float = 0.0
 
 
 def clamp(value: float, min_value: float = 0.0, max_value: float = 1.0) -> float:
@@ -134,7 +135,7 @@ def tcp_score(tcp_latency_ms: float, cfg: ScoringConfig | None = None) -> float:
 
 
 def speed_score(speed_kbps: float, cfg: ScoringConfig | None = None) -> float:
-    """[v2.5] 下载速度评分：speed_kbps 越高越好。"""
+    """下载速度评分：speed_kbps 越高越好。"""
     cfg = cfg or ScoringConfig()
     if speed_kbps <= 0:
         return 0.0

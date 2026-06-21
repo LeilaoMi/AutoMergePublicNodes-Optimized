@@ -1,21 +1,14 @@
-"""README 状态区更新器。
+"""README status block updater.
 
-保持仓库主页 synchronized with the latest pipeline stats.
-
-[P0-4] 新增 stale 检测：当 stats.json 的 timestamp 超过 24h 没更新时，
-在 README 状态区顶部追加 ⚠️ 数据可能已过期 提示，避免 CI 失败时
-用户看到的是过时数据。
+Keeps the repository homepage synchronized with the latest pipeline stats.
 """
 from __future__ import annotations
 
-import datetime as _dt
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 START_MARKER = "<!-- AUTONODES_STATS_START -->"
 END_MARKER = "<!-- AUTONODES_STATS_END -->"
-STALE_THRESHOLD_HOURS = 24
 
 
 def _table(headers: List[str], rows: List[List[object]]) -> str:
@@ -60,22 +53,7 @@ def _top_sources(stats: Dict[str, Any], limit: int = 5) -> List[List[object]]:
     return rows
 
 
-def _is_stale(timestamp: str, now: Optional[_dt.datetime] = None, threshold_hours: int = STALE_THRESHOLD_HOURS) -> bool:
-    """[P0-4] 检查 stats 是否过期。
-
-    timestamp 格式: 'YYYY-MM-DD HH:MM:SS'。解析失败或缺失都视为过期。
-    """
-    if not timestamp or not isinstance(timestamp, str):
-        return True
-    try:
-        ts = _dt.datetime.strptime(timestamp.strip(), "%Y-%m-%d %H:%M:%S")
-    except (TypeError, ValueError):
-        return True
-    ref = now or _dt.datetime.now()
-    return (ref - ts) > _dt.timedelta(hours=threshold_hours)
-
-
-def build_readme_stats_block(stats: Dict[str, Any], now: Optional[_dt.datetime] = None) -> str:
+def build_readme_stats_block(stats: Dict[str, Any]) -> str:
     overview_rows = [
         ["更新时间", stats.get("timestamp", "-")],
         ["版本", stats.get("version", "-")],
@@ -109,32 +87,24 @@ def build_readme_stats_block(stats: Dict[str, Any], now: Optional[_dt.datetime] 
         preserved = [name for name, data in guard.items() if isinstance(data, dict) and data.get("preserved")]
     guard_text = "无" if not preserved else ", ".join(preserved)
 
-    lines = [START_MARKER]
-    # [P0-4] stale 标记：超过 24h 没更新的数据不可信
-    if _is_stale(stats.get("timestamp", ""), now=now):
-        lines.append("## ⚠️ 当前运行状态（数据可能已过期）")
-    else:
-        lines.append("## 当前运行状态")
-    lines.append("")
-    lines.append(_table(["指标", "数值"], overview_rows))
-    lines.append("")
-    lines.append(f"> 输出保护：{guard_text}。完整报告见 `output/health_report.md`、`output/stats.json`。")
-    lines.append("")
-    lines.append("### Top 节点评分")
-    lines.append("")
-    lines.append(
-        _table(["评分", "协议", "延迟(ms)", "来源"], top_score_rows)
-        if top_score_rows else "_暂无评分数据_"
-    )
-    lines.append("")
-    lines.append("### Top 来源质量")
-    lines.append("")
-    lines.append(
-        _table(["来源", "评分", "测试数", "建议"], source_rows)
-        if source_rows else "_暂无来源评分数据_"
-    )
-    lines.append("")
-    lines.append(END_MARKER)
+    lines = [
+        START_MARKER,
+        "## 当前运行状态",
+        "",
+        _table(["指标", "数值"], overview_rows),
+        "",
+        f"> 输出保护：{guard_text}。完整报告见 `output/health_report.md`、`output/stats.json`。",
+        "",
+        "### Top 节点评分",
+        "",
+        _table(["评分", "协议", "延迟(ms)", "来源"], top_score_rows) if top_score_rows else "_暂无评分数据_",
+        "",
+        "### Top 来源质量",
+        "",
+        _table(["来源", "评分", "测试数", "建议"], source_rows) if source_rows else "_暂无来源评分数据_",
+        "",
+        END_MARKER,
+    ]
     return "\n".join(lines)
 
 

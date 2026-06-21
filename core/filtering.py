@@ -1,6 +1,6 @@
-"""节点质量过滤助手。
+"""Node quality filtering helpers.
 
-保留可配置的质量规则与服务器级预筛选逻辑，避免 main.py 臃肿。
+Keeps configurable quality rules and server-level prefiltering outside main.py.
 """
 from __future__ import annotations
 
@@ -92,12 +92,8 @@ def quality_prefilter(
     max_per_server: int = 0,
     rules: Dict[str, Any] | None = None,
     protocol_priority=None,
-    strong_dedup: bool = False,
 ) -> Tuple[List[Node], Dict[str, int]]:
     """质量预过滤：配置化剔除异常协议特征、按 server+protocol 强去重、同 server 限流。
-
-    [P1-1] 新增 strong_dedup：True 时按 (server, port, type, sni, host, path) 强去重。
-    旧行为 (server, type) 弱去重保留为默认，向后兼容。
 
     返回 (过滤后的节点, 命中规则统计)。rules.mode=annotate 时只统计不剔除。
     """
@@ -115,24 +111,13 @@ def quality_prefilter(
             continue
         step1.append(n)
 
-    # [P1-1] 强去重：按 fingerprint(strong=True) 精确去重
-    if strong_dedup:
-        seen: set = set()
-        step2: List[Node] = []
-        for n in step1:
-            fp = n.fingerprint(strong=True)
-            if fp in seen:
-                continue
-            seen.add(fp)
-            step2.append(n)
-    else:
-        # 旧行为：(server, type) 弱去重，保留每组第一个
-        by_st: Dict[tuple, Node] = {}
-        for n in step1:
-            key = (n.server, n.type)
-            if key not in by_st:
-                by_st[key] = n
-        step2 = list(by_st.values())
+    # 同 server+protocol+port 已经被 dedupe 处理；这里按 (server, type) 再去重
+    by_st: Dict[tuple, Node] = {}
+    for n in step1:
+        key = (n.server, n.type)
+        if key not in by_st:
+            by_st[key] = n
+    step2 = list(by_st.values())
 
     # 同 server IP 最多保留 max_per_server 个 (按协议优先级排)
     if max_per_server <= 0:

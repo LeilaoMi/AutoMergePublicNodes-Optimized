@@ -5,16 +5,11 @@
 - {prefix}.yaml   : Clash Meta YAML
 - {prefix}.txt    : V2Ray base64 订阅
 - {prefix}.urls   : 节点 URL 列表（一行一个）
-
-[P1-4] 新增 region/capability 切片：
-- by_region/{region}.txt/yaml/urls
-- by_capability/{cap}.txt/yaml/urls
 """
 from __future__ import annotations
 
 import base64
 import json
-import re
 from dataclasses import replace
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
@@ -22,19 +17,6 @@ from urllib.parse import quote
 import yaml
 
 from core.parser import Node
-
-
-# ============================================================
-# Tag 安全清洗 [v2.5]
-# ============================================================
-
-def _sanitize_tag(tag: str) -> str:
-    """移除控制字符和危险符号，防止破坏 YAML/JSON 结构或导致客户端解析失败。"""
-    if not tag:
-        return "unnamed"
-    tag = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', tag)
-    tag = tag.strip()
-    return tag or "unnamed"
 
 
 # ============================================================
@@ -57,13 +39,15 @@ def _std_b64_no_pad(value: str) -> str:
 
 
 def _flag_to_cc(flag_emoji: str) -> str:
-    """国旗 emoji → ISO 国家代码 (e.g. '🇺🇸' → 'US')
-    
-    [v2.5.1] 委托给 core.geo._flag_to_cc，避免重复定义。
-    保留此函数作为兼容别名。
-    """
-    from core.geo import _flag_to_cc as _geo_flag_to_cc
-    return _geo_flag_to_cc(flag_emoji)
+    """国旗 emoji → ISO 国家代码 (e.g. '🇺🇸' → 'US')"""
+    if len(flag_emoji) < 2:
+        return ""
+    cp0 = ord(flag_emoji[0])
+    cp1 = ord(flag_emoji[1])
+    # Regional Indicator Symbol range: 0x1F1E6..0x1F1FF
+    if 0x1F1E6 <= cp0 <= 0x1F1FF and 0x1F1E6 <= cp1 <= 0x1F1FF:
+        return chr(cp0 - 0x1F1E6 + ord("A")) + chr(cp1 - 0x1F1E6 + ord("A"))
+    return ""
 
 
 def _extract_region(tag: str, server: str | None = None, flag_map: Dict[str, str] | None = None) -> str:
@@ -111,7 +95,7 @@ def _unique_clamped_tag(tag: str, used: Dict[str, int]) -> str:
 def _prepare_nodes(nodes: List[Node]) -> List[Node]:
     """返回 tag 已截断且唯一的新节点列表，不修改输入对象。"""
     used: Dict[str, int] = {}
-    return [replace(n, tag=_unique_clamped_tag(_sanitize_tag(n.tag), used)) for n in nodes]
+    return [replace(n, tag=_unique_clamped_tag(n.tag, used)) for n in nodes]
 
 
 def _ensure_unique_tags(nodes: List[Node]) -> None:
@@ -566,9 +550,6 @@ def write_outputs(
         "outbounds": sb_outbounds,
         "route": {
             "rules": [
-                # [v2.5] 内联兜底规则：即使远程规则集加载失败，至少国内常用域名/IP 不走代理
-                {"ip_cidr": ["223.5.5.5/32", "114.114.114.114/32", "119.29.29.29/32"], "outbound": "direct"},
-                {"domain_suffix": [".cn", ".baidu.com", ".qq.com", ".weixin.qq.com", ".taobao.com", ".alipay.com"], "outbound": "direct"},
                 {"protocol": "dns", "outbound": "dns-proxy"},
                 {"rule_set": "geosite-cn", "outbound": "direct"},
                 {"rule_set": "geoip-cn", "outbound": "direct"},
@@ -584,7 +565,11 @@ def write_outputs(
         },
     }
     with open(f"{output_dir}/{prefix}.json", "w", encoding="utf-8") as f:
-        json.dump(singbox, f, ensure_ascii=False, indent=2)
+        # 大文件(>1000节点)用紧凑格式减小体积, 小文件保留可读性
+        if len(nodes) > 1000:
+            json.dump(singbox, f, ensure_ascii=False, separators=(",", ":"))
+        else:
+            json.dump(singbox, f, ensure_ascii=False, indent=2)
 
     # 5) 订阅转换链接（基于 jsdelivr CDN）
     repo_path = repo_path or "LeilaoMi/AutoMergePublicNodes-Optimized"
@@ -680,112 +665,6 @@ def write_protocol_outputs(
         count += 1
 
     return count
-
-# ============================================================
-# [P1-4] Region / Capability 切片
-# ============================================================
-
-def write_region_outputs(
-    nodes: List[Node],
-    output_dir: str,
-    prefix: str = "verified",
-    flag_map: Optional[Dict[str, str]] = None,
-) -> int:
-    """按地区分组输出订阅文件。
-
-    输出结构：
-        output/by_region/{region}.txt
-        output/by_region/{region}.urls
-    """
-    import os
-    region_dir = os.path.join(output_dir, "by_region")
-    os.makedirs(region_dir, exist_ok=True)
-
-    # 清理旧文件
-    import glob
-    for old in glob.glob(os.path.join(region_dir, "*.txt")) + glob.glob(os.path.join(region_dir, "*.urls")):
-        os.remove(old)
-
-    # 按 region 分组
-    region_groups: Dict[str, List[Node]] = {}
-    for n in nodes:
-        region = _extract_region(n.tag, n.server, flag_map)
-        region_groups.setdefault(region, []).append(n)
-
-    count = 0
-    for region, group in sorted(region_groups.items(), key=lambda x: -len(x[1])):
-        # 文件名安全化：去掉 emoji 和特殊字符
-        safe_name = re.sub(r"[^\w\-]+", "_", region).strip("_") or "other"
-        prepared = _prepare_nodes(group)
-        urls = [u for u in (node_to_url(n) for n in prepared) if u]
-        if not urls:
-            continue
-        b64 = base64.b64encode("\n".join(urls).encode()).decode()
-        with open(os.path.join(region_dir, f"{safe_name}.txt"), "w", encoding="utf-8") as f:
-            f.write(b64)
-        with open(os.path.join(region_dir, f"{safe_name}.urls"), "w", encoding="utf-8") as f:
-            f.write("\n".join(urls) + "\n")
-        count += 1
-    return count
-
-
-def write_capability_outputs(
-    nodes_with_caps: List[tuple],
-    output_dir: str,
-    prefix: str = "verified",
-) -> int:
-    """按解锁能力分组输出订阅文件。
-
-    Args:
-        nodes_with_caps: [(Node, capabilities_dict, capability_latency_dict), ...]
-            capabilities_dict: {"netflix": True, "chatgpt": False, ...}
-    """
-    import os
-    cap_dir = os.path.join(output_dir, "by_capability")
-    os.makedirs(cap_dir, exist_ok=True)
-
-    # 清理旧文件
-    import glob
-    for old in glob.glob(os.path.join(cap_dir, "*.txt")) + glob.glob(os.path.join(cap_dir, "*.urls")):
-        os.remove(old)
-
-    # 按能力分组
-    cap_groups: Dict[str, List[Node]] = {}
-    for entry in nodes_with_caps:
-        if len(entry) < 2:
-            continue
-        node = entry[0]
-        caps = entry[1] if len(entry) > 1 else {}
-        if not isinstance(caps, dict):
-            continue
-        for cap_name, ok in caps.items():
-            if not ok:
-                continue
-            cap_groups.setdefault(cap_name, []).append(node)
-
-    count = 0
-    for cap_name, group in sorted(cap_groups.items()):
-        # 同一个节点可能同时解锁多个能力，去重
-        seen_fp = set()
-        unique_nodes: List[Node] = []
-        for n in group:
-            fp = n.fingerprint()
-            if fp in seen_fp:
-                continue
-            seen_fp.add(fp)
-            unique_nodes.append(n)
-        prepared = _prepare_nodes(unique_nodes)
-        urls = [u for u in (node_to_url(n) for n in prepared) if u]
-        if not urls:
-            continue
-        b64 = base64.b64encode("\n".join(urls).encode()).decode()
-        with open(os.path.join(cap_dir, f"{cap_name}.txt"), "w", encoding="utf-8") as f:
-            f.write(b64)
-        with open(os.path.join(cap_dir, f"{cap_name}.urls"), "w", encoding="utf-8") as f:
-            f.write("\n".join(urls) + "\n")
-        count += 1
-    return count
-
 
 # 常用订阅转换后端
 CONVERTERS = [

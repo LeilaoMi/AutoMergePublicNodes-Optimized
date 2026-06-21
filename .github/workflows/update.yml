@@ -19,9 +19,9 @@ on:
         required: false
         default: '300'
       test_limit:
-        description: '送入真测的最大节点数(默认 1500)'
+        description: '送入真测的最大节点数(默认 3000)'
         required: false
-        default: '1500'
+        default: '3000'
       min_retain_ratio:
         description: '缩水守门比例，0=关闭并强制写入本轮真测结果(默认 0)'
         required: false
@@ -33,6 +33,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -47,12 +48,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: pip
 
       - run: pip install -r requirements.txt
@@ -110,11 +109,14 @@ jobs:
         run: |
           python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json
 
-      - name: Validate code
-        run: |
-          python -m compileall -q main.py core tools tests
-          python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules 'config/scoring*.yaml'
-          python -m unittest -v tests.test_regressions
+      - name: Compile check
+        run: python -m compileall -q main.py core tools tests
+
+      - name: Config validation
+        run: python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules 'config/scoring*.yaml'
+
+      - name: Unit tests
+        run: python -m unittest -v tests.test_regressions
 
       - name: Run pipeline
         env:
@@ -122,13 +124,13 @@ jobs:
         run: |
           set -euo pipefail
           TOP_N="${{ github.event.inputs.top_n || '300' }}"
-          TEST_LIMIT="${{ github.event.inputs.test_limit || '1500' }}"
+          TEST_LIMIT="${{ github.event.inputs.test_limit || '3000' }}"
           MIN_RETAIN_RATIO="${{ github.event.inputs.min_retain_ratio || '0' }}"
           [[ "$TOP_N" =~ ^[0-9]+$ ]] || { echo "::error::top_n must be a non-negative integer"; exit 1; }
           [[ "$TEST_LIMIT" =~ ^[0-9]+$ ]] || { echo "::error::test_limit must be a non-negative integer"; exit 1; }
           [[ "$MIN_RETAIN_RATIO" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "::error::min_retain_ratio must be a non-negative number"; exit 1; }
           [ "$TOP_N" -le 1000 ] || { echo "::error::top_n must be <= 1000"; exit 1; }
-          [ "$TEST_LIMIT" -le 3000 ] || { echo "::error::test_limit must be <= 3000"; exit 1; }
+          [ "$TEST_LIMIT" -le 5000 ] || { echo "::error::test_limit must be <= 5000"; exit 1; }
           python main.py \
             --top-n "$TOP_N" \
             --test-limit "$TEST_LIMIT" \
@@ -164,36 +166,17 @@ jobs:
             echo "stats.json was not generated. Check previous steps." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Export Web Nodes Data
-        run: |
-          # [v3.0] 导出节点元数据供 GitHub Pages 动态网关使用
-          python tools/export_web_nodes.py --input output/all.yaml --output web/nodes.json
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: 'web/'
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-      - name: Commit & push subscriptions to main
+      - name: Commit & push
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           BRANCH="${{ github.event.repository.default_branch }}"
+          # 显式 fetch 一次确保 origin/$BRANCH 是最新的, 避免 stale shallow ref
           git fetch --unshallow origin "$BRANCH" 2>/dev/null || git fetch origin "$BRANCH"
-          
-          # [Optimized] 剥离状态 JSON，仅提交订阅文件与 README 到 main 分支
-          git rm -f output/top.* output/*.json 2>/dev/null || true
+          git rm -f output/top.* 2>/dev/null || true
           git add output/ README.md 2>/dev/null || true
-          
           if git diff --staged --quiet; then
-            echo "no changes for main branch"
+            echo "no changes"
           else
             git commit -m "chore: update nodes $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')"
             for i in 1 2 3 4 5; do
@@ -201,29 +184,16 @@ jobs:
                 git push origin HEAD:"$BRANCH" && break
               else
                 git rebase --abort 2>/dev/null || true
-                echo "::error::rebase failed"
+                echo "::error::rebase failed; refusing to force push automatically"
+                exit 1
+              fi
+              if [ "$i" = "5" ]; then
+                echo "::error::git push failed after 5 attempts"
                 exit 1
               fi
               sleep 5
             done
           fi
-
-      - name: Push state to state branch (force overwrite)
-        run: |
-          git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
-          # [Optimized] 创建孤儿分支 state，仅包含 JSON 状态文件，强制覆盖推送
-          # 这确保了状态文件可用，但不会产生历史 commit，彻底杜绝 .git 体积膨胀
-          git checkout --orphan state
-          git rm -rf .
-          git add output/*.json
-          if git diff --staged --quiet; then
-            echo "no state changes"
-          else
-            git commit -m "chore: update state $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')"
-            git push origin state --force
-          fi
-          git checkout ${{ github.event.repository.default_branch }}
 
       - name: Upload debug artifact
         if: always()

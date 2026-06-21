@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""从 output/*.json 生成人类可读的每日状态报告。
+"""根据 output/*.json 生成面向人工阅读的每日状态报告。
 
-输出 Markdown 格式，可直接在 GitHub 查看，或纳入 workflow 产物。脚本只读输出文件、不修改订阅，最终写入 daily_report.md。
+报告使用 Markdown，便于在 GitHub 或工作流产物中直接查看；只读取现有输出，不修改订阅。
 """
 from __future__ import annotations
 
@@ -90,45 +90,45 @@ def build_daily_report(output_dir: str = "output") -> str:
     all_count = stats.get("nodes_all_output") or _count_urls(out / "all.urls")
 
     lines: List[str] = [
-        "# AutoNodes Daily Report",
+        "# AutoNodes 每日报告",
         "",
-        f"Generated at: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')}",
         "",
-        "## Summary",
+        "## 摘要",
         "",
     ]
     cleanup = health.get("source_cleanup", {}) if isinstance(health, dict) else {}
-    lines.extend(_md_table(["Metric", "Value"], [
-        ["Health status", health.get("status", "unknown")],
-        ["Health ok", health.get("ok", "unknown")],
-        ["Sources healthy", f"{source_audit.get('healthy', '-')}/{source_audit.get('sources_total', '-')}"] if isinstance(source_audit, dict) else ["Sources healthy", "-"],
-        ["Cleanup disable/downweight", f"{cleanup.get('disable_count', '-')}/{cleanup.get('downweight_count', '-')}"] if isinstance(cleanup, dict) else ["Cleanup disable/downweight", "-"],
-        ["Cleanup prefer/observe", f"{cleanup.get('prefer_count', '-')}/{cleanup.get('observe_count', '-')}"] if isinstance(cleanup, dict) else ["Cleanup prefer/observe", "-"],
-        ["Raw nodes", stats.get("nodes_raw", "-")],
-        ["Dedup nodes", stats.get("nodes_dedup", "-")],
-        ["TCP ok", stats.get("nodes_tcp_ok", "-")],
-        ["Real ok", stats.get("nodes_real_ok", "-")],
-        ["Verified output", verified_count],
-        ["Global output", global_count],
-        ["All output", all_count],
-        ["All output mode", stats.get("all_output_mode", "-")],
+    lines.extend(_md_table(["指标", "值"], [
+        ["健康状态", health.get("status", "unknown")],
+        ["健康检查通过", health.get("ok", "unknown")],
+        ["健康源数量", f"{source_audit.get('healthy', '-')}/{source_audit.get('sources_total', '-')}"] if isinstance(source_audit, dict) else ["健康源数量", "-"],
+        ["清理建议：禁用/降权", f"{cleanup.get('disable_count', '-')}/{cleanup.get('downweight_count', '-')}"] if isinstance(cleanup, dict) else ["清理建议：禁用/降权", "-"],
+        ["清理建议：优先/观察", f"{cleanup.get('prefer_count', '-')}/{cleanup.get('observe_count', '-')}"] if isinstance(cleanup, dict) else ["清理建议：优先/观察", "-"],
+        ["原始节点数", stats.get("nodes_raw", "-")],
+        ["去重后节点数", stats.get("nodes_dedup", "-")],
+        ["TCP 可达数", stats.get("nodes_tcp_ok", "-")],
+        ["真测通过数", stats.get("nodes_real_ok", "-")],
+        ["verified 输出数", verified_count],
+        ["global 输出数", global_count],
+        ["all 输出数", all_count],
+        ["all 输出模式", stats.get("all_output_mode", "-")],
     ]))
 
-    lines += ["", "## Stage Durations", ""]
+    lines += ["", "## 阶段耗时", ""]
     durations = stats.get("stage_durations", {})
     if isinstance(durations, dict) and durations:
-        lines.extend(_md_table(["Stage", "Seconds"], sorted(durations.items())))
+        lines.extend(_md_table(["阶段", "秒"], sorted(durations.items())))
     else:
-        lines.append("No stage duration data.")
+        lines.append("无阶段耗时数据。")
 
-    lines += ["", "## Protocol Pass Rate", ""]
+    lines += ["", "## 协议通过率", ""]
     proto_rows = _protocol_rows(stats)
     if proto_rows:
-        lines.extend(_md_table(["Protocol", "Tested", "Passed", "Failed", "Pass Rate"], proto_rows))
+        lines.extend(_md_table(["协议", "已测", "通过", "失败", "通过率"], proto_rows))
     else:
-        lines.append("No protocol data.")
+        lines.append("无协议数据。")
 
-    lines += ["", "## Main Real-Test Errors", ""]
+    lines += ["", "## 主要真测错误", ""]
     errors = stats.get("real_test_error_structured") or stats.get("real_test_error_details") or stats.get("real_test_errors") or {}
     if isinstance(errors, list):
         rows = [[
@@ -140,35 +140,35 @@ def build_daily_report(output_dir: str = "output") -> str:
     else:
         rows = []
     if rows:
-        lines.extend(_md_table(["Error", "Count"], rows))
+        lines.extend(_md_table(["错误", "数量"], rows))
     else:
-        lines.append("No real-test error data.")
+        lines.append("无真测错误数据。")
 
     tcp_errors = stats.get("tcp_errors", {})
     if isinstance(tcp_errors, dict) and tcp_errors:
-        lines += ["", "## TCP Precheck Errors", ""]
-        lines.extend(_md_table(["Error", "Count"], _top_counter_rows(tcp_errors)))
+        lines += ["", "## TCP 预筛选错误", ""]
+        lines.extend(_md_table(["错误", "数量"], _top_counter_rows(tcp_errors)))
 
     rankings = health.get("rankings", {}) if isinstance(health, dict) else {}
     source_score_best = rankings.get("source_score_best", []) if isinstance(rankings, dict) else []
     source_score_worst = rankings.get("source_score_worst", []) if isinstance(rankings, dict) else []
     if source_score_best:
-        lines += ["", "## Best Sources By Score", ""]
+        lines += ["", "## 高评分订阅源", ""]
         lines.extend(_md_table(
-            ["Source", "Score", "Recommendation", "Tested", "Pass Rate", "Parsed"],
+            ["订阅源", "评分", "建议", "已测", "通过率", "解析数"],
             [[r.get("name"), r.get("score"), r.get("recommendation"), r.get("tested"), r.get("pass_rate"), r.get("parsed_nodes")] for r in source_score_best if isinstance(r, dict)],
         ))
     if source_score_worst:
-        lines += ["", "## Sources Needing Attention", ""]
+        lines += ["", "## 需关注订阅源", ""]
         lines.extend(_md_table(
-            ["Source", "Score", "Recommendation", "Tested", "Pass Rate", "Dead", "Parsed"],
+            ["订阅源", "评分", "建议", "已测", "通过率", "连续死亡", "解析数"],
             [[r.get("name"), r.get("score"), r.get("recommendation"), r.get("tested"), r.get("pass_rate"), r.get("consecutive_dead"), r.get("parsed_nodes")] for r in source_score_worst if isinstance(r, dict)],
         ))
 
     cleanup_disable = cleanup.get("disable_suggestions", []) if isinstance(cleanup, dict) else []
     cleanup_downweight = cleanup.get("downweight_suggestions", []) if isinstance(cleanup, dict) else []
     if cleanup_disable or cleanup_downweight:
-        lines += ["", "## Source Cleanup Suggestions", ""]
+        lines += ["", "## 订阅源清理建议", ""]
         rows = []
         for bucket, items in (("disable", cleanup_disable), ("downweight", cleanup_downweight)):
             if not isinstance(items, list):
@@ -176,46 +176,46 @@ def build_daily_report(output_dir: str = "output") -> str:
             for r in items[:10]:
                 if isinstance(r, dict):
                     rows.append([bucket, r.get("name"), r.get("score"), r.get("tested"), r.get("pass_rate"), r.get("consecutive_dead"), r.get("reason", "-")])
-        lines.extend(_md_table(["Bucket", "Source", "Score", "Tested", "Pass Rate", "Dead", "Reason"], rows))
+        lines.extend(_md_table(["分类", "订阅源", "评分", "已测", "通过率", "连续死亡", "原因"], rows))
 
     source_worst = rankings.get("source_worst", []) if isinstance(rankings, dict) else []
     if source_worst:
-        lines += ["", "## Worst Sources By Real-Test Pass Rate", ""]
+        lines += ["", "## 真测通过率较低的订阅源", ""]
         lines.extend(_md_table(
-            ["Source", "Pass Rate", "Passed", "Failed", "Tested"],
+            ["订阅源", "通过率", "通过", "失败", "已测"],
             [[r.get("name"), r.get("pass_rate"), r.get("pass"), r.get("fail"), r.get("total")] for r in source_worst if isinstance(r, dict)],
         ))
 
-    lines += ["", "## Top Sources By Parsed Nodes", ""]
+    lines += ["", "## 解析节点数较高的订阅源", ""]
     source_rows = _source_rows(source_audit)
     if source_rows:
-        lines.extend(_md_table(["Source", "Nodes", "OK", "Duration", "Consecutive Dead"], source_rows))
+        lines.extend(_md_table(["订阅源", "节点数", "是否正常", "耗时", "连续死亡"], source_rows))
     else:
-        lines.append("No source audit data.")
+        lines.append("无源审计数据。")
 
-    lines += ["", "## Trend Alerts", ""]
+    lines += ["", "## 趋势报警", ""]
     trend_alerts = trend.get("alerts", []) if isinstance(trend, dict) else []
     if trend_alerts:
         lines.extend(_md_table(
-            ["Type", "Message"],
+            ["类型", "信息"],
             [[a.get("type", "-"), a.get("message", "-")] for a in trend_alerts if isinstance(a, dict)],
         ))
     else:
-        lines.append("No trend alerts.")
+        lines.append("无趋势报警。")
 
-    lines += ["", "## Health Alerts", ""]
+    lines += ["", "## 健康报警", ""]
     alerts = health.get("alerts", {}) if isinstance(health, dict) else {}
     low_pass = alerts.get("low_pass_protocols", []) if isinstance(alerts, dict) else []
     real_errors = alerts.get("real_test_errors", {}) if isinstance(alerts, dict) else {}
     if low_pass:
-        lines.append("### Low-pass protocols")
-        lines.extend(_md_table(["Protocol", "Pass Rate"], [[x.get("protocol"), x.get("pass_rate")] for x in low_pass if isinstance(x, dict)]))
+        lines.append("### 低通过率协议")
+        lines.extend(_md_table(["协议", "通过率"], [[x.get("protocol"), x.get("pass_rate")] for x in low_pass if isinstance(x, dict)]))
         lines.append("")
     if real_errors:
-        lines.append("### Real-test error alerts")
-        lines.extend(_md_table(["Error", "Count"], _top_counter_rows(real_errors)))
+        lines.append("### 真测错误报警")
+        lines.extend(_md_table(["错误", "数量"], _top_counter_rows(real_errors)))
     if not low_pass and not real_errors:
-        lines.append("No alerts.")
+        lines.append("无报警。")
 
     return "\n".join(lines) + "\n"
 
@@ -230,7 +230,7 @@ def main() -> None:
     path = Path(args.output)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(report, encoding="utf-8")
-    print(f"daily report written to {path}")
+    print(f"每日报告已写入：{path}")
 
 
 if __name__ == "__main__":

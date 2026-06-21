@@ -134,7 +134,7 @@ def validate_scoring_rules(path: str) -> List[str]:
     if not isinstance(weights, dict):
         _add(errors, "scoring.weights 必须是映射")
     else:
-        required_weights = {"latency", "jitter", "tcp", "speed", "fingerprint_resistance", "protocol_history", "source_history"}
+        required_weights = {"latency", "jitter", "tcp", "protocol_history", "source_history", "speed", "fingerprint_resistance"}
         for key in weights:
             if key not in required_weights:
                 _add(errors, f"scoring.weights 包含未知字段：{key}")
@@ -157,9 +157,7 @@ def validate_scoring_rules(path: str) -> List[str]:
             if key not in allowed_thresholds:
                 _add(errors, f"scoring.thresholds 包含未知字段：{key}")
             else:
-                # bad_speed_kbps 允许 0（表示任何速度都算差）
-                min_val = 0 if key == "bad_speed_kbps" else 1
-                _as_number(thresholds[key], f"scoring.thresholds.{key}", errors, min_value=min_val)
+                _as_number(thresholds[key], f"scoring.thresholds.{key}", errors, min_value=1)
         excellent_latency = thresholds.get("excellent_latency_ms")
         bad_latency = thresholds.get("bad_latency_ms")
         if excellent_latency is not None and bad_latency is not None:
@@ -211,7 +209,7 @@ def validate_scoring_warnings(path: str) -> List[str]:
     if weights is None or not isinstance(weights, dict):
         return []
 
-    required_weights = {"latency", "jitter", "tcp", "speed", "fingerprint_resistance", "protocol_history", "source_history"}
+    required_weights = {"latency", "jitter", "tcp", "protocol_history", "source_history", "speed", "fingerprint_resistance"}
     total = 0.0
     usable = False
     for key in required_weights:

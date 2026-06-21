@@ -31,17 +31,6 @@ _CF_PREFIXES = (
     "162.159.",
 )
 
-# [v2.5] 已知 Anycast/CDN ASN — 比硬编码 IP 前缀更准确、更易维护
-ANYCAST_ASN_PREFIXES = (
-    "AS13335",  # Cloudflare
-    "AS54113",  # Fastly
-    "AS20940",  # Akamai
-    "AS16509",  # Amazon CloudFront
-    "AS15169",  # Google (部分 Anycast)
-    "AS32934",  # Facebook
-    "AS36459",  # GitHub
-)
-
 
 def _load_geo_cache(path: str) -> Dict[str, Dict[str, object]]:
     try:
@@ -91,13 +80,6 @@ def _is_anycast(ip: str) -> bool:
     return any(ip.startswith(p) for p in _CF_PREFIXES)
 
 
-def _is_anycast_by_asn(as_str: str) -> bool:
-    """[v2.5] 通过 ASN 判断是否为 Anycast/CDN 节点"""
-    if not as_str:
-        return False
-    return any(as_str.startswith(prefix) for prefix in ANYCAST_ASN_PREFIXES)
-
-
 async def _resolve_server(server: str, timeout: float = 1.0) -> str:
     try:
         ipaddress.ip_address(server)
@@ -123,24 +105,23 @@ async def _lookup_batch(ips: List[str], timeout: float = 5.0, max_retries: int =
     """批量查询 ip-api.com（免费版 15 requests/min，batch 每次最多 100 个）。
 
     §2.8 — 指数退避 + 尊重 X-Ttl 响应头, 不再固定 sleep 4.2s
-    [v2.5] 增加 ASN 字段，用于 Anycast 检测
     """
     if not ips:
         return {}
-    result: Dict[str, Dict[str, str]] = {}  # ip -> {"cc": "...", "as": "..."}
+    result: Dict[str, str] = {}
     async with aiohttp.ClientSession() as session:
         # 每批最多 100 个；失败时指数退避 (1s, 2s, 4s, 8s)
         for i in range(0, len(ips), 100):
             if i > 0:
                 await asyncio.sleep(4.5)  # 批间基础间隔
             batch = ips[i:i + 100]
-            body = [{"query": ip, "fields": "countryCode,as"} for ip in batch]
+            body = [{"query": ip, "fields": "countryCode"} for ip in batch]
             attempt = 0
             backoff = 1.0
             while attempt < max_retries:
                 try:
                     async with session.post(
-                        "http://ip-api.com/batch?fields=countryCode,as",
+                        "http://ip-api.com/batch?fields=countryCode",
                         json=body,
                         timeout=aiohttp.ClientTimeout(total=timeout),
                     ) as resp:
@@ -157,9 +138,8 @@ async def _lookup_batch(ips: List[str], timeout: float = 5.0, max_retries: int =
                         items = await resp.json()
                         for item, ip in zip(items, batch):
                             cc = item.get("countryCode", "")
-                            as_str = item.get("as", "")
                             if cc:
-                                result[ip] = {"cc": cc, "as": as_str}
+                                result[ip] = cc
                         break
                 except Exception as exc:
                     logger.warning("ip-api batch lookup failed: %s", exc)
@@ -219,24 +199,16 @@ async def geo_flag_map(
             if len(unique_ips) >= max_queries:
                 break
 
-    ip2info = await _lookup_batch(unique_ips)
+    ip2cc = await _lookup_batch(unique_ips)
     cache_changed = False
     for server, ip in server_to_ip.items():
-        info = ip2info.get(ip)
-        if not info:
-            continue
-        cc = info.get("cc", "")
-        as_str = info.get("as", "")
-        # [v2.5] ASN-based Anycast 检测：比 IP 前缀更准确
-        if _is_anycast_by_asn(as_str):
-            logger.debug("skipping Anycast IP %s (ASN: %s)", ip, as_str)
-            continue
+        cc = ip2cc.get(ip)
         if not cc:
             continue
         flag = _country_flag(cc)
         if flag:
             result[server] = flag
-            cache[server] = {"flag": flag, "ip": ip, "as": as_str, "timestamp": now}
+            cache[server] = {"flag": flag, "ip": ip, "timestamp": now}
             cache_changed = True
     if cache_changed:
         _save_geo_cache(cache_path, cache)
@@ -246,14 +218,3 @@ async def geo_flag_map(
 def flag_for_server(server: str, flag_map: Dict[str, str]) -> str:
     """查询单个 server 的国旗 emoji"""
     return flag_map.get(server, "")
-
-
-def _flag_to_cc(flag_emoji: str) -> str:
-    """[v2.5] 国旗 emoji → ISO 国家代码 (e.g. '🇺🇸' → 'US')"""
-    if not flag_emoji or len(flag_emoji) < 2:
-        return ""
-    cp0 = ord(flag_emoji[0])
-    cp1 = ord(flag_emoji[1])
-    if 0x1F1E6 <= cp0 <= 0x1F1FF and 0x1F1E6 <= cp1 <= 0x1F1FF:
-        return chr(cp0 - 0x1F1E6 + ord("A")) + chr(cp1 - 0x1F1E6 + ord("A"))
-    return ""

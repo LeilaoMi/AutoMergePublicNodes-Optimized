@@ -375,14 +375,11 @@ class RegressionTests(unittest.TestCase):
             tcp_timeout = 0.1
             test_limit = 0
             real_test = False
-            lightweight_probe = False
-            probe_concurrency = 100
-            probe_timeout = 4.0
-            probe_startup_wait = 0.4
             top_n = 10
             global_output = False
             min_retain_ratio = 0.7
             all_output_mode = "full"
+            lightweight_probe = False
 
         source = Source(url="https://example.com/sub.txt", name="mock-source")
         node = Node("http", "mock", "127.0.0.1", 8080, {})
@@ -432,14 +429,11 @@ class RegressionTests(unittest.TestCase):
             tcp_timeout = 0.1
             test_limit = 0
             real_test = True
-            lightweight_probe = False
-            probe_concurrency = 100
-            probe_timeout = 4.0
-            probe_startup_wait = 0.4
             top_n = 10
             global_output = True
             min_retain_ratio = 0.7
             all_output_mode = "light"
+            lightweight_probe = False
             singbox = __file__
             test_concurrency = 1
             startup_wait = 0
@@ -657,7 +651,7 @@ class RegressionTests(unittest.TestCase):
             self.assertEqual(payload["summary"]["disable"], 1)
             self.assertEqual(payload["suggestions"]["disable"][0]["name"], "dead")
             report = build_cleanup_report(d)
-            self.assertIn("# Source Cleanup Suggestions", report)
+            self.assertIn("订阅源清理", report)
             self.assertIn("dead", report)
 
     def test_source_scores_report_generates_markdown(self):
@@ -671,7 +665,7 @@ class RegressionTests(unittest.TestCase):
             }
             Path(d, "stats.json").write_text(json.dumps(stats), encoding="utf-8")
             report = build_source_scores_report(d)
-            self.assertIn("# Source Quality Scores", report)
+            self.assertIn("订阅源质量评分", report)
             self.assertIn("good", report)
             self.assertIn("dead", report)
 
@@ -712,7 +706,7 @@ class RegressionTests(unittest.TestCase):
             health["source_cleanup"] = {"disable_count": 1, "downweight_count": 2, "prefer_count": 3, "observe_count": 4, "disable_suggestions": [{"name": "dead", "score": 0.0, "tested": 0, "pass_rate": None, "consecutive_dead": 2, "reason": "consecutive_dead >= 2"}], "downweight_suggestions": []}
             (out / "health_report.json").write_text(json.dumps(health), encoding="utf-8")
             report = build_daily_report(d)
-            self.assertIn("# AutoNodes Daily Report", report)
+            self.assertIn("AutoNodes", report)
             self.assertIn("204:TimeoutError", report)
             self.assertIn("dead", report)
 
@@ -791,12 +785,12 @@ class RegressionTests(unittest.TestCase):
 
     def test_scoring_profiles_report_includes_all_profiles_and_totals(self):
         report = build_scoring_profiles_report(["config/scoring*.yaml"])
-        self.assertIn("# Scoring Profiles Report", report)
+        self.assertIn("# 评分模板对比报告", report)
         self.assertIn("scoring.yaml", report)
         self.assertIn("scoring.low_latency.yaml", report)
         self.assertIn("scoring.stability.yaml", report)
         self.assertIn("scoring.source_quality.yaml", report)
-        self.assertIn("| Profile | latency | jitter | tcp | speed | fingerprint_resistance | protocol_history | source_history | total |", report)
+        self.assertIn("| 模板 | latency | jitter | tcp | speed | fingerprint_resistance | protocol_history | source_history | 总和 |", report)
         for name in (
             "scoring.yaml",
             "scoring.low_latency.yaml",
@@ -829,11 +823,11 @@ class RegressionTests(unittest.TestCase):
         }
         summary = build_summary(stats, repo="owner/repo", branch="main")
         self.assertIn("scoring_profiles.md", summary)
-        self.assertIn("release notes", summary)
+        self.assertIn("发布说明", summary)
         self.assertIn("docs/releases/README.md", summary)
-        self.assertIn("Latency pts", summary)
-        self.assertIn("Protocol hist pts", summary)
-        self.assertIn("Source hist pts", summary)
+        self.assertIn("延迟分", summary)
+        self.assertIn("协议历史分", summary)
+        self.assertIn("来源历史分", summary)
         self.assertIn("| 80 | trojan | 120 | 10 | 35 | 14 | 9 | 10 | 12 | src |", summary)
 
     def test_actions_summary_handles_missing_score_breakdown(self):
@@ -970,8 +964,8 @@ weights:
         with tempfile.TemporaryDirectory() as d:
             ok, report = build_doctor_report("config/sources.yaml", "config/filter_rules.yaml", "./missing-sing-box", d)
             self.assertFalse(ok)
-            self.assertIn("# AutoNodes Doctor", report)
-            self.assertIn("sing-box binary", report)
+            self.assertIn("AutoNodes", report)
+            self.assertIn("sing-box", report)
 
     def test_protocol_fixture_corpus_parse_and_generate(self):
         fixture_dir = Path(__file__).parent / "fixtures" / "protocols"

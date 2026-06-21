@@ -1,4 +1,4 @@
-"""生成 Markdown 健康报告。"""
+"""Markdown health report generation."""
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,4 +1,4 @@
-"""真测采样助手。"""
+"""Sampling helpers for real proxy tests."""
 from __future__ import annotations
 
 from typing import Dict, List, Tuple
@@ -58,25 +58,10 @@ def sample_for_real_test_weighted(
     protocol_rates: Dict[str, float],
     source_rates: Dict[str, float],
 ) -> List[Node]:
-    """[P0-2] 双层采样：协议多样性探索 + 历史通过率加权。
-
-    旧实现只采样 1/5 探索，剩下的纯按历史排序。问题：
-      - 新协议/新源永远进不去真测（被历史高分源挤掉）
-      - 长尾节点被永久饿死
-      - 协议分布逐渐塌缩到 top3
-
-    新实现：
-      1. phase1 探索：保证每个协议至少 N 个节点进入真测，避免协议分布塌缩
-      2. phase2 加权：剩下的按 (source_rate, protocol_rate, latency) 排序
-      3. 同协议内按 TCP 延迟升序（旧的 latency tiebreaker 行为不变）
-    """
     if limit <= 0 or len(nodes) <= limit:
         return nodes
-
-    # phase1: 协议多样性探索（占 30% 配额，按 TCP 延迟从各协议里均匀挑）
-    explore_quota = max(int(limit * 0.3), len(set(n.type for n in nodes)))
-    explore_quota = min(explore_quota, limit)
-    sampled = sample_for_real_test(nodes, tcp_latency, explore_quota)
+    base_quota = max(limit // 5, 1)
+    sampled = sample_for_real_test(nodes, tcp_latency, min(base_quota, limit))
     used = {n.fingerprint() for n in sampled}
 
     def score(n: Node) -> Tuple[float, float, int]:
@@ -87,7 +72,6 @@ def sample_for_real_test_weighted(
         latency = tcp_latency.get(fp, float("inf"))
         return (-(source_rate * 0.7 + protocol_rate * 0.3), latency, protocol_priority(n.type))
 
-    # phase2: 历史加权（占 70% 配额）
     remaining = [n for n in nodes if n.fingerprint() not in used]
     remaining.sort(key=score)
     sampled.extend(remaining[:max(limit - len(sampled), 0)])
