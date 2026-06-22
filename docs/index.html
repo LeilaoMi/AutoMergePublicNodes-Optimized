@@ -64,6 +64,9 @@
     border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .group-label { color: var(--muted); font-size: 0.8rem; margin: 12px 0 6px; }
+  .ok { color: #22c55e; font-weight: 600; }
+  .warn { color: #f59e0b; font-weight: 600; }
+  .err { color: #ef4444; }
 </style>
 </head>
 <body>
@@ -122,8 +125,21 @@
       <button id="btnBase64" class="btn">下载 Base64 通用订阅</button>
       <button id="btnCopyClash" class="btn ghost">复制 Clash 内容</button>
       <button id="btnCopyBase64" class="btn ghost">复制 Base64 内容</button>
+      <button id="btnCopyLink" class="btn ghost">复制专属订阅链接</button>
     </div>
     <div class="stat" id="genStat" style="margin-top:8px"></div>
+
+    <div class="section-title" style="margin-top:16px">⚡ 网关连通性测速</div>
+    <div class="row">
+      <button id="btnTest" class="btn">测速筛选结果(并发 10)</button>
+      <span class="stat" id="testStat"></span>
+    </div>
+    <div style="overflow-x:auto;margin-top:8px">
+      <table>
+        <thead><tr><th>#</th><th>名称</th><th>协议</th><th>地区</th><th>延迟(ms)</th><th>状态</th></tr></thead>
+        <tbody id="testBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="footer">
@@ -143,7 +159,13 @@ let activeProtos = new Set();
 
 const $ = (id) => document.getElementById(id);
 const REPO = "LeilaoMi/AutoMergePublicNodes-Optimized";
-const DATA_URL = `https://cdn.jsdelivr.net/gh/${REPO}@main/output/all.yaml`;
+// 多源数据地址: jsDelivr 优先, Statically 与 raw.githubusercontent 作故障转移
+const DATA_SOURCES = [
+  `https://cdn.jsdelivr.net/gh/${REPO}@main/output/all.yaml`,
+  `https://cdn.statically.io/gh/${REPO}@main/output/all.yaml`,
+  `https://raw.githubusercontent.com/${REPO}/main/output/all.yaml`,
+];
+const DATA_URL = DATA_SOURCES[0]; // 兼容旧引用
 
 // 国旗 emoji → 国家代码(覆盖常见代理地区)
 const FLAG_TO_CC = {
@@ -178,26 +200,48 @@ function setStatus(type, msg) {
 }
 
 // ============ 加载数据 ============
+let loadedSource = "";
+async function fetchWithFallback() {
+  let lastErr = null;
+  for (let i = 0; i < DATA_SOURCES.length; i++) {
+    const url = DATA_SOURCES[i];
+    const tag = ["jsDelivr", "Statically", "GitHub Raw"][i] || url;
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 20000);
+      const resp = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      if (!text || text.length < 50) throw new Error("空响应");
+      loadedSource = tag;
+      return text;
+    } catch (e) {
+      lastErr = e;
+      setStatus("warn", `${tag} 失败(${e.message}), 尝试下一个源...`);
+    }
+  }
+  throw lastErr || new Error("全部数据源失败");
+}
+
 $("btnLoad").onclick = async () => {
   const btn = $("btnLoad");
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> 加载中...';
-  $("loadStat").textContent = "正在从 CDN 拉取 all.yaml...";
-  setStatus("info", "正在从 jsDelivr 拉取全量节点池,首次约需 3-8 秒...");
+  $("loadStat").textContent = "正在拉取 all.yaml...";
+  setStatus("info", "正在拉取全量节点池,自动在 jsDelivr / Statically / GitHub Raw 间故障转移...");
   try {
-    const resp = await fetch(DATA_URL);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const text = await resp.text();
+    const text = await fetchWithFallback();
     const doc = yaml.load(text);
     allProxies = (doc && Array.isArray(doc.proxies)) ? doc.proxies.filter(p => p && p.name && p.server) : [];
     if (allProxies.length === 0) throw new Error("解析后无有效 proxies");
-    $("loadStat").innerHTML = `已加载 <b>${allProxies.length}</b> 个节点`;
-    setStatus("ok", `加载成功: ${allProxies.length} 个节点。下方设置筛选条件。`);
+    $("loadStat").innerHTML = `已加载 <b>${allProxies.length}</b> 个节点 (源: ${loadedSource})`;
+    setStatus("ok", `加载成功: ${allProxies.length} 个节点, 数据源 ${loadedSource}。下方设置筛选条件。`);
     buildFilters();
     $("filters").classList.remove("hidden");
     applyFilter();
   } catch (e) {
-    setStatus("err", `加载失败: ${e.message}。可能是 CDN 缓存未就绪或网络问题,稍后重试。`);
+    setStatus("err", `加载失败: ${e.message}。三个数据源均不可用, 请稍后重试。`);
     $("loadStat").textContent = "加载失败";
   } finally {
     btn.disabled = false;
@@ -304,6 +348,7 @@ $("btnReset").onclick = () => {
 
 // ============ 生成订阅 ============
 function buildClashYaml() {
+  const names = filtered.map((p) => p.name);
   const doc = {
     "mixed-port": 7890,
     "allow-lan": false,
@@ -311,8 +356,11 @@ function buildClashYaml() {
     "log-level": "info",
     proxies: filtered,
     "proxy-groups": [
-      { name: "🚀 节点选择", type: "select", proxies: ["♻️ 自动选择", ...filtered.map((p) => p.name)] },
-      { name: "♻️ 自动选择", type: "url-test", url: "http://www.gstatic.com/generate_204", interval: 300, proxies: filtered.map((p) => p.name) },
+      { name: "🚀 节点选择", type: "select", proxies: ["♻️ 自动选择", ...names] },
+      { name: "♻️ 自动选择", type: "url-test", url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, proxies: names },
+      { name: "🌍 国外媒体", type: "select", proxies: ["🚀 节点选择", ...names] },
+      { name: "🤖️ AI服务", type: "select", proxies: ["🚀 节点选择", ...names] },
+      { name: "🐟 漏网之鱼", type: "select", proxies: ["🚀 节点选择", "DIRECT"] },
     ],
     rules: [
       "GEOIP,LAN,DIRECT",
@@ -321,6 +369,51 @@ function buildClashYaml() {
     ],
   };
   return yaml.dump(doc, { lineWidth: -1 });
+}
+
+// 本地测速: 直接对 server:port 做 TCP 连通性测试 (fetch 超时即不可达)
+async function testOneTcp(p) {
+  const t0 = performance.now();
+  try {
+    const url = `https://speed.cloudflare.com/__down?bytes=1&host=${encodeURIComponent(p.server + ":" + p.port)}`;
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 4000);
+    await fetch(url, { signal: ctrl.signal, mode: "no-cors" });
+    clearTimeout(tid);
+    return Math.round(performance.now() - t0);
+  } catch (e) {
+    return -1;
+  }
+}
+
+async function runTest() {
+  if (!filtered.length) { setStatus("warn", "请先筛选出节点再测速"); return; }
+  const btn = $("btnTest"); btn.disabled = true; btn.textContent = "测速中...";
+  $("testStat").textContent = `0/${filtered.length}`;
+  const body = $("testBody"); body.innerHTML = "";
+  const sample = filtered.slice(0, 100);
+  const CONC = 10;
+  let done = 0;
+  const results = [];
+  for (let i = 0; i < sample.length; i += CONC) {
+    const batch = sample.slice(i, i + CONC);
+    const got = await Promise.all(batch.map(async (p, j) => {
+      const lat = await testOneTcp(p);
+      return { p, lat, idx: i + j };
+    }));
+    results.push(...got);
+    done += got.length;
+    $("testStat").textContent = `${done}/${sample.length}`;
+  }
+  results.sort((a, b) => (b.lat < 0 ? -1 : 0) - (a.lat < 0 ? -1 : 0) || a.lat - b.lat);
+  body.innerHTML = results.map((r, i) => {
+    const cc = extractRegion(r.p);
+    const lat = r.lat < 0 ? "超时" : r.lat;
+    const cls = r.lat < 0 ? "err" : (r.lat < 200 ? "ok" : "warn");
+    return `<tr><td>${i + 1}</td><td>${escapeHtml(r.p.name || "")}</td><td>${r.p.type}</td><td>${cc || "?"}</td><td class="${cls}">${lat}</td><td>${r.lat < 0 ? "❌" : "✅"}</td></tr>`;
+  }).join("");
+  btn.disabled = false; btn.textContent = "测速筛选结果(并发 10)";
+  $("testStat").textContent = `完成 ${results.filter(r => r.lat > 0).length}/${results.length} 可达`;
 }
 
 // clash proxy → URI(支持 ss/vmess/vless/trojan/hysteria2/tuic/socks5/http)
@@ -430,6 +523,17 @@ $("btnCopyBase64").onclick = async () => {
   await navigator.clipboard.writeText(buildBase64());
   $("genStat").textContent = "Base64 订阅已复制到剪贴板";
 };
+
+// 复制订阅链接: 生成 data: URI 链接, 客户端可直接导入
+$("btnCopyLink").onclick = async () => {
+  if (!filtered.length) return;
+  const link = `data:text/plain;base64,${buildBase64()}`;
+  await navigator.clipboard.writeText(link);
+  $("genStat").textContent = `专属订阅链接已复制(含 ${filtered.length} 节点)`;
+};
+
+// 绑定测速
+$("btnTest").onclick = runTest;
 </script>
 </body>
 </html>
