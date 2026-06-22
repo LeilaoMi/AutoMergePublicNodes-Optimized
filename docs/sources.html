@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>订阅源健康 · AutoMergePublicNodes</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --fg: #e6edf3; --muted: #8b949e; --accent: #2f81f7; --accent2: #238636;
+    --danger: #f85149; --warn: #d29922;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btn { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: 0.9rem; transition: opacity .15s; }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--fg); }
+  input[type="text"], select { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--fg); padding: 6px 10px; font-size: 0.9rem; }
+  input[type="text"] { flex: 1; min-width: 180px; }
+  .stat { color: var(--muted); font-size: 0.85rem; }
+  .stat b { color: var(--fg); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  td.name { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  td.url { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  .section-title { font-size: 0.95rem; margin: 0 0 10px; color: var(--fg); }
+  .status { padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px; }
+  .status.info { background: rgba(47,129,247,0.12); border: 1px solid var(--accent); }
+  .status.ok { background: rgba(35,134,54,0.12); border: 1px solid var(--accent2); }
+  .status.err { background: rgba(248,81,73,0.12); border: 1px solid var(--danger); }
+  .status.warn { background: rgba(210,153,34,0.12); border: 1px solid var(--warn); }
+  .footer { color: var(--muted); font-size: 0.8rem; margin-top: 24px; text-align: center; }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .hidden { display: none; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--muted); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+  .badge.ok { background: rgba(35,134,54,0.2); color: var(--accent2); }
+  .badge.dead { background: rgba(248,81,73,0.2); color: var(--danger); }
+  .badge.warn { background: rgba(210,153,34,0.2); color: var(--warn); }
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .metric { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+  .metric .num { font-size: 1.6rem; font-weight: 700; }
+  .metric .label { color: var(--muted); font-size: 0.8rem; }
+  .nav { display: flex; gap: 16px; margin-bottom: 16px; }
+  .nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; padding-bottom: 4px; border-bottom: 2px solid transparent; }
+  .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="nav">
+    <a href="index.html">订阅网关</a>
+    <a href="sources.html" class="active">订阅源健康</a>
+  </div>
+  <h1>📡 订阅源健康面板</h1>
+  <p class="subtitle">实时展示 107 个订阅源的抓取状态、节点贡献与连续死亡计数。数据来自 <code>output/source_audit.json</code>，每 6 小时由 CI 刷新。</p>
+
+  <div class="row" style="margin-bottom: 16px;">
+    <button id="btnLoad" class="btn green">📥 加载源审计数据</button>
+    <span class="stat" id="loadStat"></span>
+  </div>
+  <div id="statusBox"></div>
+
+  <div id="overview" class="card hidden">
+    <div class="section-title">📊 概览</div>
+    <div class="metric-grid" id="metrics"></div>
+  </div>
+
+  <div id="filters" class="card hidden">
+    <div class="section-title">🔍 筛选</div>
+    <div class="row">
+      <input type="text" id="keyword" placeholder="按名称 / URL 关键词搜索">
+      <select id="statusFilter">
+        <option value="all">全部状态</option>
+        <option value="ok">✅ 健康</option>
+        <option value="dead">❌ 死亡</option>
+        <option value="dying">⚠️ 垂死</option>
+      </select>
+      <select id="sortBy">
+        <option value="nodes">按节点数降序</option>
+        <option value="dead">按连续死亡升序</option>
+        <option value="name">按名称</option>
+        <option value="duration">按抓取耗时升序</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="results" class="card hidden">
+    <div class="section-title">📋 订阅源列表 <span class="stat" id="resultStat"></span></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>#</th><th>名称</th><th>状态</th><th>节点数</th><th>大小</th><th>耗时(s)</th><th>连续死亡</th><th>URL</th></tr></thead>
+        <tbody id="sourceBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="deadPanel" class="card hidden">
+    <div class="section-title" style="color: var(--danger)">💀 死源治理建议</div>
+    <p class="stat">以下源连续死亡 ≥ 3 次，建议在 <code>config/sources.yaml</code> 中禁用或删除，减少无效抓取。</p>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>名称</th><th>连续死亡</th><th>错误</th><th>URL</th><th>建议操作</th></tr></thead>
+        <tbody id="deadBody"></tbody>
+      </table>
+    </div>
+    <button id="btnExportDead" class="btn ghost" style="margin-top: 12px;">📋 复制禁用源名称列表</button>
+  </div>
+
+  <div class="footer">
+    数据源：<a href="https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/source_audit.json" target="_blank">source_audit.json</a> ·
+    <a href="https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized" target="_blank">GitHub 仓库</a> · 仅供学习研究
+  </div>
+</div>
+
+<script type="module">
+const REPO = "LeilaoMi/AutoMergePublicNodes-Optimized";
+const AUDIT_SOURCES = [
+  `https://cdn.jsdelivr.net/gh/${REPO}@main/output/source_audit.json`,
+  `https://cdn.statically.io/gh/${REPO}@main/output/source_audit.json`,
+  `https://raw.githubusercontent.com/${REPO}/main/output/source_audit.json`,
+];
+
+const $ = (id) => document.getElementById(id);
+function setStatus(cls, msg) {
+  const box = $("statusBox");
+  box.innerHTML = `<div class="status ${cls}">${msg}</div>`;
+}
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function fmtBytes(n) {
+  if (!n || n <= 0) return "0";
+  if (n < 1024) return n + "B";
+  if (n < 1048576) return (n / 1024).toFixed(1) + "KB";
+  return (n / 1048576).toFixed(1) + "MB";
+}
+
+let allSources = [];
+
+function classifySource(s) {
+  if (s.ok) return "ok";
+  if (s.consecutive_dead >= 3) return "dead";
+  return "dying";
+}
+
+function renderMetrics(data) {
+  const total = data.sources_total;
+  const healthy = data.healthy;
+  const broken = data.broken;
+  const totalNodes = (data.sources || []).reduce((a, s) => a + (s.nodes || 0), 0);
+  const dead = (data.sources || []).filter(s => (s.consecutive_dead || 0) >= 3).length;
+  const metrics = [
+    { num: total, label: "订阅源总数" },
+    { num: healthy, label: "健康源" },
+    { num: broken, label: "当前失败" },
+    { num: dead, label: "连续死亡 ≥3" },
+    { num: totalNodes.toLocaleString(), label: "总解析节点" },
+    { num: data.disabled_count || 0, label: "已自动禁用" },
+  ];
+  $("metrics").innerHTML = metrics.map(m => `<div class="metric"><div class="num">${m.num}</div><div class="label">${m.label}</div></div>`).join("");
+}
+
+function applyFilter() {
+  const kw = $("keyword").value.trim().toLowerCase();
+  const sf = $("statusFilter").value;
+  const sb = $("sortBy").value;
+  let list = allSources.slice();
+  if (kw) list = list.filter(s => (s.name || "").toLowerCase().includes(kw) || (s.url || "").toLowerCase().includes(kw));
+  if (sf !== "all") list = list.filter(s => classifySource(s) === sf);
+  const sorters = {
+    nodes: (a, b) => (b.nodes || 0) - (a.nodes || 0),
+    dead: (a, b) => (a.consecutive_dead || 0) - (b.consecutive_dead || 0),
+    name: (a, b) => (a.name || "").localeCompare(b.name || ""),
+    duration: (a, b) => (a.duration || 999) - (b.duration || 999),
+  };
+  list.sort(sorters[sb] || sorters.nodes);
+  $("resultStat").textContent = `(${list.length}/${allSources.length})`;
+  const body = $("sourceBody");
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center">无匹配源</td></tr>';
+    return;
+  }
+  body.innerHTML = list.map((s, i) => {
+    const cls = classifySource(s);
+    const badge = cls === "ok" ? '<span class="badge ok">健康</span>'
+      : cls === "dead" ? '<span class="badge dead">死亡</span>'
+      : '<span class="badge warn">垂死</span>';
+    const dead = s.consecutive_dead || 0;
+    const deadCell = dead > 0 ? `<span style="color:var(--danger)">${dead}</span>` : "0";
+    return `<tr><td>${i + 1}</td><td class="name">${escapeHtml(s.name)}</td><td>${badge}</td><td>${(s.nodes || 0).toLocaleString()}</td><td>${fmtBytes(s.bytes)}</td><td>${(s.duration || 0).toFixed(1)}</td><td>${deadCell}</td><td class="url">${escapeHtml(s.url)}</td></tr>`;
+  }).join("");
+}
+
+function renderDeadPanel() {
+  const dead = allSources.filter(s => (s.consecutive_dead || 0) >= 3);
+  if (!dead.length) {
+    $("deadPanel").classList.add("hidden");
+    return;
+  }
+  $("deadPanel").classList.remove("hidden");
+  dead.sort((a, b) => (b.consecutive_dead || 0) - (a.consecutive_dead || 0));
+  $("deadBody").innerHTML = dead.map(s => {
+    return `<tr><td class="name">${escapeHtml(s.name)}</td><td style="color:var(--danger)">${s.consecutive_dead}</td><td style="color:var(--muted)">${escapeHtml(s.error || "")}</td><td class="url">${escapeHtml(s.url)}</td><td><span class="badge dead">建议禁用</span></td></tr>`;
+  }).join("");
+}
+
+$("btnLoad").onclick = async () => {
+  const btn = $("btnLoad");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> 加载中...';
+  setStatus("info", "正在拉取 source_audit.json, 自动故障转移...");
+  let lastErr = null;
+  for (let i = 0; i < AUDIT_SOURCES.length; i++) {
+    const url = AUDIT_SOURCES[i];
+    const tag = ["jsDelivr", "Statically", "GitHub Raw"][i];
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 15000);
+      const resp = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (!data.sources || !Array.isArray(data.sources)) throw new Error("数据格式异常");
+      allSources = data.sources;
+      $("loadStat").innerHTML = `已加载 <b>${allSources.length}</b> 个源 (源: ${tag})`;
+      setStatus("ok", `加载成功, 数据源 ${tag}。`);
+      renderMetrics(data);
+      renderDeadPanel();
+      $("overview").classList.remove("hidden");
+      $("filters").classList.remove("hidden");
+      $("results").classList.remove("hidden");
+      applyFilter();
+      return;
+    } catch (e) {
+      lastErr = e;
+      setStatus("warn", `${tag} 失败(${e.message}), 尝试下一个源...`);
+    }
+  }
+  setStatus("err", `加载失败: ${lastErr ? lastErr.message : "全部源不可用"}。`);
+  $("loadStat").textContent = "加载失败";
+  btn.disabled = false;
+  btn.textContent = "📥 重新加载";
+};
+
+$("keyword").oninput = applyFilter;
+$("statusFilter").onchange = applyFilter;
+$("sortBy").onchange = applyFilter;
+
+$("btnExportDead").onclick = async () => {
+  const dead = allSources.filter(s => (s.consecutive_dead || 0) >= 3);
+  const names = dead.map(s => s.name).join("\n");
+  if (!names) { setStatus("warn", "当前没有连续死亡 ≥3 的源。"); return; }
+  await navigator.clipboard.writeText(names);
+  setStatus("ok", `已复制 ${dead.length} 个建议禁用源名称到剪贴板, 可粘贴到 sources.yaml 编辑。`);
+};
+</script>
+</body>
+</html>

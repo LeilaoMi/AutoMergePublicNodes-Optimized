@@ -25,12 +25,21 @@
 访问项目的 **GitHub Pages** 站点，在浏览器端实时过滤并生成专属订阅链接：
 👉 **[点击进入动态网关](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)**
 
-功能：
+### 订阅网关
 - 按地区、协议、关键词实时筛选全量节点池
 - 多 CDN 自动故障转移（jsDelivr → Statically → GitHub Raw），单源挂了也能用
 - 浏览器端测速：对筛选结果并发 TCP 连通性测试，标红超时节点
 - 一键下载 Clash YAML（含多分组策略）/ Base64 通用订阅 / 复制专属订阅链接
 - 计算全在本地，保护隐私，零服务器开销
+
+### 订阅源健康面板
+
+👉 **[订阅源健康](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/sources.html)**
+
+- 订阅源抓取状态总览（健康 / 失效 / 自动禁用计数）
+- 趋势图：30 轮运行漏斗（原始节点 → 去重 → TCP → 真测 → Verified）
+- 死源清单：连续死亡计数、抓取错误、抓取耗时
+- 源贡献排行：按解析节点数排序，识别高价值源
 
 *支持条件：地区 (如 `HK,JP`)、协议 (如 `vless,trojan`)。*
 
@@ -337,6 +346,7 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
+<<<<<<< Updated upstream
 | 更新时间 | 2026-06-22 00:48:47 |
 | 版本 | 2.4.0 |
 | 订阅源 | 105/107 |
@@ -348,11 +358,25 @@ MIT
 | Verified 输出 | 300 |
 | Global 输出 | 300 |
 | All 输出 | 22101 |
+=======
+| 更新时间 | 2026-06-22 00:44:08 |
+| 版本 | 2.4.0 |
+| 订阅源 | 1/1 |
+| 原始节点 | 1 |
+| 去重后 | 1 |
+| TCP 可达 | 1 |
+| 真实可用 | 1 |
+| 真测通过率 | 100.0% |
+| Verified 输出 | 1 |
+| Global 输出 | 0 |
+| All 输出 | 1 |
+>>>>>>> Stashed changes
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
 ### Top 节点评分
 
+<<<<<<< Updated upstream
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
 | 81.55 | shadowsocks | 253.9 | mheidari-all |
@@ -360,16 +384,23 @@ MIT
 | 79.93 | shadowsocks | 271.9 | Au1rxx-base64 |
 | 79.86 | shadowsocks | 268.2 | Au1rxx-base64 |
 | 79.77 | shadowsocks | 284.7 | Au1rxx-base64 |
+=======
+_暂无评分数据_
+>>>>>>> Stashed changes
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
+<<<<<<< Updated upstream
 | snakem982 | 0.991 | 69 | prefer |
 | Au1rxx-base64 | 0.847 | 42 | prefer |
 | mheidari-all | 0.829 | 425 | prefer |
 | DeltaKronecker-all | 0.731 | 227 | prefer |
 | Surfboard-tg-mixed | 0.53 | 10 | observe |
+=======
+| mock-source | 0.175 | 0 | observe |
+>>>>>>> Stashed changes
 
 <!-- AUTONODES_STATS_END -->
 
