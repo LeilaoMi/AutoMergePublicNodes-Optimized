@@ -1,41 +1,46 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+本项目所有 notable 变更记录于此。按时间倒序排列。
 
-## [3.0.0] - 2026-06-22 (工业级重构与生态跨越)
+## 2026-06-22 动态订阅网关与防投毒
 
-### 🚀 核心架构重构 (底层基建)
-- **内存防线 (Bloom Filter)**：引入 `core/bloom_filter.py`，使用布隆过滤器替代传统的 `set()` 进行节点指纹去重。在处理 70,000+ 原始节点时，将内存占用压缩 90% 以上，彻底免疫 GitHub Actions 的 OOM 崩溃风险。
-- **并发引擎重构 (Concurrency Gate)**：引入 `core/concurrency_pool.py`，实现基于 `asyncio.Semaphore` 与预分配端口池的 `ConcurrencyGate`。彻底替代废弃的 `ProcessPoolGate`，解决高并发探活时的端口冲突与进程排队超时。
-- **代码脱水 (物理清创)**：删除 10 个在单机 CI 环境下无法运行或纯属概念堆砌的“伪 AI/联邦”僵尸模块（包括 `_federated_test_network`, `_adaptive_learning`, `_community_driven` 等），大幅降低代码库认知负载。
+### 🌐 动态订阅网关（GitHub Pages）
+- 新增 `docs/index.html`：浏览器端实时筛选全量节点池，按地区/协议/关键词过滤，本地生成 Clash YAML / Base64 / sing-box JSON 订阅。
+- 多 CDN 故障转移（jsDelivr → Statically → GitHub Raw），单源挂掉仍可用；浏览器端 TCP 测速，标红超时节点。
+- 新增 `docs/sources.html`：订阅源健康面板，含 30 轮运行漏斗、死源清单、源贡献排行。
+- 部署方式：GitHub Pages 从 `main` 分支 `/docs` 目录自动构建（Pages 服务端监听，非 workflow 部署步骤）。CI 推送 `output/` 后页面自动刷新。
 
-### ⚡ 终极性能压榨 (控制面集成)
-- **sing-box API 批量测速**：新增 `core/singbox_api_tester.py`。抛弃 Python 端使用 `aiohttp` 挨个发送 HTTP 请求的低效模式，利用 sing-box 内置的 Clash API 与 `url-test` 引擎进行并发探活。
-- **零侵入热插拔**：通过异步适配层 (`async def test_all`) 完美兼容原有 `TestResult` 数据结构，已在 `main.py` 中无缝替换原有测试器，将测速耗时从“分钟级”降维至“秒级”。
+### 🔒 SSRF 防投毒
+- 在 `core/filtering.py` 增加私有地址 / 云元数据端点拦截：剔除 `server` 指向 RFC1918、本地环回、`169.254.169.254` 等的恶意节点，保护 CI 环境。
+- 新增 `tools/import_contract.py`：CI 阶段检查导入契约，防止悬空 import（曾因引入未实现模块导致 CI 连续崩溃）。
 
-### 🔒 安全防御与 CI 治理
-- **SSRF 防投毒网关**：新增 `core/security_guard.py`。在最终输出阶段 (`build_output_nodes`) 自动校验节点 `server` 字段，精准拦截指向 RFC1918 私有地址、本地环回及云厂商元数据服务（如 AWS/GCP/阿里云的 `169.254.169.254`）的恶意 TG 节点，保护 CI 运行环境。
-- **Git 仓库治理 (双分支隔离)**：重构 `.github/workflows/update.yml`。`main` 分支仅保留订阅文件与 README，状态 JSON 文件被剥离并强制覆盖推送至 `state` 孤儿分支，彻底冻结 `.git` 目录的体积膨胀。
+### 🧹 回退与清理
+- 回退此前一次"工业级重构"：该重构引入大量 `_*` 占位模块（bloom_filter / concurrency_pool / singbox_api_tester 等），在单机 CI 下无法运行，导致连续失败。已回退到两步测活稳定版本，并清理残留僵尸文件（-4.1MB，12 文件）。
+- 修正 stability ranking bonus 使用的 counter 字段。
 
-### 🌐 产品化跨越 (纯静态动态网关)
-- **前端交互层**：新增 `web/` 目录，提供基于 Tailwind CSS 的极简 Web UI (`index.html` + `app.js`)。
-- **客户端实时过滤**：支持用户在浏览器端按地区、协议实时过滤节点，并本地生成 Base64 或 Clash YAML 订阅。零服务器开销，抗审查能力达到极致。
-- **CI 自动化部署**：流水线集成 `tools/export_web_nodes.py` 数据导出与 GitHub Pages 自动部署逻辑，实现全链路自动化。
+## 2026-06-18 全量扩源与两阶段测活
 
----
+- 新增 Telegram 频道源支持与频道发现工具 `tools/discover_tg_channels.py`。
+- 全量扩源：新增 43 个 Telegram 频道源，总源数从 64 提升至 107。
+- 两阶段测活：100 并发轻量探活（只测 generate_204）先筛不可达节点，再对剩余做 50 并发完整真测，总耗时从 60+ 分钟降到约 8 分钟。
+- 移除真测进程池门控，改用 `asyncio.Semaphore` 并发控制，解决高并发端口冲突。
 
-## [2.9.1] - 2026-06-18
-- **性能调优**：移除真测进程池门控，并发数提升至 50；引入两阶段探活（100 并发轻量探活 + 50 并发完整真测），解决 60 分钟超时问题。
-- **全量扩源**：新增 43 个 Telegram 频道源，总源数达到 107 个。
-- **文档重构**：按实际功能重写所有说明文档，中文化所有模块 docstring。
+## 2026-06-15 多维评分
 
-## [2.8.0] - 2026-06-15
-- **多维评分**：引入 7 因子加权评分系统（延迟、抖动、TCP、速度、指纹对抗、协议历史、来源历史）。
-- **能力画像**：扩展解锁检测（Netflix, ChatGPT, Disney, YouTube Premium 等），支持按能力切片输出。
+- 7 因子加权评分：延迟、抖动、TCP、下载速度、指纹抗检测、协议历史、来源历史。
+- REALITY / uTLS 优先，443 端口加成，跨周期稳定节点加分（`core/_fingerprint_test.py`）。
 
-## [2.5.0] - 2026-06-10
-- **增量缓存**：引入 `_incremental_cache.py`，跳过配置未变且近期已测过的节点。
-- **生命周期预测**：引入 `_lifetime_predictor.py`，基于历史数据预测节点剩余寿命。
+## 2026-06-14 (2.4.0) 分块输出与稳定性追踪
 
-## [1.0.0] - 2026-05-01
-- 初始版本发布。基于 sing-box 的真实代理测试流水线。
+- 分块订阅输出（`chunks/`，每 100 节点一块）、按协议分文件（`by_protocol/`）、按地区分文件（`by_region/`）。
+- 节点跨轮稳定性追踪（`node_stability.json`，连续通过/失败计数）。
+- 降级容错、CI 失败自动开 Issue、源发现工具。
+
+## 2026-06-12 (2.3.0) 可配置评分与可观测报告
+
+- 可配置评分模板（`config/scoring.*.yaml`）、评分分项拆解。
+- 健康报告、每日摘要、Actions Summary、README 状态区自动化（`core/readme_updater.py`）。
+
+## 2026-05-01 (1.0.0) 初始版本
+
+- 基于 sing-box 的真实代理测试流水线：聚合公开订阅源 → 去重 → TCP 预筛 → sing-box 真测 → 评分排序 → 输出多格式订阅。

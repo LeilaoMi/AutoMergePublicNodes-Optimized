@@ -7,7 +7,7 @@
 | `output/verified.*` | 质量优先 | GitHub Actions 环境下 sing-box 真测通过，数量可能较少 |
 | `output/global.*` | 数量与质量兼顾 | 海外可用但国内站点连通不一定稳定 |
 | `output/all.*` | 自己再测速 | 全量候选池，只去重，不保证可用 |
-| `output/local_verified.*` | 本地用户 | 运行 `tools/local_filter.py` 后生成，更贴近你的网络环境 |
+| `output/local_verified.*` | 本地用户 | 需在本机手动运行 `tools/local_filter.py` 生成（CI 不自动产出），更贴近你的网络环境 |
 
 > 建议普通用户优先导入 `verified.yaml` 或 `verified.txt`；如果数量太少，再尝试 `global.*`。
 
