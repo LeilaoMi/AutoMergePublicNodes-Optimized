@@ -25,7 +25,14 @@
 访问项目的 **GitHub Pages** 站点，在浏览器端实时过滤并生成专属订阅链接：
 👉 **[点击进入动态网关](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)**
 
-*支持条件：地区 (如 `HK,JP`)、协议 (如 `vless,trojan`)。计算全在本地，保护隐私。*
+功能：
+- 按地区、协议、关键词实时筛选全量节点池
+- 多 CDN 自动故障转移（jsDelivr → Statically → GitHub Raw），单源挂了也能用
+- 浏览器端测速：对筛选结果并发 TCP 连通性测试，标红超时节点
+- 一键下载 Clash YAML（含多分组策略）/ Base64 通用订阅 / 复制专属订阅链接
+- 计算全在本地，保护隐私，零服务器开销
+
+*支持条件：地区 (如 `HK,JP`)、协议 (如 `vless,trojan`)。*
 
 ---
 
