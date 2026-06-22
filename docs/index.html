@@ -101,6 +101,8 @@
       <input id="keyword" type="text" placeholder="关键词(匹配节点名/server,如 443 / HK)">
       <label>数量上限</label>
       <input id="maxN" type="number" value="100" min="1" max="10000" style="width:90px">
+      <label>测速超时(ms)</label>
+      <input id="testTimeout" type="number" value="4000" min="500" max="10000" style="width:90px">
       <select id="sortBy">
         <option value="default">默认(原始顺序)</option>
         <option value="name">按名称</option>
@@ -130,6 +132,7 @@
       <button id="btnCopyClash" class="btn ghost">复制 Clash 内容</button>
       <button id="btnCopyBase64" class="btn ghost">复制 Base64 内容</button>
       <button id="btnCopyLink" class="btn ghost">复制专属订阅链接</button>
+      <button id="btnSingbox" class="btn green">下载 sing-box JSON</button>
     </div>
     <div class="stat" id="genStat" style="margin-top:8px"></div>
 
@@ -378,10 +381,11 @@ function buildClashYaml() {
 // 本地测速: 直接对 server:port 做 TCP 连通性测试 (fetch 超时即不可达)
 async function testOneTcp(p) {
   const t0 = performance.now();
+  const timeoutMs = parseInt($("testTimeout").value) || 4000;
   try {
     const url = `https://speed.cloudflare.com/__down?bytes=1&host=${encodeURIComponent(p.server + ":" + p.port)}`;
     const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), 4000);
+    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
     await fetch(url, { signal: ctrl.signal, mode: "no-cors" });
     clearTimeout(tid);
     return Math.round(performance.now() - t0);
@@ -491,6 +495,59 @@ function buildBase64() {
   return btoa(uris.join("\n"));
 }
 
+// clash proxy → sing-box outbound (支持 ss/vmess/vless/trojan/hysteria2/tuic/socks/http)
+function proxyToSingbox(p) {
+  const tag = p.name || `${p.type}-${p.server}`;
+  const base = { type: p.type, tag, server: p.server, server_port: p.port };
+  const tls = () => {
+    const t = { enabled: !!p.tls };
+    if (p.tls) {
+      if (p.servername || p.sni) t.server_name = p.servername || p.sni;
+    }
+    return t;
+  };
+  const transport = () => {
+    if (p.network === "ws" && p.wsOpts) {
+      return { type: "ws", path: p.wsOpts.path || "/", headers: { Host: p.wsOpts.headers?.Host || "" } };
+    }
+    if (p.network === "grpc" && p.grpcOpts) {
+      return { type: "grpc", service_name: p.grpcOpts.grpcServiceName || "" };
+    }
+    return null;
+  };
+  try {
+    switch (p.type) {
+      case "ss":
+        return { ...base, method: p.cipher, password: p.password };
+      case "vmess":
+        return { ...base, uuid: p.uuid, security: p.cipher || "auto", alter_id: p.alterId || 0, tls: tls(), ...(transport() ? { transport: transport() } : {}) };
+      case "vless":
+        return { ...base, uuid: p.uuid, ...(p.flow ? { flow: p.flow } : {}), tls: tls(), ...(transport() ? { transport: transport() } : {}) };
+      case "trojan":
+        return { ...base, password: p.password, tls: tls(), ...(transport() ? { transport: transport() } : {}) };
+      case "hysteria2":
+        return { ...base, password: p.password || p.auth || "", tls: tls() };
+      case "tuic":
+        return { ...base, uuid: p.uuid, password: p.password, tls: tls(), congestion_control: p.congestionController || p["congestion-controller"] || "bbr" };
+      case "socks5": case "socks":
+        return { ...base, ...(p.username ? { username: p.username, password: p.password } : {}) };
+      case "http":
+        return { ...base, ...(p.username ? { username: p.username, password: p.password } : {}) };
+      default:
+        return null;
+    }
+  } catch (e) { return null; }
+}
+
+function buildSingboxJson() {
+  const outbounds = filtered.map(proxyToSingbox).filter(Boolean);
+  outbounds.unshift({ type: "direct", tag: "direct" });
+  outbounds.unshift({ type: "block", tag: "block" });
+  const selectorTag = "🚀 节点选择";
+  outbounds.unshift({ type: "selector", tag: selectorTag, outbounds: filtered.map(p => p.name).filter(Boolean), default: filtered[0]?.name || "direct" });
+  return JSON.stringify({ log: { level: "info" }, outbounds, route: { final: selectorTag } }, null, 2);
+}
+
 function download(filename, content, mime) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -534,6 +591,14 @@ $("btnCopyLink").onclick = async () => {
   const link = `data:text/plain;base64,${buildBase64()}`;
   await navigator.clipboard.writeText(link);
   $("genStat").textContent = `专属订阅链接已复制(含 ${filtered.length} 节点)`;
+};
+
+// sing-box JSON 导出
+$("btnSingbox").onclick = () => {
+  if (!filtered.length) return;
+  const json = buildSingboxJson();
+  download(`subnet-${filtered.length}.json`, json, "application/json");
+  $("genStat").innerHTML = `已生成 sing-box JSON: <b>${json.length}</b> 字节(${filtered.length} 节点)`;
 };
 
 // 绑定测速
