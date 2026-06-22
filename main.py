@@ -318,7 +318,7 @@ async def run(args):
             stability_bonus = 0.0
             if fp in stable_fingerprints:
                 # 连续通过 2 轮 +2, 3 轮 +3, 上限 +5 (满分 100 内)
-                stability_count = stability_data.get(fp, {}).get("consecutive_passes", 0) if stability_data else 0
+                stability_count = stability_data.get(fp, {}).get("consecutive_pass", 0) if stability_data else 0
                 stability_bonus = min(5.0, float(stability_count))
                 score = round(score + stability_bonus, 2)
 
