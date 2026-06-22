@@ -1,22 +1,21 @@
-# AutoMergePublicNodes-Optimized (v3.0)
+# AutoMergePublicNodes-Optimized
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)]()
 [![节点更新](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
-> **工业级公开代理节点聚合与分发引擎。**
-> 自动聚合公开代理订阅源，使用 sing-box 控制面 API 真实代理测试，输出可直接导入主流客户端的订阅文件，并提供零服务器成本的纯客户端动态订阅网关。
+> 自动聚合公开代理订阅源，使用 sing-box 真实代理测试，输出可直接导入主流客户端的订阅文件，并提供零服务器成本的浏览器端动态订阅网关。
 > *仅供学习研究。公开节点稳定性不可控，请自行评估可用性与合规风险。*
 
 ---
 
-## 🌟 v3.0 核心特性
+## 🌟 核心特性
 
-- **⚡ 终极性能 (控制面集成)**：抛弃传统 Python 并发请求，利用 sing-box 内置 Clash API 与 `url-test` 引擎进行批量探活，测速耗时从“分钟级”降维至“秒级”。
-- **🛡️ 内存防线 (布隆过滤器)**：引入 `BloomFilter` 替代传统 `set()`，在处理 70,000+ 原始节点时，将去重内存占用压缩 90% 以上，彻底免疫 CI OOM。
-- **🔒 SSRF 防投毒网关**：内置 `SecurityGuard`，自动拦截指向 RFC1918 私有地址及云厂商元数据服务（如 `169.254.169.254`）的恶意 TG 节点，保护 CI 运行环境。
-- **🌐 纯静态动态网关**：依托 GitHub Pages 提供浏览器端实时过滤订阅，支持按地区、协议自定义生成 Base64/Clash YAML，零服务器开销。
-- **♻️ Git 仓库治理**：实施“双分支隔离”模式，状态 JSON 强制覆盖推送至 `state` 孤儿分支，彻底冻结 `main` 分支 `.git` 体积膨胀。
+- **⚡ 两阶段测活**：先用 100 并发轻量探活（只测 204）快速筛掉不可达节点，再对剩余节点做完整真测，总耗时从 60+ 分钟降到 ~8 分钟。
+- **🎯 7 因子加权评分**：延迟、抖动、TCP、下载速度、指纹抗检测、协议历史、来源历史。REALITY/uTLS 优先，443 端口加成，跨周期稳定节点加分。
+- **🔒 SSRF 防投毒**：拦截指向私有地址与云元数据端点（如 `169.254.169.254`）的恶意节点，保护 CI 运行环境。
+- **📈 节点稳定性追踪**：跨周期连续真测通过的节点获评分加成，历史稳定的老节点优先排在前面。
+- **🌐 动态订阅网关**：GitHub Pages 浏览器端实时筛选，多 CDN 故障转移，本地测速，一键导出 Clash / Base64 / sing-box JSON。
 
 ---
 
@@ -95,16 +94,12 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 订阅源配置
   → 异步抓取与重试
   → 多协议解析
-  → [v3.0] 布隆过滤器极速去重 (防 OOM)
-  → [v3.0] SSRF 防投毒安全清洗
-  → 指纹去重 → GeoIP 标记 → 质量预过滤
-  → TCP 预筛选 → 历史权重下采样
-  → [4.5] 轻量探活（100 并发只测 204，快速筛掉不可达节点）
-  → [5] sing-box 真实代理测试（50 并发，完整目标）
+  → 指纹去重 → GeoIP 标记 → SSRF 防投毒拦截
+  → 质量预过滤 → TCP 预筛选 → 历史权重下采样
+  → 轻量探活（100 并发只测 204，快速筛掉不可达节点）
+  → sing-box 真实代理测试（50 并发，完整目标）
   → 综合评分排序输出
-  → [v3.0] 导出 Web 元数据并部署至 GitHub Pages
   → 生成健康报告、日报、源评分与清理建议
-  → [v3.0] 状态文件推送到 state 孤儿分支 (防 Git 膨胀)
 ```
 
 两阶段测试是性能关键：先用高并发探活把 3000 候选筛到 ~1000，再对剩余节点做完整真测，总耗时从 60+ 分钟降到 ~8 分钟。
@@ -156,11 +151,7 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 | `chunks/verified_*.txt` | 分块订阅（每 100 节点一块，避免单文件过大） |
 | `by_protocol/verified_*.txt` | 按协议分文件（vmess/vless/trojan/ss/hysteria2 独立订阅） |
 | `by_region/{region}.txt/yaml/urls` | 按地区分文件（HK/JP/US/SG 等） |
-| `by_capability/{cap}.txt/yaml/urls` | 按解锁能力分文件（netflix/chatgpt/disney 等） |
-| `recommended/clash.yaml` | 推荐 Clash 配置（精选节点 + 分组规则） |
-| `recommended/singbox.json` | 推荐 sing-box 配置 |
-| `recommended/mobile.yaml` | 移动端推荐配置 |
-| `recommended/streaming.yaml` | 流媒体推荐配置 |
+
 | `stats.json` | 数量、耗时、协议通过率、错误明细、探活/真测阶段数据、节点速度和解锁状态 |
 | `health_report.md` | 当前流水线健康报告，包含评分、来源质量、失败原因与输出保护 |
 | `health_report.json` | 输出完整性、重复项、报警、源清理摘要 |
@@ -220,14 +211,12 @@ pip install -r requirements.txt
 
 # 下载 sing-box 后运行
 python main.py --top-n 100 --test-limit 500
-
-# 导出本地 Web 网关数据
-python tools/export_web_nodes.py --input output/all.yaml --output web/nodes.json
 ```
 
 常用检查：
 ```bash
 python -m compileall -q main.py core tools tests
+python tools/import_contract.py
 python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules config/scoring.yaml
 python tools/doctor.py
 python -m unittest -v tests.test_regressions
@@ -254,7 +243,7 @@ python tools/local_filter.py --input output/global.urls --output-prefix local_ve
 - `min_retain_ratio`：缩水守门比例，默认 0 表示关闭。
 - 轻量探活：默认启用（`--lightweight-probe`），100 并发先筛不可达节点，再真测剩余。
 - 真测并发：50（`--test-concurrency 50`），完整目标测试。
-- 超时上限：15 分钟（`timeout-minutes: 15`）。
+- 超时上限：30 分钟（`timeout-minutes: 30`）。
 
 CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`health_report.json`、`daily_report.md`、`source_scores.md`、`scoring_profiles.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
 
@@ -264,74 +253,58 @@ CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`h
 
 ```text
 AutoMergePublicNodes-Optimized/
-├── main.py                         # 主流水线与 CLI (已热插拔控制面引擎)
+├── main.py                         # 主流水线与 CLI
 ├── core/
-│   ├── bloom_filter.py             # [v3.0] 布隆过滤器 (内存防线)
-│   ├── concurrency_pool.py         # [v3.0] 异步端口池与信号量门控
-│   ├── security_guard.py           # [v3.0] SSRF 防投毒网关
-│   ├── singbox_api_tester.py       # [v3.0] sing-box 控制面批量测速引擎
-│   ├── fetcher.py                  # 异步抓取、重试、CDN 回退
-│   ├── parser.py                   # 多协议解析
-│   ├── tester.py                   # sing-box 真实代理测试（两阶段：探活 + 真测）
-│   ├── filtering.py                # 质量预过滤与同源降噪
+│   ├── fetcher.py                  # 异步抓取、重试、jsDelivr/CDN 回退
+│   ├── parser.py                   # 多协议解析（ss/ssr/vmess/vless/trojan/hysteria2/tuic/anytls/socks/http）
+│   ├── tester.py                   # sing-box 真实代理测试（两阶段：轻量探活 + 完整真测）
+│   ├── filtering.py                # 质量预过滤、同源降噪、SSRF 防投毒（拦截私有/元数据地址）
 │   ├── sampling.py                 # 真测下采样与历史权重排序
-│   ├── generator.py                # 多格式订阅输出（含分块/按协议/按地区/按能力切片）
+│   ├── generator.py                # 多格式订阅输出（yaml/txt/json/urls，大文件紧凑）
 │   ├── scoring.py                  # 综合节点评分（7 因子加权）
+│   ├── _fingerprint_test.py        # 协议指纹抗检测评分（REALITY/uTLS/WS+TLS/端口加成）
 │   ├── report.py                   # Markdown 健康报告
 │   ├── readme_updater.py           # README 状态区自动更新
-│   ├── stats.py                    # 源评分、趋势与报警统计（EWMA 历史通过率）
-│   ├── geo.py                      # GeoIP 标记与缓存
-│   ├── _incremental_cache.py       # [v2.5] 增量测试缓存，跳过未变更节点
-│   ├── _latency_trend.py           # [v2.5] 节点延迟趋势持久化与告警
-│   ├── _lifetime_predictor.py      # [v2.5] 节点剩余寿命预测
-│   ├── _time_aware.py              # [v2.5] 时段感知评分加成
-│   ├── _recommended_configs.py     # [v2.5] 推荐配置生成
-│   ├── _logging.py                 # [v2.5] 结构化日志
-│   ├── _fingerprint_test.py        # [v2.6] 指纹抗识别检测
-│   ├── _self_healing.py            # [v2.6] 流水线自愈
-│   ├── _predictive_monitoring.py   # [v2.6] 预测性监控
-│   ├── _node_dna.py                # [v2.7] 节点 DNA 分析（特征聚类）
-│   └── _quality_map.py             # [v2.9] 节点质量地图
-├── web/                            # [v3.0] 纯静态动态网关前端
-│   ├── index.html                  # Tailwind CSS 交互界面
-│   ├── app.js                      # 客户端过滤与 Base64/YAML 生成
-│   └── nodes.json                  # CI 自动导出的节点元数据
+│   ├── stats.py                    # 源评分、趋势、节点稳定性追踪（EWMA 历史通过率）
+│   └── geo.py                      # GeoIP 标记与缓存（ip-api.com 批量）
 ├── tools/
-│   ├── export_web_nodes.py         # [v3.0] Web 网关数据导出工具
 │   ├── audit_sources.py            # 源健康审计
 │   ├── health_report.py            # 输出健康报告
 │   ├── daily_report.py             # Markdown 日报
 │   ├── source_scores_report.py     # 源质量评分报告
 │   ├── scoring_profiles_report.py  # 评分模板对比报告
-│   ├── source_discovery.py         # 从其他项目发现新源
 │   ├── suggest_source_cleanup.py   # 源清理建议与安全应用
-│   ├── source_proposal_validator.py# 新源提案验证
+│   ├── source_discovery.py         # 从其他项目发现新源
+│   ├── discover_tg_channels.py     # Telegram 频道源发现
 │   ├── validate_config.py          # 配置静态校验
+│   ├── import_contract.py          # 导入契约检查（防悬空 import）
 │   ├── doctor.py                   # 本地环境诊断
 │   ├── local_filter.py             # 本地二次筛选
-│   ├── notify.py                   # Telegram/Webhook 通知
-│   ├── sign_output.py              # 输出文件签名
 │   ├── actions_summary.py          # GitHub Actions 运行摘要
 │   └── prepare_artifact_output.py  # 发布产物整理
-├── config/                         # 源配置与过滤规则
-├── tests/                          # 回归测试（221 用例）与协议样例
-├── output/                         # CI 输出文件
-├── docs/                           # 使用指南、资源与历史报告
+├── config/                         # 源配置、过滤规则、评分模板
+├── tests/                          # 回归测试与协议样例
+├── output/                         # CI 输出文件（订阅 + 报告）
+├── docs/                           # 使用指南、网关页面、发布说明
+│   ├── index.html                  # 动态订阅网关（GitHub Pages）
+│   ├── sources.html                # 订阅源健康面板
+│   ├── client-guide.md             # 客户端导入指南
+│   ├── resources.md                # 测速、转换和排障资源
+│   └── releases/                   # 版本发布说明
 ├── CHANGELOG.md                    # 版本变更记录
-└── .github/workflows/update.yml    # 自动更新流程 (含 Pages 部署与双分支隔离)
+└── .github/workflows/update.yml    # 自动更新流程（每 6 小时 + Pages）
 ```
 
 ---
 
 ## 文档
 
+- [`docs/index.html`](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)：动态订阅网关（浏览器端筛选生成订阅）。
+- [`docs/sources.html`](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/sources.html)：订阅源健康面板。
 - [`docs/client-guide.md`](docs/client-guide.md)：客户端导入指南。
 - [`docs/resources.md`](docs/resources.md)：测速、转换和排障资源。
-- [`docs/reports/`](docs/reports/)：历史审查与复核报告。
-- [`docs/cloudflare-worker-setup.md`](docs/cloudflare-worker-setup.md)：Cloudflare Worker 订阅加速方案。
-- [`docs/competitive-analysis-2026-06-14.md`](docs/competitive-analysis-2026-06-14.md)：33 个同类项目全量对标分析。
+- [`docs/releases/`](docs/releases/)：版本发布说明索引。
 - [`CHANGELOG.md`](CHANGELOG.md)：版本变更记录。
-- [`docs/releases/`](docs/releases/)：版本发布说明索引，包含 2.3.0 等用户向发布说明。
 
 ## License
 
@@ -346,7 +319,6 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-<<<<<<< Updated upstream
 | 更新时间 | 2026-06-22 00:48:47 |
 | 版本 | 2.4.0 |
 | 订阅源 | 105/107 |
@@ -358,25 +330,11 @@ MIT
 | Verified 输出 | 300 |
 | Global 输出 | 300 |
 | All 输出 | 22101 |
-=======
-| 更新时间 | 2026-06-22 00:44:08 |
-| 版本 | 2.4.0 |
-| 订阅源 | 1/1 |
-| 原始节点 | 1 |
-| 去重后 | 1 |
-| TCP 可达 | 1 |
-| 真实可用 | 1 |
-| 真测通过率 | 100.0% |
-| Verified 输出 | 1 |
-| Global 输出 | 0 |
-| All 输出 | 1 |
->>>>>>> Stashed changes
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
 ### Top 节点评分
 
-<<<<<<< Updated upstream
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
 | 81.55 | shadowsocks | 253.9 | mheidari-all |
@@ -384,23 +342,16 @@ MIT
 | 79.93 | shadowsocks | 271.9 | Au1rxx-base64 |
 | 79.86 | shadowsocks | 268.2 | Au1rxx-base64 |
 | 79.77 | shadowsocks | 284.7 | Au1rxx-base64 |
-=======
-_暂无评分数据_
->>>>>>> Stashed changes
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-<<<<<<< Updated upstream
 | snakem982 | 0.991 | 69 | prefer |
 | Au1rxx-base64 | 0.847 | 42 | prefer |
 | mheidari-all | 0.829 | 425 | prefer |
 | DeltaKronecker-all | 0.731 | 227 | prefer |
 | Surfboard-tg-mixed | 0.53 | 10 | observe |
-=======
-| mock-source | 0.175 | 0 | observe |
->>>>>>> Stashed changes
 
 <!-- AUTONODES_STATS_END -->
 

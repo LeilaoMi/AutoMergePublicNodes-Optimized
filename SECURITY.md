@@ -23,10 +23,11 @@
 
 ## 反滥用措施（CI 侧）
 
-- 所有真测并发受 `[P0-1] 进程池` 限制，避免对目标站点造成压力
-- TCP 预筛 + 真测双层，避免无意义请求
-- `[P2-2] source_proposal_validator` 对新源做风险评分（XSS 关键词、超大 payload、加密货币关键词、泄露凭据关键词）
-- 已知恶意 IP 段前缀 / 扫描器 ASN 在 PR 阶段被自动标记
+- 所有真测并发受 `asyncio.Semaphore` 门控（探活 100 并发、真测 50 并发），避免对目标站点造成压力
+- TCP 预筛 + 轻量探活 + 完整真测三层过滤，避免无意义请求
+- `tools/audit_sources.py` 在流水线起始阶段对订阅源做健康审计，识别死源并自动禁用
+- `core/filtering.py` 的 SSRF 防投毒：拦截指向私有地址 / 云元数据端点的恶意节点
+- `tools/import_contract.py` 在 CI 阶段检查导入契约，防止悬空 import 破坏构建
 
 ## 第三方镜像与订阅
 
