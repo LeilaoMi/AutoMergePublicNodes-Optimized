@@ -319,17 +319,17 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-07-03 19:41:17 |
+| 更新时间 | 2026-07-04 03:42:44 |
 | 版本 | 2.4.0 |
 | 订阅源 | 103/107 |
-| 原始节点 | 77772 |
-| 去重后 | 23173 |
+| 原始节点 | 78050 |
+| 去重后 | 23076 |
 | TCP 可达 | 3000 |
-| 真实可用 | 267 |
-| 真测通过率 | 8.9% |
-| Verified 输出 | 267 |
-| Global 输出 | 274 |
-| All 输出 | 23173 |
+| 真实可用 | 418 |
+| 真测通过率 | 13.9% |
+| Verified 输出 | 300 |
+| Global 输出 | 300 |
+| All 输出 | 23076 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -337,21 +337,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 78.31 | shadowsocks | 201.1 | Au1rxx-base64 |
-| 77.25 | shadowsocks | 246.9 | Au1rxx-base64 |
-| 76.93 | shadowsocks | 253.3 | Au1rxx-base64 |
-| 76.33 | shadowsocks | 264.4 | Au1rxx-base64 |
-| 76.33 | shadowsocks | 265.0 | Au1rxx-base64 |
+| 74.97 | shadowsocks | 256.6 | Au1rxx-base64 |
+| 74.65 | shadowsocks | 270.5 | Au1rxx-base64 |
+| 74.63 | shadowsocks | 248.7 | Au1rxx-base64 |
+| 74.4 | shadowsocks | 276.1 | mheidari-all |
+| 74.39 | trojan | 289.8 | Surfboard-tg-mixed |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
 | snakem982 | 0.976 | 36 | prefer |
-| Surfboard-tg-mixed | 0.791 | 95 | prefer |
-| Au1rxx-base64 | 0.717 | 33 | prefer |
-| DeltaKronecker-all | 0.715 | 113 | prefer |
-| mheidari-all | 0.711 | 101 | prefer |
+| Surfboard-tg-mixed | 0.877 | 141 | prefer |
+| mheidari-all | 0.864 | 100 | prefer |
+| Au1rxx-base64 | 0.849 | 24 | prefer |
+| DeltaKronecker-all | 0.819 | 220 | prefer |
 
 <!-- AUTONODES_STATS_END -->
 
