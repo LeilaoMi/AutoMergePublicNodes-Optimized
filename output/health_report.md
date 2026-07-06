@@ -5,42 +5,42 @@
 | 指标 | 数值 |
 | --- | --- |
 | 版本 | 2.4.0 |
-| 更新时间 | 2026-07-06 10:52:32 |
-| 运行耗时 | 197.4s |
+| 更新时间 | 2026-07-06 15:48:22 |
+| 运行耗时 | 179.8s |
 | 订阅源总数 | 107 |
 | 健康订阅源 | 102 |
-| 原始节点 | 79147 |
-| 去重后节点 | 24406 |
+| 原始节点 | 79704 |
+| 去重后节点 | 24484 |
 | TCP 可达 | 3000 |
-| 真实可用 | 338 |
+| 真实可用 | 375 |
 | Verified 输出 | 300 |
 | Global 输出 | 300 |
-| All 输出 | 24406 |
+| All 输出 | 24484 |
 
 ## 阶段耗时
 
 | 阶段 | 秒 |
 | --- | --- |
-| fetch | 4.2 |
+| fetch | 4.4 |
 | geo | 1.3 |
-| tcp | 31.1 |
-| probe | 43.3 |
-| real_test | 81.8 |
-| generate | 35.7 |
+| tcp | 31.0 |
+| probe | 42.9 |
+| real_test | 73.9 |
+| generate | 26.1 |
 
 ## 协议分布
 
 | 协议 | 数量 |
 | --- | --- |
-| vless | 45506 |
-| trojan | 12944 |
-| vmess | 10452 |
-| shadowsocks | 9451 |
-| hysteria2 | 447 |
+| vless | 46285 |
+| trojan | 12680 |
+| vmess | 10482 |
+| shadowsocks | 9433 |
+| hysteria2 | 465 |
 | shadowsocksr | 148 |
 | http | 139 |
-| socks | 44 |
-| tuic | 10 |
+| socks | 55 |
+| tuic | 11 |
 | hysteria | 6 |
 
 ## 评分权重
@@ -59,62 +59,63 @@
 
 | 评分 | 协议 | 延迟(ms) | 抖动(ms) | 延迟分 | 抖动分 | TCP分 | 协议历史分 | 来源历史分 | 来源 | 服务器 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 78.8 | shadowsocks | 278.4 | 678.5 | 21.33 | 0.0 | 10.0 | 14.08 | 19.38 | mheidari-all | 108.181.57.93 |
-| 78.65 | shadowsocks | 347.1 | 906.0 | 19.74 | 0.0 | 10.0 | 14.08 | 19.38 | mheidari-all | 185.196.61.82 |
-| 78.54 | shadowsocks | 256.6 | 633.7 | 21.84 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 156.146.38.169 |
-| 78.45 | shadowsocks | 260.5 | 613.6 | 21.75 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 156.146.38.168 |
-| 78.42 | shadowsocks | 259.0 | 650.0 | 21.78 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 156.146.38.167 |
-| 77.63 | shadowsocks | 295.7 | 755.3 | 20.93 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 37.19.198.236 |
-| 77.55 | shadowsocks | 293.3 | 741.5 | 20.99 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 37.19.198.244 |
-| 77.48 | shadowsocks | 268.9 | 679.5 | 21.55 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 37.19.198.243 |
-| 77.45 | trojan | 300.9 | 739.0 | 20.81 | 0.0 | 10.0 | 13.74 | 15.4 | DeltaKronecker-all | 149.28.241.235 |
-| 77.43 | shadowsocks | 304.5 | 768.4 | 20.73 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 37.19.198.160 |
-| 77.3 | trojan | 305.6 | 746.0 | 20.7 | 0.0 | 10.0 | 13.74 | 15.4 | DeltaKronecker-all | 45.32.195.168 |
-| 77.0 | trojan | 298.8 | 724.4 | 20.86 | 0.0 | 10.0 | 13.74 | 15.4 | DeltaKronecker-all | 64.94.95.117 |
-| 76.81 | trojan | 307.0 | 739.6 | 20.67 | 0.0 | 10.0 | 13.74 | 15.4 | DeltaKronecker-all | 64.94.95.114 |
-| 75.83 | trojan | 313.2 | 774.0 | 20.53 | 0.0 | 10.0 | 13.74 | 15.4 | DeltaKronecker-all | 64.94.95.115 |
-| 74.27 | shadowsocks | 254.8 | 631.2 | 21.88 | 0.0 | 10.0 | 14.08 | 19.38 | mheidari-all | 198.98.53.130 |
-| 73.79 | shadowsocks | 335.7 | 841.9 | 20.01 | 0.0 | 10.0 | 14.08 | 19.38 | mheidari-all | 147.90.234.133 |
-| 73.79 | shadowsocks | 476.3 | 1187.1 | 16.75 | 0.0 | 10.0 | 14.08 | 19.38 | mheidari-all | 130.51.22.8 |
-| 73.45 | shadowsocks | 260.5 | 649.4 | 21.75 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 156.146.38.170 |
-| 73.25 | shadowsocks | 301.3 | 604.3 | 20.8 | 0.0 | 10.0 | 14.08 | 16.62 | Au1rxx-base64 | 149.22.95.183 |
-| 72.81 | shadowsocks | 420.0 | 915.1 | 18.06 | 0.0 | 10.0 | 14.08 | 19.38 | mheidari-all | 172.245.235.84 |
+| 78.33 | shadowsocks | 262.6 | 658.7 | 21.7 | 0.0 | 10.0 | 12.91 | 18.22 | mheidari-all | 108.181.57.93 |
+| 78.21 | shadowsocks | 235.6 | 630.6 | 22.32 | 0.0 | 10.0 | 12.91 | 16.98 | Au1rxx-base64 | 37.19.198.243 |
+| 78.09 | shadowsocks | 241.2 | 646.4 | 22.2 | 0.0 | 10.0 | 12.91 | 16.98 | Au1rxx-base64 | 37.19.198.160 |
+| 74.74 | shadowsocks | 271.5 | 617.2 | 21.49 | 0.0 | 10.0 | 12.91 | 16.98 | Au1rxx-base64 | 156.146.38.167 |
+| 74.57 | shadowsocks | 284.2 | 650.1 | 21.2 | 0.0 | 10.0 | 12.91 | 16.98 | Au1rxx-base64 | 156.146.38.168 |
+| 74.37 | shadowsocks | 281.0 | 647.5 | 21.27 | 0.0 | 10.0 | 12.91 | 16.98 | Au1rxx-base64 | 156.146.38.169 |
+| 74.29 | trojan | 321.8 | 756.8 | 20.33 | 0.0 | 10.0 | 12.68 | 15.84 | DeltaKronecker-all | 149.28.241.235 |
+| 74.28 | trojan | 323.2 | 768.1 | 20.3 | 0.0 | 10.0 | 12.68 | 15.84 | DeltaKronecker-all | 45.32.195.168 |
+| 74.13 | shadowsocks | 341.6 | 822.5 | 19.87 | 0.0 | 10.0 | 12.91 | 18.22 | mheidari-all | 185.196.61.82 |
+| 74.07 | trojan | 317.7 | 746.2 | 20.42 | 0.0 | 10.0 | 12.68 | 15.84 | DeltaKronecker-all | 45.32.198.247 |
+| 72.1 | shadowsocks | 236.0 | 616.3 | 22.32 | 0.0 | 10.0 | 12.91 | 18.22 | mheidari-all | 198.98.53.130 |
+| 71.37 | trojan | 401.0 | 903.5 | 18.5 | 0.0 | 10.0 | 12.68 | 18.22 | mheidari-all | 64.94.95.118 |
+| 71.14 | shadowsocks | 323.8 | 769.4 | 20.28 | 0.0 | 10.0 | 12.91 | 16.98 | Au1rxx-base64 | 156.146.38.170 |
+| 70.02 | trojan | 457.1 | 780.9 | 17.2 | 0.0 | 10.0 | 12.68 | 18.22 | mheidari-all | 104.17.131.88 |
+| 69.78 | trojan | 464.9 | 793.7 | 17.02 | 0.0 | 10.0 | 12.68 | 18.22 | mheidari-all | 199.181.197.36 |
+| 69.75 | trojan | 467.0 | 801.8 | 16.97 | 0.0 | 10.0 | 12.68 | 18.22 | mheidari-all | 104.17.121.71 |
+| 69.57 | trojan | 473.4 | 777.7 | 16.82 | 0.0 | 10.0 | 12.68 | 18.22 | mheidari-all | 104.18.7.147 |
+| 69.35 | shadowsocks | 339.5 | 581.9 | 19.92 | 0.0 | 10.0 | 12.91 | 16.98 | Au1rxx-base64 | 216.105.168.18 |
+| 69.26 | trojan | 468.4 | 789.2 | 16.94 | 0.0 | 10.0 | 12.68 | 18.22 | mheidari-all | 199.181.197.143 |
+| 69.25 | trojan | 470.6 | 801.5 | 16.88 | 0.0 | 10.0 | 12.68 | 18.22 | mheidari-all | 104.20.42.250 |
 
 ## 来源质量排行
 
 | 来源 | 评分 | 通过率 | 测试数 | 解析节点 | 建议 |
 | --- | --- | --- | --- | --- | --- |
 | snakem982 | 0.976 | 1.0 | 36 | 61 | prefer |
-| mheidari-all | 0.911 | 0.839 | 87 | 16255 | prefer |
-| Au1rxx-base64 | 0.849 | 0.867 | 30 | 120 | prefer |
-| Surfboard-tg-mixed | 0.841 | 0.765 | 115 | 5925 | prefer |
-| DeltaKronecker-all | 0.792 | 0.715 | 158 | 8330 | prefer |
-| nscl5-all | 0.321 | 1.0 | 1 | 1651 | observe |
-| ermaozi | 0.256 | 1.0 | 1 | 27 | observe |
+| Surfboard-tg-mixed | 0.887 | 0.813 | 107 | 5986 | prefer |
+| DeltaKronecker-all | 0.852 | 0.775 | 187 | 8330 | prefer |
+| mheidari-all | 0.796 | 0.719 | 114 | 16268 | prefer |
+| Au1rxx-base64 | 0.753 | 0.773 | 22 | 84 | prefer |
+| nscl5-all | 0.424 | 1.0 | 3 | 1651 | observe |
+| 10ium-HighSpeed | 0.289 | 1.0 | 1 | 839 | observe |
+| Barabama-yudou | 0.262 | 1.0 | 1 | 166 | observe |
+| ermaozi | 0.256 | 1.0 | 1 | 26 | observe |
 | 10ium-ScrapeCategorize-Vless | 0.255 | None | 0 | 4358 | observe |
-| Epodonios-all | 0.255 | None | 0 | 6980 | observe |
+| Epodonios-all | 0.255 | None | 0 | 6989 | observe |
 | MatinGhanbari-all-sub | 0.255 | None | 0 | 3998 | observe |
-| SoliSpirit-all | 0.255 | None | 0 | 6861 | observe |
-| Surfboard-tg-vless | 0.255 | None | 0 | 4334 | observe |
-| barry-far-vless | 0.255 | None | 0 | 5043 | observe |
-| mahdibland-V2RayAggregator | 0.255 | None | 0 | 5349 | observe |
-| xiaoji235-airport-v2ray-all | 0.226 | None | 0 | 1268 | observe |
+| SoliSpirit-all | 0.255 | None | 0 | 7108 | observe |
+| Surfboard-tg-vless | 0.255 | None | 0 | 4436 | observe |
+| barry-far-vless | 0.255 | None | 0 | 5099 | observe |
 
 ## 真实测试失败原因
 
 | 目标 | 原因 | 状态/值 | 数量 |
 | --- | --- | --- | --- |
-| speed | ClientOSError | - | 26 |
-| geo | TimeoutError | - | 23 |
-| 204 | ClientOSError | - | 12 |
-| geo | ClientOSError | - | 6 |
-| 204 | TimeoutError | - | 6 |
-| cn-block | TimeoutError | - | 6 |
-| speed | TimeoutError | - | 5 |
-| 204 | ProxyError | - | 3 |
-| cn-block | ClientOSError | - | 3 |
-| geo | ProxyError | - | 2 |
-| cn-block | ProxyError | - | 1 |
+| 204 | ClientOSError | - | 22 |
+| speed | ClientOSError | - | 17 |
+| 204 | ProxyError | - | 11 |
+| 204 | TimeoutError | - | 11 |
+| geo | TimeoutError | - | 9 |
+| speed | ProxyError | - | 8 |
+| geo | ClientOSError | - | 5 |
+| geo | ProxyError | - | 5 |
+| cn-block | ClientOSError | - | 4 |
+| cn-block | ProxyError | - | 4 |
+| speed | TimeoutError | - | 3 |
+| cn-block | TimeoutError | - | 3 |
 
 ## 输出保护
 
