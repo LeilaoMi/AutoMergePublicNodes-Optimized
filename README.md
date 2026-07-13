@@ -319,17 +319,17 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-07-13 03:34:47 |
+| 更新时间 | 2026-07-13 09:40:59 |
 | 版本 | 2.4.0 |
 | 订阅源 | 103/107 |
-| 原始节点 | 77721 |
-| 去重后 | 24189 |
+| 原始节点 | 76766 |
+| 去重后 | 23821 |
 | TCP 可达 | 3000 |
-| 真实可用 | 461 |
-| 真测通过率 | 15.4% |
-| Verified 输出 | 300 |
-| Global 输出 | 300 |
-| All 输出 | 24189 |
+| 真实可用 | 288 |
+| 真测通过率 | 9.6% |
+| Verified 输出 | 288 |
+| Global 输出 | 297 |
+| All 输出 | 23821 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -337,21 +337,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 76.85 | shadowsocks | 220.4 | Au1rxx-base64 |
-| 76.63 | shadowsocks | 229.9 | Au1rxx-base64 |
-| 76.45 | shadowsocks | 237.5 | Au1rxx-base64 |
-| 76.37 | shadowsocks | 241.0 | Au1rxx-base64 |
-| 75.71 | shadowsocks | 247.7 | Au1rxx-base64 |
+| 77.28 | trojan | 275.0 | Surfboard-tg-mixed |
+| 74.08 | trojan | 312.7 | DeltaKronecker-all |
+| 73.26 | vless | 195.1 | DeltaKronecker-all |
+| 72.94 | trojan | 281.7 | Surfboard-tg-mixed |
+| 72.29 | trojan | 402.9 | DeltaKronecker-all |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| Surfboard-tg-mixed | 0.996 | 129 | prefer |
 | snakem982 | 0.976 | 36 | prefer |
-| mheidari-all | 0.878 | 92 | prefer |
-| DeltaKronecker-all | 0.802 | 246 | prefer |
-| Au1rxx-base64 | 0.745 | 71 | prefer |
+| mheidari-all | 0.815 | 66 | prefer |
+| DeltaKronecker-all | 0.688 | 207 | observe |
+| Surfboard-tg-mixed | 0.683 | 114 | observe |
+| Au1rxx-base64 | 0.413 | 9 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
