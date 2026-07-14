@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-07-14 02:56:35
+生成时间：2026-07-14 08:21:17
 
 ## 摘要
 
@@ -8,8 +8,8 @@
 | --- | --- |
 | 已评分订阅源总数 | 107 |
 | 建议优先 | 3 |
-| 继续观察 | 103 |
-| 建议降权 | 1 |
+| 继续观察 | 104 |
+| 建议降权 | 0 |
 | 建议禁用 | 0 |
 
 ## 建议优先
@@ -17,14 +17,12 @@
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | snakem982 | 0.976 | prefer | 36 | 36 | 0 | 1.0 | 61 | 0 |
-| Surfboard-tg-mixed | 0.932 | prefer | 113 | 97 | 16 | 0.858 | 5561 | 0 |
-| DeltaKronecker-all | 0.75 | prefer | 228 | 153 | 75 | 0.671 | 7926 | 0 |
+| Surfboard-tg-mixed | 0.796 | prefer | 107 | 77 | 30 | 0.72 | 5561 | 0 |
+| DeltaKronecker-all | 0.733 | prefer | 148 | 97 | 51 | 0.655 | 7942 | 0 |
 
 ## 建议降权
 
-| 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ninja-vless | 0.14 | downweight | 6 | 0 | 6 | 0.0 | 1791 | 0 |
+无记录。
 
 ## 建议禁用
 
@@ -35,34 +33,34 @@
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | snakem982 | 0.976 | prefer | 36 | 36 | 0 | 1.0 | 61 | 0 |
-| Surfboard-tg-mixed | 0.932 | prefer | 113 | 97 | 16 | 0.858 | 5561 | 0 |
-| DeltaKronecker-all | 0.75 | prefer | 228 | 153 | 75 | 0.671 | 7926 | 0 |
-| mheidari-all | 0.658 | observe | 114 | 66 | 48 | 0.579 | 16374 | 0 |
-| Au1rxx-base64 | 0.482 | observe | 6 | 6 | 0 | 1.0 | 119 | 0 |
-| xiaoji235-airport-v2ray-all | 0.335 | observe | 1 | 1 | 0 | 1.0 | 3836 | 0 |
-| Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 6563 | 0 |
-| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 6467 | 0 |
-| mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 5454 | 0 |
-| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 4885 | 0 |
+| Surfboard-tg-mixed | 0.796 | prefer | 107 | 77 | 30 | 0.72 | 5561 | 0 |
+| DeltaKronecker-all | 0.733 | prefer | 148 | 97 | 51 | 0.655 | 7942 | 0 |
+| mheidari-all | 0.638 | observe | 111 | 62 | 49 | 0.559 | 18314 | 0 |
+| Au1rxx-base64 | 0.404 | observe | 4 | 4 | 0 | 1.0 | 103 | 0 |
+| xiaoji235-airport-v2ray-all | 0.391 | observe | 2 | 2 | 0 | 1.0 | 3836 | 0 |
+| Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 6471 | 0 |
+| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 6406 | 0 |
+| mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 5405 | 0 |
+| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 4826 | 0 |
 | Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 4279 | 0 |
-| MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3978 | 0 |
-| 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | 0 | 0 | None | 3897 | 0 |
+| 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | 0 | 0 | None | 4019 | 0 |
+| MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3972 | 0 |
+| ninja-vless | 0.247 | observe | 0 | 0 | 0 | None | 1791 | 0 |
+| nscl5-all | 0.231 | observe | 0 | 0 | 0 | None | 1412 | 0 |
 | moneyfly1-collectSub | 0.222 | observe | 0 | 0 | 0 | None | 1164 | 0 |
 | 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 498 | 0 |
 | barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 494 | 0 |
-| nscl5-all | 0.184 | observe | 1 | 0 | 1 | 0.0 | 1412 | 0 |
-| MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 199 | 0 |
-| Barabama-yudou | 0.182 | observe | 0 | 0 | 0 | None | 166 | 0 |
+| MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | barabama-yudou66 | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
 | roosterkid-openproxylist-v2ray | 0.181 | observe | 0 | 0 | 0 | None | 150 | 0 |
-| ts-sf-Fly | 0.18 | observe | 0 | 0 | 0 | None | 130 | 0 |
-| ts-sf | 0.18 | observe | 0 | 0 | 0 | None | 129 | 0 |
-| Au1rxx-clash | 0.18 | observe | 0 | 0 | 0 | None | 120 | 0 |
-| mfuu-v2ray | 0.178 | observe | 0 | 0 | 0 | None | 78 | 0 |
+| ts-sf-Fly | 0.18 | observe | 0 | 0 | 0 | None | 131 | 0 |
+| ts-sf | 0.18 | observe | 0 | 0 | 0 | None | 130 | 0 |
+| Au1rxx-clash | 0.179 | observe | 0 | 0 | 0 | None | 104 | 0 |
 | zhangkai | 0.177 | observe | 0 | 0 | 0 | None | 61 | 0 |
-| chromego_merge | 0.177 | observe | 0 | 0 | 0 | None | 49 | 0 |
-| peasoft-NoMoreWalls | 0.176 | observe | 0 | 0 | 0 | None | 30 | 0 |
+| chromego_merge | 0.177 | observe | 0 | 0 | 0 | None | 50 | 0 |
+| mfuu-v2ray | 0.177 | observe | 0 | 0 | 0 | None | 48 | 0 |
+| peasoft-NoMoreWalls | 0.176 | observe | 0 | 0 | 0 | None | 31 | 0 |
 | vxiaov | 0.176 | observe | 0 | 0 | 0 | None | 28 | 0 |
 
 ## 综合后 30

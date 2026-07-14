@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-14 02:56:49",
+  "generated_at": "2026-07-14 08:21:37",
   "ok": true,
   "status": "warning",
   "prefixes": {
@@ -9,36 +9,42 @@
       "missing_files": [],
       "ok": true,
       "files": {
-        "json": 157911,
-        "yaml": 110349,
-        "urls": 42151,
-        "txt": 56200,
+        "json": 145254,
+        "yaml": 101559,
+        "urls": 39416,
+        "txt": 52556,
         "converter.md": 5599
       },
-      "url_count": 300,
-      "txt_url_count": 300,
-      "json_node_count": 300,
-      "yaml_proxy_count": 300,
+      "url_count": 278,
+      "txt_url_count": 278,
+      "json_node_count": 278,
+      "yaml_proxy_count": 278,
       "protocol_dist": {
-        "shadowsocks": 85,
-        "trojan": 172,
-        "vless": 1,
+        "trojan": 148,
+        "shadowsocks": 77,
         "http": 36,
         "vmess": 4,
-        "hysteria2": 2
+        "hysteria2": 3,
+        "vless": 9,
+        "socks": 1
       },
-      "region_group_count": 10,
+      "region_group_count": 15,
       "region_groups": [
         "其他",
+        "🇦🇺 澳大利亚",
+        "🇨🇦 加拿大",
         "🇩🇪 德国",
         "🇪🇸 其他",
         "🇫🇷 法国",
+        "🇬🇧 英国",
         "🇮🇪 其他",
         "🇳🇱 荷兰",
+        "🇷🇺 俄罗斯",
         "🇸🇨 其他",
         "🇸🇬 新加坡",
         "🇹🇷 土耳其",
-        "🇺🇸 美国"
+        "🇺🇸 美国",
+        "🇿🇦 其他"
       ],
       "duplicate_json_tags": [],
       "duplicate_yaml_names": [],
@@ -50,26 +56,26 @@
       "missing_files": [],
       "ok": true,
       "files": {
-        "json": 7499640,
-        "yaml": 7510117,
-        "urls": 4200485,
-        "txt": 5600648,
+        "json": 7349110,
+        "yaml": 7354339,
+        "urls": 4154832,
+        "txt": 5539776,
         "converter.md": 5434
       },
-      "url_count": 23680,
-      "txt_url_count": 23680,
-      "json_node_count": 23680,
-      "yaml_proxy_count": 23680,
+      "url_count": 23657,
+      "txt_url_count": 23657,
+      "json_node_count": 23657,
+      "yaml_proxy_count": 23657,
       "protocol_dist": {
-        "vmess": 3673,
-        "shadowsocks": 3644,
-        "vless": 11100,
+        "vmess": 3678,
+        "shadowsocks": 3637,
+        "vless": 11091,
         "hysteria2": 130,
-        "trojan": 4972,
+        "trojan": 4966,
         "hysteria": 7,
         "tuic": 2,
         "socks": 19,
-        "shadowsocksr": 60,
+        "shadowsocksr": 54,
         "http": 69,
         "anytls": 4
       },
@@ -166,16 +172,16 @@
     }
   },
   "strategy": {
-    "all_json_nodes": 23680,
-    "all_compare_nodes": 23680,
-    "verified_json_nodes": 300,
+    "all_json_nodes": 23657,
+    "all_compare_nodes": 23657,
+    "verified_json_nodes": 278,
     "all_contains_at_least_verified_count": true,
     "note": "all.* 来自去重池；verified.* 来自质量过滤/TCP/真测后的 Top N。light 模式下 all_compare_nodes 使用 all.urls 数量。"
   },
   "stats_summary": {
-    "nodes_raw": 77090,
-    "nodes_dedup": 23680,
-    "nodes_real_ok": 359
+    "nodes_raw": 78847,
+    "nodes_dedup": 23657,
+    "nodes_real_ok": 278
   },
   "rankings": {
     "protocol_best": [
@@ -201,48 +207,62 @@
         "pass_rate": 1.0
       },
       {
-        "name": "shadowsocks",
-        "pass": 104,
-        "fail": 4,
-        "total": 108,
-        "pass_rate": 0.963
+        "name": "trojan",
+        "pass": 148,
+        "fail": 38,
+        "total": 186,
+        "pass_rate": 0.796
       },
       {
-        "name": "trojan",
-        "pass": 191,
-        "fail": 21,
-        "total": 212,
-        "pass_rate": 0.901
+        "name": "shadowsocks",
+        "pass": 77,
+        "fail": 25,
+        "total": 102,
+        "pass_rate": 0.755
+      },
+      {
+        "name": "socks",
+        "pass": 1,
+        "fail": 1,
+        "total": 2,
+        "pass_rate": 0.5
       },
       {
         "name": "vless",
-        "pass": 21,
-        "fail": 121,
-        "total": 142,
-        "pass_rate": 0.148
+        "pass": 9,
+        "fail": 67,
+        "total": 76,
+        "pass_rate": 0.118
       }
     ],
     "protocol_worst": [
       {
         "name": "vless",
-        "pass": 21,
-        "fail": 121,
-        "total": 142,
-        "pass_rate": 0.148
+        "pass": 9,
+        "fail": 67,
+        "total": 76,
+        "pass_rate": 0.118
       },
       {
-        "name": "trojan",
-        "pass": 191,
-        "fail": 21,
-        "total": 212,
-        "pass_rate": 0.901
+        "name": "socks",
+        "pass": 1,
+        "fail": 1,
+        "total": 2,
+        "pass_rate": 0.5
       },
       {
         "name": "shadowsocks",
-        "pass": 104,
-        "fail": 4,
-        "total": 108,
-        "pass_rate": 0.963
+        "pass": 77,
+        "fail": 25,
+        "total": 102,
+        "pass_rate": 0.755
+      },
+      {
+        "name": "trojan",
+        "pass": 148,
+        "fail": 38,
+        "total": 186,
+        "pass_rate": 0.796
       },
       {
         "name": "hysteria2",
@@ -276,48 +296,41 @@
       },
       {
         "name": "Au1rxx-base64",
-        "pass": 6,
+        "pass": 4,
         "fail": 0,
-        "total": 6,
+        "total": 4,
         "pass_rate": 1.0
       },
       {
         "name": "xiaoji235-airport-v2ray-all",
-        "pass": 1,
+        "pass": 2,
         "fail": 0,
-        "total": 1,
+        "total": 2,
         "pass_rate": 1.0
       },
       {
         "name": "Surfboard-tg-mixed",
-        "pass": 97,
-        "fail": 16,
-        "total": 113,
-        "pass_rate": 0.858
+        "pass": 77,
+        "fail": 30,
+        "total": 107,
+        "pass_rate": 0.72
       },
       {
         "name": "DeltaKronecker-all",
-        "pass": 153,
-        "fail": 75,
-        "total": 228,
-        "pass_rate": 0.671
+        "pass": 97,
+        "fail": 51,
+        "total": 148,
+        "pass_rate": 0.655
       },
       {
         "name": "mheidari-all",
-        "pass": 66,
-        "fail": 48,
-        "total": 114,
-        "pass_rate": 0.579
+        "pass": 62,
+        "fail": 49,
+        "total": 111,
+        "pass_rate": 0.559
       },
       {
-        "name": "ninja-vless",
-        "pass": 0,
-        "fail": 6,
-        "total": 6,
-        "pass_rate": 0.0
-      },
-      {
-        "name": "nscl5-all",
+        "name": "Barabama-yudou",
         "pass": 0,
         "fail": 1,
         "total": 1,
@@ -326,52 +339,45 @@
     ],
     "source_worst": [
       {
-        "name": "nscl5-all",
+        "name": "Barabama-yudou",
         "pass": 0,
         "fail": 1,
         "total": 1,
         "pass_rate": 0.0
       },
       {
-        "name": "ninja-vless",
-        "pass": 0,
-        "fail": 6,
-        "total": 6,
-        "pass_rate": 0.0
-      },
-      {
         "name": "mheidari-all",
-        "pass": 66,
-        "fail": 48,
-        "total": 114,
-        "pass_rate": 0.579
+        "pass": 62,
+        "fail": 49,
+        "total": 111,
+        "pass_rate": 0.559
       },
       {
         "name": "DeltaKronecker-all",
-        "pass": 153,
-        "fail": 75,
-        "total": 228,
-        "pass_rate": 0.671
+        "pass": 97,
+        "fail": 51,
+        "total": 148,
+        "pass_rate": 0.655
       },
       {
         "name": "Surfboard-tg-mixed",
-        "pass": 97,
-        "fail": 16,
-        "total": 113,
-        "pass_rate": 0.858
+        "pass": 77,
+        "fail": 30,
+        "total": 107,
+        "pass_rate": 0.72
       },
       {
         "name": "xiaoji235-airport-v2ray-all",
-        "pass": 1,
+        "pass": 2,
         "fail": 0,
-        "total": 1,
+        "total": 2,
         "pass_rate": 1.0
       },
       {
         "name": "Au1rxx-base64",
-        "pass": 6,
+        "pass": 4,
         "fail": 0,
-        "total": 6,
+        "total": 4,
         "pass_rate": 1.0
       },
       {
@@ -396,60 +402,60 @@
         "name": "snakem982"
       },
       {
-        "score": 0.932,
-        "pass_rate": 0.858,
-        "smoothed_pass_rate": 0.852,
-        "pass": 97,
-        "fail": 16,
-        "tested": 113,
+        "score": 0.796,
+        "pass_rate": 0.72,
+        "smoothed_pass_rate": 0.716,
+        "pass": 77,
+        "fail": 30,
+        "tested": 107,
         "parsed_nodes": 5561,
         "consecutive_dead": 0,
         "recommendation": "prefer",
         "name": "Surfboard-tg-mixed"
       },
       {
-        "score": 0.75,
-        "pass_rate": 0.671,
-        "smoothed_pass_rate": 0.67,
-        "pass": 153,
-        "fail": 75,
-        "tested": 228,
-        "parsed_nodes": 7926,
+        "score": 0.733,
+        "pass_rate": 0.655,
+        "smoothed_pass_rate": 0.653,
+        "pass": 97,
+        "fail": 51,
+        "tested": 148,
+        "parsed_nodes": 7942,
         "consecutive_dead": 0,
         "recommendation": "prefer",
         "name": "DeltaKronecker-all"
       },
       {
-        "score": 0.658,
-        "pass_rate": 0.579,
-        "smoothed_pass_rate": 0.578,
-        "pass": 66,
-        "fail": 48,
-        "tested": 114,
-        "parsed_nodes": 16374,
+        "score": 0.638,
+        "pass_rate": 0.559,
+        "smoothed_pass_rate": 0.558,
+        "pass": 62,
+        "fail": 49,
+        "tested": 111,
+        "parsed_nodes": 18314,
         "consecutive_dead": 0,
         "recommendation": "observe",
         "name": "mheidari-all"
       },
       {
-        "score": 0.482,
+        "score": 0.404,
         "pass_rate": 1.0,
-        "smoothed_pass_rate": 0.875,
-        "pass": 6,
+        "smoothed_pass_rate": 0.833,
+        "pass": 4,
         "fail": 0,
-        "tested": 6,
-        "parsed_nodes": 119,
+        "tested": 4,
+        "parsed_nodes": 103,
         "consecutive_dead": 0,
         "recommendation": "observe",
         "name": "Au1rxx-base64"
       },
       {
-        "score": 0.335,
+        "score": 0.391,
         "pass_rate": 1.0,
-        "smoothed_pass_rate": 0.667,
-        "pass": 1,
+        "smoothed_pass_rate": 0.75,
+        "pass": 2,
         "fail": 0,
-        "tested": 1,
+        "tested": 2,
         "parsed_nodes": 3836,
         "consecutive_dead": 0,
         "recommendation": "observe",
@@ -462,7 +468,7 @@
         "pass": 0,
         "fail": 0,
         "tested": 0,
-        "parsed_nodes": 3897,
+        "parsed_nodes": 4019,
         "consecutive_dead": 0,
         "recommendation": "observe",
         "name": "10ium-ScrapeCategorize-Vless"
@@ -474,7 +480,7 @@
         "pass": 0,
         "fail": 0,
         "tested": 0,
-        "parsed_nodes": 6563,
+        "parsed_nodes": 6471,
         "consecutive_dead": 0,
         "recommendation": "observe",
         "name": "Epodonios-all"
@@ -486,7 +492,7 @@
         "pass": 0,
         "fail": 0,
         "tested": 0,
-        "parsed_nodes": 3978,
+        "parsed_nodes": 3972,
         "consecutive_dead": 0,
         "recommendation": "observe",
         "name": "MatinGhanbari-all-sub"
@@ -498,7 +504,7 @@
         "pass": 0,
         "fail": 0,
         "tested": 0,
-        "parsed_nodes": 6467,
+        "parsed_nodes": 6406,
         "consecutive_dead": 0,
         "recommendation": "observe",
         "name": "SoliSpirit-all"
@@ -628,7 +634,7 @@
     ]
   },
   "source_cleanup": {
-    "dead_2_plus_count": 5,
+    "dead_2_plus_count": 63,
     "dead_2_plus": [
       {
         "url": "https://t.me/s/ShadowsocksM",
@@ -637,9 +643,163 @@
         "ok": false,
         "nodes": 0,
         "bytes": 0,
-        "duration": 2.33,
+        "duration": 2.77,
         "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
-        "consecutive_dead": 55
+        "consecutive_dead": 56
+      },
+      {
+        "url": "https://t.me/s/LonUp_M",
+        "name": "tg-LonUp_M",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/oneclickvpnkeys",
+        "name": "tg-oneclickvpnkeys",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/V2RAYProxy",
+        "name": "tg-V2RAYProxy",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/configfa",
+        "name": "tg-configfa",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/Outline_Vpn",
+        "name": "tg-Outline_Vpn",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/tv2rayrr",
+        "name": "tg-tv2rayrr",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/prrofile_purple",
+        "name": "tg-prrofile_purple",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/proxy_mtm",
+        "name": "tg-proxy_mtm",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/Hope_Net",
+        "name": "tg-Hope_Net",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.69,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/V2ray_Alpha",
+        "name": "tg-V2ray_Alpha",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.67,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/fastkanfig",
+        "name": "tg-fastkanfig",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.26,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/ViProxys",
+        "name": "tg-ViProxys",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.26,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/v2Source",
+        "name": "tg-v2Source",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.26,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/Letiranbreath",
+        "name": "tg-Letiranbreath",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.26,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
       },
       {
         "url": "https://t.me/s/An0nymousTeam",
@@ -648,9 +808,75 @@
         "ok": false,
         "nodes": 0,
         "bytes": 0,
-        "duration": 2.2,
+        "duration": 2.26,
         "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
-        "consecutive_dead": 45
+        "consecutive_dead": 46
+      },
+      {
+        "url": "https://t.me/s/golestan_vpn",
+        "name": "tg-golestan_vpn",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.26,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/v2raybaz",
+        "name": "tg-v2raybaz",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.65,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/DarkVPNpro",
+        "name": "tg-DarkVPNpro",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.65,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/FreeV2rays",
+        "name": "tg-FreeV2rays",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.65,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/v2ray_free_conf",
+        "name": "tg-v2ray_free_conf",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.53,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/Free_Vpn_for_All_of_Us",
+        "name": "tg-Free_Vpn_for_All_of_Us",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.53,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
       },
       {
         "url": "https://t.me/s/V2rayngVpn",
@@ -659,9 +885,273 @@
         "ok": false,
         "nodes": 0,
         "bytes": 0,
-        "duration": 1.77,
+        "duration": 2.53,
         "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
-        "consecutive_dead": 102
+        "consecutive_dead": 103
+      },
+      {
+        "url": "https://t.me/s/V2SayFree",
+        "name": "tg-V2SayFree",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.06,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/shadowproxy66",
+        "name": "tg-shadowproxy66",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.06,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/v2nodes",
+        "name": "tg-v2nodes",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 2.06,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/OutlineReleasedKey",
+        "name": "tg-OutlineReleasedKey",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/vaddress",
+        "name": "tg-vaddress",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/Farah_VPN",
+        "name": "tg-Farah_VPN",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/v2rayng_channel",
+        "name": "tg-v2rayng_channel",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/vpnstorefast",
+        "name": "tg-vpnstorefast",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/CryptoGuardVPN",
+        "name": "tg-CryptoGuardVPN",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/VlessConfig",
+        "name": "tg-VlessConfig",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/V2rayNG_Outlinee",
+        "name": "tg-V2rayNG_Outlinee",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/ConfigV2rayNG",
+        "name": "tg-ConfigV2rayNG",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/SafeNet_Server",
+        "name": "tg-SafeNet_Server",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/vpnaloo",
+        "name": "tg-vpnaloo",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/CaV2ray",
+        "name": "tg-CaV2ray",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/V2RayRootFree",
+        "name": "tg-V2RayRootFree",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/abc_configs",
+        "name": "tg-abc_configs",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/ConfigWireguard",
+        "name": "tg-ConfigWireguard",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/freedomofinfor",
+        "name": "tg-freedomofinfor",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/vpnfail_vless",
+        "name": "tg-vpnfail_vless",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/DirectVPN",
+        "name": "tg-DirectVPN",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/PrivateVPNs",
+        "name": "tg-PrivateVPNs",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.68,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/BESTFORBEST66",
+        "name": "tg-BESTFORBEST66",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/ISVvpn",
+        "name": "tg-ISVvpn",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
       },
       {
         "url": "https://t.me/s/proxy_kafee",
@@ -670,7 +1160,106 @@
         "ok": false,
         "nodes": 0,
         "bytes": 0,
-        "duration": 1.54,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 3
+      },
+      {
+        "url": "https://t.me/s/VmessProtocol",
+        "name": "tg-VmessProtocol",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/v2raying",
+        "name": "tg-v2raying",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/Parsashonam",
+        "name": "tg-Parsashonam",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/mehduox_vpn",
+        "name": "tg-mehduox_vpn",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/v2rayfree",
+        "name": "tg-v2rayfree",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/xroVPN",
+        "name": "tg-xroVPN",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/freeiranianv2rey",
+        "name": "tg-freeiranianv2rey",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/ArV2ray",
+        "name": "tg-ArV2ray",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/proSSH",
+        "name": "tg-proSSH",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
         "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
         "consecutive_dead": 2
       },
@@ -681,49 +1270,92 @@
         "ok": false,
         "nodes": 0,
         "bytes": 0,
-        "duration": 1.56,
+        "duration": 1.53,
         "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
-        "consecutive_dead": 106
+        "consecutive_dead": 107
+      },
+      {
+        "url": "https://t.me/s/Ahmedhamoomi_Servers",
+        "name": "tg-Ahmedhamoomi_Servers",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/GrizzlyVPN",
+        "name": "tg-GrizzlyVPN",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/freevpnconfigso",
+        "name": "tg-freevpnconfigso",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/ernoxin_shop",
+        "name": "tg-ernoxin_shop",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
+      },
+      {
+        "url": "https://t.me/s/redfree8",
+        "name": "tg-redfree8",
+        "dynamic": false,
+        "ok": false,
+        "nodes": 0,
+        "bytes": 0,
+        "duration": 1.6,
+        "error": "Cannot connect to host t.me:443 ssl:default [Name or service not known]",
+        "consecutive_dead": 2
       }
     ],
     "suggestion_summary": {
       "disable": 0,
-      "downweight": 1,
+      "downweight": 0,
       "prefer": 3,
-      "observe": 103
+      "observe": 104
     },
     "disable_count": 0,
-    "downweight_count": 1,
+    "downweight_count": 0,
     "prefer_count": 3,
-    "observe_count": 103,
+    "observe_count": 104,
     "disable_suggestions": [],
-    "downweight_suggestions": [
-      {
-        "name": "ninja-vless",
-        "url": "https://raw.githubusercontent.com/ninjastrikers/v2ray-configs/main/splitted/vless.txt",
-        "score": 0.14,
-        "recommendation": "downweight",
-        "tested": 6,
-        "pass_rate": 0.0,
-        "parsed_nodes": 1791,
-        "consecutive_dead": 0,
-        "reason": "已测数量 >= 5 且评分偏低"
-      }
-    ]
+    "downweight_suggestions": []
   },
   "alerts": {
     "low_pass_protocols": [],
     "real_test_errors": {
-      "speed": 51,
-      "geo": 87,
-      "cn-block": 5,
-      "204": 3
+      "speed": 32,
+      "geo": 60,
+      "204": 25,
+      "cn-block": 14
     },
     "tcp_errors": {
-      "ConnectionRefusedError": 637,
-      "gaierror": 264,
+      "gaierror": 311,
+      "ConnectionRefusedError": 639,
       "OSError": 196,
-      "TimeoutError": 4345
+      "TimeoutError": 4106
     },
     "source_disable_candidates": [],
     "source_cleanup_disable_suggestions": []
