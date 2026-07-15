@@ -5,41 +5,41 @@
 | 指标 | 数值 |
 | --- | --- |
 | 版本 | 2.4.0 |
-| 更新时间 | 2026-07-15 02:55:28 |
-| 运行耗时 | 195.1s |
+| 更新时间 | 2026-07-15 08:27:05 |
+| 运行耗时 | 207.6s |
 | 订阅源总数 | 107 |
-| 健康订阅源 | 103 |
-| 原始节点 | 76515 |
-| 去重后节点 | 23743 |
+| 健康订阅源 | 104 |
+| 原始节点 | 75676 |
+| 去重后节点 | 22853 |
 | TCP 可达 | 3000 |
-| 真实可用 | 285 |
-| Verified 输出 | 285 |
-| Global 输出 | 293 |
-| All 输出 | 23743 |
+| 真实可用 | 292 |
+| Verified 输出 | 292 |
+| Global 输出 | 300 |
+| All 输出 | 22853 |
 
 ## 阶段耗时
 
 | 阶段 | 秒 |
 | --- | --- |
-| fetch | 4.7 |
-| geo | 1.5 |
-| tcp | 33.2 |
-| probe | 43.2 |
-| real_test | 82.5 |
-| generate | 30.2 |
+| fetch | 4.2 |
+| geo | 1.6 |
+| tcp | 31.7 |
+| probe | 43.4 |
+| real_test | 87.7 |
+| generate | 39.0 |
 
 ## 协议分布
 
 | 协议 | 数量 |
 | --- | --- |
-| vless | 43611 |
-| trojan | 11286 |
-| vmess | 11134 |
-| shadowsocks | 9817 |
-| hysteria2 | 349 |
-| http | 137 |
-| shadowsocksr | 131 |
-| socks | 32 |
+| vless | 42346 |
+| trojan | 11672 |
+| vmess | 11121 |
+| shadowsocks | 9883 |
+| hysteria2 | 343 |
+| http | 138 |
+| shadowsocksr | 124 |
+| socks | 31 |
 | hysteria | 10 |
 | anytls | 5 |
 | tuic | 3 |
@@ -60,68 +60,68 @@
 
 | 评分 | 协议 | 延迟(ms) | 抖动(ms) | 延迟分 | 抖动分 | TCP分 | 协议历史分 | 来源历史分 | 来源 | 服务器 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 72.26 | trojan | 285.8 | 444.0 | 21.16 | 0.0 | 10.0 | 11.34 | 15.44 | DeltaKronecker-all | 104.16.100.215 |
-| 69.1 | hysteria2 | 192.5 | 495.9 | 23.32 | 0.0 | 10.0 | 12.0 | 9.88 | Au1rxx-base64 | 38.148.249.252 |
-| 68.48 | trojan | 330.2 | 361.6 | 20.13 | 1.44 | 10.0 | 11.34 | 15.44 | DeltaKronecker-all | 104.16.99.215 |
-| 68.24 | trojan | 292.9 | 634.6 | 21.0 | 0.0 | 10.0 | 11.34 | 15.44 | DeltaKronecker-all | 64.94.95.117 |
-| 68.14 | trojan | 346.2 | 346.1 | 19.76 | 2.02 | 9.89 | 11.34 | 15.44 | DeltaKronecker-all | 52.68.90.114 |
-| 68.05 | trojan | 287.3 | 636.7 | 21.13 | 0.0 | 10.0 | 11.34 | 15.44 | DeltaKronecker-all | 64.94.95.115 |
-| 67.81 | trojan | 351.7 | 357.3 | 19.64 | 1.6 | 9.87 | 11.34 | 15.44 | DeltaKronecker-all | 18.179.120.96 |
-| 66.59 | trojan | 343.6 | 602.6 | 19.82 | 0.0 | 10.0 | 11.34 | 15.44 | DeltaKronecker-all | 5.10.215.9 |
-| 66.07 | trojan | 283.9 | 627.1 | 21.21 | 0.0 | 10.0 | 11.34 | 15.44 | DeltaKronecker-all | 64.94.95.114 |
-| 65.93 | trojan | 367.5 | 407.3 | 19.27 | 0.0 | 9.9 | 11.34 | 15.44 | DeltaKronecker-all | 52.194.192.245 |
-| 65.86 | trojan | 369.2 | 413.0 | 19.23 | 0.0 | 9.89 | 11.34 | 15.44 | DeltaKronecker-all | 43.207.192.70 |
-| 65.48 | trojan | 375.1 | 894.8 | 19.09 | 0.0 | 10.0 | 11.34 | 13.06 | mheidari-all | 64.94.95.118 |
-| 64.61 | vmess | 425.5 | 939.5 | 17.93 | 0.0 | 10.0 | 13.12 | 13.3 | Surfboard-tg-mixed | 67.220.95.3 |
-| 64.33 | vless | 296.3 | 745.1 | 20.92 | 0.0 | 10.0 | 3.56 | 15.44 | DeltaKronecker-all | 129.146.65.178 |
-| 64.2 | trojan | 490.2 | 679.8 | 16.43 | 0.0 | 10.0 | 11.34 | 13.3 | Surfboard-tg-mixed | 162.159.38.62 |
-| 62.68 | trojan | 431.0 | 447.2 | 17.8 | 0.0 | 10.0 | 11.34 | 13.3 | Surfboard-tg-mixed | 199.232.78.140 |
-| 62.54 | vmess | 504.1 | 1163.9 | 16.11 | 0.0 | 10.0 | 13.12 | 13.3 | Surfboard-tg-mixed | 67.220.85.46 |
-| 62.22 | vless | 262.1 | 581.9 | 21.71 | 0.0 | 10.0 | 3.56 | 15.44 | DeltaKronecker-all | 172.64.53.219 |
-| 62.16 | vless | 318.3 | 428.9 | 20.41 | 0.0 | 10.0 | 3.56 | 15.44 | DeltaKronecker-all | 162.159.45.241 |
-| 61.52 | shadowsocks | 381.2 | 288.4 | 18.95 | 4.18 | 9.36 | 11.25 | 15.44 | DeltaKronecker-all | 103.149.182.105 |
+| 75.77 | shadowsocks | 253.1 | 623.5 | 21.92 | 0.0 | 10.0 | 13.03 | 14.82 | mheidari-all | 198.98.53.130 |
+| 74.1 | vmess | 337.0 | 896.8 | 19.98 | 0.0 | 10.0 | 12.5 | 16.12 | Surfboard-tg-mixed | 67.220.95.3 |
+| 72.68 | shadowsocks | 310.4 | 804.1 | 20.59 | 0.0 | 10.0 | 13.03 | 14.82 | mheidari-all | 108.181.57.93 |
+| 71.41 | trojan | 287.2 | 700.5 | 21.13 | 0.0 | 10.0 | 14.08 | 9.2 | DeltaKronecker-all | 64.94.95.115 |
+| 69.74 | trojan | 308.5 | 656.9 | 20.64 | 0.0 | 10.0 | 14.08 | 16.12 | Surfboard-tg-mixed | 172.64.145.202 |
+| 69.12 | trojan | 284.6 | 680.4 | 21.19 | 0.0 | 10.0 | 14.08 | 9.2 | DeltaKronecker-all | 64.94.95.114 |
+| 68.18 | trojan | 392.2 | 986.1 | 18.7 | 0.0 | 10.0 | 14.08 | 9.2 | DeltaKronecker-all | 64.94.95.117 |
+| 67.8 | vmess | 552.7 | 1509.0 | 14.98 | 0.0 | 10.0 | 12.5 | 14.82 | mheidari-all | 67.220.85.46 |
+| 67.41 | trojan | 431.0 | 638.0 | 17.8 | 0.0 | 10.0 | 14.08 | 16.12 | Surfboard-tg-mixed | 104.17.151.126 |
+| 67.39 | trojan | 522.6 | 844.0 | 15.68 | 0.0 | 10.0 | 14.08 | 16.12 | Surfboard-tg-mixed | 104.18.152.219 |
+| 67.33 | trojan | 515.6 | 841.2 | 15.84 | 0.0 | 10.0 | 14.08 | 16.12 | Surfboard-tg-mixed | 104.16.174.12 |
+| 66.73 | trojan | 540.4 | 867.6 | 15.27 | 0.0 | 10.0 | 14.08 | 16.12 | Surfboard-tg-mixed | 104.16.174.117 |
+| 66.7 | trojan | 704.5 | 1931.9 | 11.47 | 0.0 | 10.0 | 14.08 | 14.82 | mheidari-all | 64.94.95.118 |
+| 66.64 | trojan | 499.2 | 804.6 | 16.22 | 0.0 | 10.0 | 14.08 | 14.82 | mheidari-all | 45.130.125.158 |
+| 66.53 | shadowsocks | 387.7 | 1018.5 | 18.8 | 0.0 | 10.0 | 13.03 | 9.2 | DeltaKronecker-all | 185.196.61.82 |
+| 66.46 | trojan | 528.3 | 912.7 | 15.55 | 0.0 | 10.0 | 14.08 | 16.12 | Surfboard-tg-mixed | 172.64.147.227 |
+| 66.26 | shadowsocks | 420.7 | 747.6 | 18.04 | 0.0 | 10.0 | 13.03 | 16.12 | Surfboard-tg-mixed | 158.173.24.73 |
+| 66.18 | trojan | 505.1 | 829.9 | 16.09 | 0.0 | 10.0 | 14.08 | 14.82 | mheidari-all | 104.18.152.97 |
+| 65.68 | trojan | 541.8 | 758.0 | 15.24 | 0.0 | 10.0 | 14.08 | 14.82 | mheidari-all | 216.24.57.7 |
+| 65.54 | trojan | 551.3 | 759.8 | 15.02 | 0.0 | 10.0 | 14.08 | 14.82 | mheidari-all | 104.16.174.37 |
 
 ## 来源质量排行
 
 | 来源 | 评分 | 通过率 | 测试数 | 解析节点 | 建议 |
 | --- | --- | --- | --- | --- | --- |
 | snakem982 | 0.976 | 1.0 | 36 | 61 | prefer |
-| Surfboard-tg-mixed | 0.806 | 0.732 | 82 | 5500 | prefer |
-| mheidari-all | 0.741 | 0.664 | 110 | 18109 | prefer |
-| DeltaKronecker-all | 0.46 | 0.379 | 298 | 6421 | observe |
+| mheidari-all | 0.818 | 0.743 | 101 | 16158 | prefer |
+| DeltaKronecker-all | 0.721 | 0.643 | 140 | 6421 | prefer |
+| Surfboard-tg-mixed | 0.627 | 0.547 | 159 | 5640 | observe |
+| 10ium-ScrapeCategorize-Vless | 0.335 | 1.0 | 1 | 3759 | observe |
 | Au1rxx-base64 | 0.317 | 1.0 | 2 | 149 | observe |
-| nscl5-all | 0.26 | 0.5 | 2 | 1300 | observe |
-| 10ium-ScrapeCategorize-Vless | 0.255 | None | 0 | 4019 | observe |
-| Epodonios-all | 0.255 | None | 0 | 6322 | observe |
-| MatinGhanbari-all-sub | 0.255 | None | 0 | 3968 | observe |
-| SoliSpirit-all | 0.255 | None | 0 | 6061 | observe |
-| Surfboard-tg-vless | 0.255 | None | 0 | 4205 | observe |
-| barry-far-vless | 0.255 | None | 0 | 4653 | observe |
+| Epodonios-all | 0.255 | None | 0 | 6608 | observe |
+| MatinGhanbari-all-sub | 0.255 | None | 0 | 3975 | observe |
+| SoliSpirit-all | 0.255 | None | 0 | 6437 | observe |
+| Surfboard-tg-vless | 0.255 | None | 0 | 4320 | observe |
+| barry-far-vless | 0.255 | None | 0 | 4712 | observe |
 | mahdibland-V2RayAggregator | 0.255 | None | 0 | 5187 | observe |
 | xiaoji235-airport-v2ray-all | 0.245 | None | 0 | 1741 | observe |
+| nscl5-all | 0.231 | 0.333 | 3 | 1300 | observe |
 | moneyfly1-collectSub | 0.222 | None | 0 | 1164 | observe |
 
 ## 真实测试失败原因
 
 | 目标 | 原因 | 状态/值 | 数量 |
 | --- | --- | --- | --- |
-| speed | ClientOSError | - | 134 |
-| geo | TimeoutError | - | 57 |
-| geo | ClientOSError | - | 36 |
-| speed | TimeoutError | - | 6 |
-| cn-block | TimeoutError | - | 5 |
-| 204 | ClientOSError | - | 3 |
-| cn-block | ProxyError | - | 2 |
-| cn-block | ClientOSError | - | 2 |
-| 204 | ProxyError | - | 1 |
-| 204 | TimeoutError | - | 1 |
+| geo | TimeoutError | - | 65 |
+| speed | ClientOSError | - | 46 |
+| 204 | TimeoutError | - | 12 |
+| cn-block | TimeoutError | - | 11 |
+| geo | ClientOSError | - | 6 |
+| speed | TimeoutError | - | 5 |
+| cn-block | ClientOSError | - | 4 |
+| 204 | ProxyError | - | 2 |
+| cn-block | ProxyError | - | 1 |
+| geo | ProxyError | - | 1 |
 
 ## 输出保护
 
 | 前缀 | 是否保留旧输出 | 上一轮数量 | 本轮建议数量 | 保护比例 |
 | --- | --- | --- | --- | --- |
-| verified | False | 165 | 285 | - |
-| global | False | 173 | 293 | - |
+| verified | False | 285 | 292 | - |
+| global | False | 293 | 300 | - |
 
 ---
 
