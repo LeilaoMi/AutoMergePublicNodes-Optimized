@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-08-02 03:33:45
+生成时间：2026-08-02 08:35:47
 
 ## 摘要
 
@@ -8,23 +8,22 @@
 | --- | --- |
 | 已评分订阅源总数 | 107 |
 | 建议优先 | 2 |
-| 继续观察 | 103 |
-| 建议降权 | 2 |
+| 继续观察 | 104 |
+| 建议降权 | 1 |
 | 建议禁用 | 0 |
 
 ## 建议优先
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| zhangkai | 1.0 | prefer | 147 | 147 | 0 | 1.0 | 194 | 0 |
-| Au1rxx-base64 | 0.948 | prefer | 501 | 444 | 57 | 0.886 | 1590 | 0 |
+| zhangkai | 0.996 | prefer | 219 | 216 | 3 | 0.986 | 344 | 0 |
+| Au1rxx-base64 | 0.802 | prefer | 524 | 387 | 137 | 0.739 | 1604 | 0 |
 
 ## 建议降权
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ninja-vless | 0.136 | downweight | 7 | 0 | 7 | 0.0 | 1791 | 0 |
-| DeltaKronecker-all | 0.237 | downweight | 430 | 67 | 363 | 0.156 | 5497 | 0 |
+| mheidari-all | 0.208 | downweight | 7 | 1 | 6 | 0.143 | 16553 | 0 |
 
 ## 建议禁用
 
@@ -34,36 +33,36 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| zhangkai | 1.0 | prefer | 147 | 147 | 0 | 1.0 | 194 | 0 |
-| Au1rxx-base64 | 0.948 | prefer | 501 | 444 | 57 | 0.886 | 1590 | 0 |
-| Surfboard-tg-mixed | 0.647 | observe | 118 | 67 | 51 | 0.568 | 5146 | 0 |
-| nscl5-all | 0.262 | observe | 2 | 1 | 1 | 0.5 | 1354 | 0 |
-| Barabama-yudou | 0.262 | observe | 1 | 1 | 0 | 1.0 | 166 | 0 |
+| zhangkai | 0.996 | prefer | 219 | 216 | 3 | 0.986 | 344 | 0 |
+| Au1rxx-base64 | 0.802 | prefer | 524 | 387 | 137 | 0.739 | 1604 | 0 |
+| Surfboard-tg-mixed | 0.678 | observe | 115 | 69 | 46 | 0.6 | 5167 | 0 |
+| DeltaKronecker-all | 0.48 | observe | 43 | 17 | 26 | 0.395 | 4549 | 0 |
+| Epodonios-all | 0.335 | observe | 1 | 1 | 0 | 1.0 | 5764 | 0 |
+| xiaoji235-airport-v2ray-all | 0.329 | observe | 1 | 1 | 0 | 1.0 | 1861 | 0 |
+| roosterkid-openproxylist-v2ray | 0.261 | observe | 1 | 1 | 0 | 1.0 | 150 | 0 |
+| chromego_merge | 0.258 | observe | 1 | 1 | 0 | 1.0 | 70 | 0 |
 | tg-OutlineReleasedKey | 0.257 | observe | 1 | 1 | 0 | 1.0 | 57 | 0 |
-| mheidari-all | 0.255 | observe | 9 | 2 | 7 | 0.222 | 16695 | 0 |
-| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 6873 | 0 |
-| Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 5783 | 0 |
+| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 6688 | 0 |
 | mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 5071 | 0 |
-| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 4431 | 0 |
-| Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 4069 | 0 |
-| MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3973 | 0 |
-| Au1rxx-clash | 0.239 | observe | 0 | 0 | 0 | None | 1590 | 0 |
-| DeltaKronecker-all | 0.237 | downweight | 430 | 67 | 363 | 0.156 | 5497 | 0 |
+| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 4406 | 0 |
+| Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 3990 | 0 |
+| MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3969 | 0 |
+| Au1rxx-clash | 0.239 | observe | 0 | 0 | 0 | None | 1604 | 0 |
 | moneyfly1-collectSub | 0.222 | observe | 0 | 0 | 0 | None | 1164 | 0 |
 | 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
-| 10ium-ScrapeCategorize-Vless | 0.207 | observe | 1 | 0 | 1 | 0.0 | 5391 | 0 |
-| xiaoji235-airport-v2ray-all | 0.202 | observe | 1 | 0 | 1 | 0.0 | 1861 | 0 |
+| mheidari-all | 0.208 | downweight | 7 | 1 | 6 | 0.143 | 16553 | 0 |
+| 10ium-ScrapeCategorize-Vless | 0.207 | observe | 1 | 0 | 1 | 0.0 | 5486 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 494 | 0 |
-| barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 489 | 0 |
+| barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 492 | 0 |
 | ts-sf-Fly | 0.183 | observe | 0 | 0 | 0 | None | 201 | 0 |
 | MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-ConfigV2rayNG | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-Farah_VPN | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | ts-sf | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
-| tg-LonUp_M | 0.182 | observe | 0 | 0 | 0 | None | 180 | 0 |
-| tg-oneclickvpnkeys | 0.182 | observe | 0 | 0 | 0 | None | 165 | 0 |
+| nscl5-all | 0.182 | observe | 1 | 0 | 1 | 0.0 | 1354 | 0 |
+| tg-LonUp_M | 0.182 | observe | 0 | 0 | 0 | None | 177 | 0 |
+| tg-oneclickvpnkeys | 0.182 | observe | 0 | 0 | 0 | None | 167 | 0 |
 | barabama-yudou66 | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
-| tg-proxy_mtm | 0.181 | observe | 0 | 0 | 0 | None | 160 | 0 |
 
 ## 综合后 30
 
@@ -75,8 +74,8 @@
 | tg-Letiranbreath | 0.025 | observe | 0 | 0 | 0 | None | 0 | 1 |
 | tg-V2rayngVpn | 0.025 | observe | 0 | 0 | 0 | None | 0 | 1 |
 | tg-shadowproxy66 | 0.025 | observe | 0 | 0 | 0 | None | 0 | 1 |
+| Barabama-yudou | 0.134 | observe | 1 | 0 | 1 | 0.0 | 166 | 0 |
 | tg-V2RAYProxy | 0.136 | observe | 1 | 0 | 1 | 0.0 | 217 | 0 |
-| ninja-vless | 0.136 | downweight | 7 | 0 | 7 | 0.0 | 1791 | 0 |
 | ninja-tuic | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | tg-GrizzlyVPN | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | tg-Ahmedhamoomi_Servers | 0.175 | observe | 0 | 0 | 0 | None | 2 | 0 |
@@ -97,8 +96,8 @@
 | tg-DarkVPNpro | 0.175 | observe | 0 | 0 | 0 | None | 11 | 0 |
 | tg-CaV2ray | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
 | tg-vpnfail_vless | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
+| ninja-vless | 0.175 | observe | 2 | 0 | 2 | 0.0 | 1791 | 0 |
 | tg-V2RayRootFree | 0.176 | observe | 0 | 0 | 0 | None | 13 | 0 |
-| tg-VmessProtocol | 0.176 | observe | 0 | 0 | 0 | None | 13 | 0 |
 
 ## 说明
 
