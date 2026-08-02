@@ -319,17 +319,17 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-08-01 19:21:55 |
+| 更新时间 | 2026-08-02 03:33:44 |
 | 版本 | 2.4.0 |
 | 订阅源 | 101/107 |
-| 原始节点 | 78665 |
-| 去重后 | 23513 |
+| 原始节点 | 78379 |
+| 去重后 | 23363 |
 | TCP 可达 | 3000 |
-| 真实可用 | 590 |
-| 真测通过率 | 19.7% |
+| 真实可用 | 730 |
+| 真测通过率 | 24.3% |
 | Verified 输出 | 300 |
 | Global 输出 | 300 |
-| All 输出 | 23513 |
+| All 输出 | 23363 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -337,21 +337,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 84.21 | http | 231.1 | zhangkai |
-| 83.98 | http | 240.8 | zhangkai |
-| 83.93 | http | 243.1 | zhangkai |
-| 83.8 | http | 248.6 | zhangkai |
-| 83.63 | http | 256.2 | zhangkai |
+| 80.41 | http | 311.4 | zhangkai |
+| 79.28 | http | 316.7 | zhangkai |
+| 79.25 | http | 315.7 | zhangkai |
+| 79.09 | http | 280.7 | zhangkai |
+| 78.95 | http | 281.0 | zhangkai |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| zhangkai | 1.0 | 148 | prefer |
-| Au1rxx-base64 | 0.766 | 502 | prefer |
-| Surfboard-tg-mixed | 0.638 | 75 | observe |
-| DeltaKronecker-all | 0.514 | 104 | observe |
-| mheidari-all | 0.4 | 4 | observe |
+| zhangkai | 1.0 | 147 | prefer |
+| Au1rxx-base64 | 0.948 | 501 | prefer |
+| Surfboard-tg-mixed | 0.647 | 118 | observe |
+| Barabama-yudou | 0.262 | 1 | observe |
+| nscl5-all | 0.262 | 2 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
