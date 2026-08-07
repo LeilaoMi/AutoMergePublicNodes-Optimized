@@ -1,6 +1,6 @@
 # AutoNodes 每日报告
 
-生成时间：2026-08-07 13:19:26
+生成时间：2026-08-07 19:08:29
 
 ## 摘要
 
@@ -11,76 +11,78 @@
 | 健康源数量 | 100/107 |
 | 清理建议：禁用/降权 | 0/0 |
 | 清理建议：优先/观察 | 2/105 |
-| 原始节点数 | 82701 |
-| 去重后节点数 | 23372 |
+| 原始节点数 | 82638 |
+| 去重后节点数 | 23519 |
 | TCP 可达数 | 3000 |
-| 真测通过数 | 468 |
+| 真测通过数 | 455 |
 | verified 输出数 | 300 |
 | global 输出数 | 300 |
-| all 输出数 | 23372 |
+| all 输出数 | 23519 |
 | all 输出模式 | full |
 
 ## 阶段耗时
 
 | 阶段 | 秒 |
 | --- | --- |
-| fetch | 5.5 |
-| generate | 39.5 |
+| fetch | 5.9 |
+| generate | 36.5 |
 | geo | 1.4 |
-| probe | 48.4 |
-| real_test | 106.3 |
-| tcp | 35.7 |
+| probe | 56.4 |
+| real_test | 104.4 |
+| tcp | 36.0 |
 
 ## 协议通过率
 
 | 协议 | 已测 | 通过 | 失败 | 通过率 |
 | --- | --- | --- | --- | --- |
-| http | 20 | 20 | 0 | 100.0% |
-| hysteria2 | 22 | 19 | 3 | 86.4% |
-| shadowsocks | 154 | 139 | 15 | 90.3% |
+| http | 20 | 19 | 1 | 95.0% |
+| hysteria2 | 24 | 23 | 1 | 95.8% |
+| shadowsocks | 153 | 134 | 19 | 87.6% |
 | socks | 5 | 2 | 3 | 40.0% |
-| trojan | 146 | 137 | 9 | 93.8% |
-| vless | 250 | 149 | 101 | 59.6% |
+| trojan | 139 | 138 | 1 | 99.3% |
+| vless | 232 | 137 | 95 | 59.1% |
 | vmess | 2 | 2 | 0 | 100.0% |
 
 ## 主要真测错误
 
 | 错误 | 数量 |
 | --- | --- |
-| geo:TimeoutError | 30 |
-| 204:ProxyError | 24 |
-| geo:ClientOSError | 21 |
-| 204:TimeoutError | 16 |
-| cn-block:TimeoutError | 14 |
-| speed:TimeoutError | 11 |
+| 204:ProxyError | 29 |
+| 204:TimeoutError | 25 |
+| geo:ClientOSError | 15 |
+| geo:TimeoutError | 13 |
+| cn-block:TimeoutError | 9 |
 | speed:ClientOSError | 9 |
-| 204:ClientOSError | 3 |
-| cn-block:ClientOSError | 2 |
+| speed:TimeoutError | 7 |
+| 204:ClientOSError | 5 |
+| cn-block:ClientOSError | 4 |
+| speed:ProxyError | 2 |
 | cn-block:ProxyError | 1 |
+| geo:ProxyError | 1 |
 
 ## TCP 预筛选错误
 
 | 错误 | 数量 |
 | --- | --- |
-| TimeoutError | 4874 |
-| ConnectionRefusedError | 793 |
-| gaierror | 292 |
+| TimeoutError | 5011 |
+| ConnectionRefusedError | 821 |
+| gaierror | 299 |
 | OSError | 225 |
 
 ## 高评分订阅源
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过率 | 解析数 |
 | --- | --- | --- | --- | --- | --- |
-| Au1rxx-base64 | 0.994 | prefer | 347 | 0.937 | 1509 |
-| zhangkai | 0.956 | prefer | 20 | 1.0 | 25 |
-| DeltaKronecker-all | 0.638 | observe | 195 | 0.559 | 5326 |
-| mheidari-all | 0.446 | observe | 5 | 0.8 | 17690 |
-| Surfboard-tg-mixed | 0.403 | observe | 29 | 0.31 | 6364 |
-| nscl5-all | 0.326 | observe | 1 | 1.0 | 1772 |
+| Au1rxx-base64 | 0.989 | prefer | 350 | 0.931 | 1506 |
+| zhangkai | 0.91 | prefer | 20 | 0.95 | 25 |
+| DeltaKronecker-all | 0.605 | observe | 175 | 0.526 | 5326 |
+| Surfboard-tg-mixed | 0.556 | observe | 12 | 0.667 | 6368 |
+| ninja-vless | 0.457 | observe | 7 | 0.714 | 1791 |
+| mheidari-all | 0.401 | observe | 7 | 0.571 | 17684 |
+| Barabama-yudou | 0.262 | observe | 1 | 1.0 | 166 |
 | 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | None | 5282 |
-| Epodonios-all | 0.255 | observe | 0 | None | 6987 |
+| Epodonios-all | 0.255 | observe | 0 | None | 7096 |
 | MatinGhanbari-all-sub | 0.255 | observe | 0 | None | 3996 |
-| SoliSpirit-all | 0.255 | observe | 0 | None | 7685 |
 
 ## 需关注订阅源
 
@@ -93,37 +95,38 @@
 | tg-V2rayngVpn | 0.025 | observe | 0 | None | 1 | 0 |
 | tg-shadowproxy66 | 0.025 | observe | 0 | None | 1 | 0 |
 | xiaoji235-airport-v2ray-all | 0.025 | observe | 0 | None | 1 | 0 |
-| Barabama-yudou | 0.134 | observe | 1 | 0.0 | 0 | 166 |
 | tg-V2RAYProxy | 0.136 | observe | 1 | 0.0 | 0 | 217 |
-| ninja-hy2 | 0.175 | observe | 0 | None | 0 | 3 |
+| Pawdroid | 0.175 | observe | 0 | None | 0 | 12 |
+| abc-configs-readme-latest30 | 0.175 | observe | 0 | None | 0 | 9 |
 
 ## 真测通过率较低的订阅源
 
 | 订阅源 | 通过率 | 通过 | 失败 | 已测 |
 | --- | --- | --- | --- | --- |
 | tg-V2RAYProxy | 0.0 | 0 | 1 | 1 |
-| Barabama-yudou | 0.0 | 0 | 1 | 1 |
-| Surfboard-tg-mixed | 0.31 | 9 | 20 | 29 |
-| DeltaKronecker-all | 0.559 | 109 | 86 | 195 |
-| mheidari-all | 0.8 | 4 | 1 | 5 |
-| Au1rxx-base64 | 0.937 | 325 | 22 | 347 |
-| nscl5-all | 1.0 | 1 | 0 | 1 |
-| zhangkai | 1.0 | 20 | 0 | 20 |
+| nscl5-all | 0.0 | 0 | 2 | 2 |
+| DeltaKronecker-all | 0.526 | 92 | 83 | 175 |
+| mheidari-all | 0.571 | 4 | 3 | 7 |
+| Surfboard-tg-mixed | 0.667 | 8 | 4 | 12 |
+| ninja-vless | 0.714 | 5 | 2 | 7 |
+| Au1rxx-base64 | 0.931 | 326 | 24 | 350 |
+| zhangkai | 0.95 | 19 | 1 | 20 |
+| Barabama-yudou | 1.0 | 1 | 0 | 1 |
 
 ## 解析节点数较高的订阅源
 
 | 订阅源 | 节点数 | 是否正常 | 耗时 | 连续死亡 |
 | --- | --- | --- | --- | --- |
-| mheidari-all | 17690 | yes | 4.05 | 0 |
-| SoliSpirit-all | 7685 | yes | 3.65 | 0 |
-| Epodonios-all | 6987 | yes | 4.26 | 0 |
-| Surfboard-tg-mixed | 6364 | yes | 2.66 | 0 |
-| barry-far-vless | 5471 | yes | 1.11 | 0 |
-| DeltaKronecker-all | 5326 | yes | 4.1 | 0 |
-| 10ium-ScrapeCategorize-Vless | 5282 | yes | 1.97 | 0 |
-| mahdibland-V2RayAggregator | 5247 | yes | 3.56 | 0 |
-| Surfboard-tg-vless | 5147 | yes | 3.19 | 0 |
-| MatinGhanbari-all-sub | 3996 | yes | 2.07 | 0 |
+| mheidari-all | 17684 | yes | 5.27 | 0 |
+| SoliSpirit-all | 7593 | yes | 3.13 | 0 |
+| Epodonios-all | 7096 | yes | 5.53 | 0 |
+| Surfboard-tg-mixed | 6368 | yes | 2.88 | 0 |
+| barry-far-vless | 5504 | yes | 2.45 | 0 |
+| DeltaKronecker-all | 5326 | yes | 4.3 | 0 |
+| 10ium-ScrapeCategorize-Vless | 5282 | yes | 2.22 | 0 |
+| mahdibland-V2RayAggregator | 5175 | yes | 2.44 | 0 |
+| Surfboard-tg-vless | 5103 | yes | 3.56 | 0 |
+| MatinGhanbari-all-sub | 3996 | yes | 2.85 | 0 |
 
 ## 趋势报警
 
@@ -134,7 +137,7 @@
 ### 真测错误报警
 | 错误 | 数量 |
 | --- | --- |
-| geo | 51 |
-| 204 | 43 |
-| speed | 20 |
-| cn-block | 17 |
+| 204 | 59 |
+| geo | 29 |
+| speed | 18 |
+| cn-block | 14 |
