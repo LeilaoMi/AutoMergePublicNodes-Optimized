@@ -319,17 +319,17 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-08-25 18:50:01 |
+| 更新时间 | 2026-08-26 01:47:07 |
 | 版本 | 2.4.0 |
 | 订阅源 | 95/107 |
-| 原始节点 | 78004 |
-| 去重后 | 22569 |
+| 原始节点 | 79196 |
+| 去重后 | 22570 |
 | TCP 可达 | 3000 |
-| 真实可用 | 564 |
-| 真测通过率 | 18.8% |
+| 真实可用 | 550 |
+| 真测通过率 | 18.3% |
 | Verified 输出 | 300 |
 | Global 输出 | 300 |
-| All 输出 | 22569 |
+| All 输出 | 22570 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -337,21 +337,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 80.12 | shadowsocks | 236.1 | Au1rxx-base64 |
-| 80.08 | shadowsocks | 237.9 | Au1rxx-base64 |
-| 79.65 | vless | 268.6 | Au1rxx-base64 |
-| 79.61 | shadowsocks | 273.9 | mheidari-all |
-| 79.54 | hysteria2 | 310.2 | mheidari-all |
+| 83.16 | http | 229.7 | zhangkai |
+| 83.04 | http | 235.0 | zhangkai |
+| 82.79 | vless | 231.7 | DeltaKronecker-all |
+| 81.76 | shadowsocks | 215.4 | DeltaKronecker-all |
+| 81.11 | shadowsocks | 232.6 | DeltaKronecker-all |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
+| Au1rxx-base64 | 1.0 | 115 | prefer |
 | zhangkai | 0.966 | 23 | prefer |
-| DeltaKronecker-all | 0.943 | 49 | prefer |
-| Surfboard-tg-mixed | 0.908 | 97 | prefer |
-| Au1rxx-base64 | 0.902 | 427 | prefer |
-| mheidari-all | 0.843 | 74 | prefer |
+| Surfboard-tg-mixed | 0.873 | 114 | prefer |
+| mheidari-all | 0.856 | 47 | prefer |
+| DeltaKronecker-all | 0.391 | 912 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
