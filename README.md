@@ -319,17 +319,17 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-08-26 19:57:11 |
+| 更新时间 | 2026-08-27 08:39:59 |
 | 版本 | 2.4.0 |
 | 订阅源 | 97/107 |
-| 原始节点 | 89577 |
-| 去重后 | 24385 |
+| 原始节点 | 88922 |
+| 去重后 | 24473 |
 | TCP 可达 | 3000 |
-| 真实可用 | 455 |
-| 真测通过率 | 15.2% |
+| 真实可用 | 508 |
+| 真测通过率 | 16.9% |
 | Verified 输出 | 300 |
 | Global 输出 | 300 |
-| All 输出 | 24385 |
+| All 输出 | 24473 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -337,21 +337,21 @@ MIT
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 81.79 | vless | 299.4 | Au1rxx-base64 |
-| 80.76 | vless | 218.4 | DeltaKronecker-all |
-| 80.71 | vless | 273.8 | Au1rxx-base64 |
-| 80.56 | vless | 269.6 | Au1rxx-base64 |
-| 80.17 | trojan | 205.4 | Au1rxx-base64 |
+| 82.71 | vless | 224.3 | Au1rxx-base64 |
+| 82.59 | hysteria2 | 270.7 | Au1rxx-base64 |
+| 82.15 | vless | 248.2 | Au1rxx-base64 |
+| 81.34 | vless | 273.1 | Au1rxx-base64 |
+| 81.11 | vless | 293.1 | Au1rxx-base64 |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| Au1rxx-base64 | 0.966 | 350 | prefer |
-| zhangkai | 0.926 | 23 | prefer |
-| Surfboard-tg-mixed | 0.757 | 122 | prefer |
-| DeltaKronecker-all | 0.509 | 68 | observe |
-| mheidari-all | 0.46 | 17 | observe |
+| Au1rxx-base64 | 0.972 | 350 | prefer |
+| zhangkai | 0.966 | 23 | prefer |
+| Surfboard-tg-mixed | 0.873 | 143 | prefer |
+| mheidari-all | 0.807 | 53 | prefer |
+| DeltaKronecker-all | 0.407 | 47 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
