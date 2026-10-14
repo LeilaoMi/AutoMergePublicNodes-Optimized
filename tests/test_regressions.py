@@ -352,7 +352,12 @@ class RegressionTests(unittest.TestCase):
             Node("http", "fast", "fast.example", 80, {}),
         ]
         errors = {}
-        with patch("asyncio.open_connection", fake_open_connection):
+
+        async def fake_resolve_and_check(server, port, timeout):
+            return False  # 测试用假域名，跳过真实 DNS 解析
+
+        with patch("asyncio.open_connection", fake_open_connection), \
+             patch("main._resolve_and_check_ssrf", fake_resolve_and_check):
             results = asyncio.run(m.tcp_check_batch(nodes, concurrency=2, timeout=1, error_counts=errors))
         self.assertEqual([n.tag for n, _ in results], ["fast", "slow"])
         self.assertEqual(errors.get("OSError"), 1)
