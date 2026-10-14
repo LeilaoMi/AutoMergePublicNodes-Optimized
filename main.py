@@ -351,6 +351,28 @@ async def run(args):
         scored_valid.sort(key=lambda x: (-x[3], x[1]))
         valid = [(n, lat, jit) for n, lat, jit, _, _, _, _, _ in scored_valid]
         real_test_passed = bool(valid)
+        # E2 回测数据：记录每轮的完整打分明细，供权重调优分析
+        try:
+            import json as _json
+            _details = []
+            for n, lat, jit, score, src, bd, r, sbonus in scored_valid:
+                _details.append({
+                    "fingerprint": n.fingerprint(),
+                    "protocol": n.type,
+                    "source": src,
+                    "latency_ms": lat,
+                    "jitter_ms": jit,
+                    "tcp_latency_ms": tcp_latency.get(n.fingerprint(), 0),
+                    "speed_kbps": getattr(r, "speed_kbps", 0),
+                    "score": score,
+                    "stability_bonus": sbonus,
+                    "breakdown": bd,
+                })
+            with open(f"{args.output_dir}/score_details.json", "w") as _f:
+                _json.dump({"updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                            "count": len(_details), "nodes": _details}, _f)
+        except Exception as _e:
+            print(f"      score_details 写入失败（{type(_e).__name__}），不影响主流程")
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
         print(f"[funnel] stage=real_test in={len(nodes)} out={len(valid)}")
         if valid:
