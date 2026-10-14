@@ -1099,6 +1099,32 @@ weights:
         self.assertIn("stable-2", stable)
         self.assertNotIn("unstable", stable)
 
+    def test_test_one_integration_bad_node(self):
+        """C2 集成测试：用真实 sing-box 进程测一个必失败的节点。
+
+        覆盖 test_one 的真实路径：配置生成 → 进程启动 → 测试执行 → 错误处理 → 清理。
+        不需要可用代理，坏节点走失败路径同样锻炼核心逻辑。
+        sing-box 二进制不存在时跳过（本地）/ CI 上必跑。
+        """
+        import shutil
+        sb_path = shutil.which("sing-box") or "./sing-box"
+        import os
+        if not os.path.exists(sb_path):
+            self.skipTest("sing-box 二进制不存在，跳过集成测试")
+        import asyncio
+        from core.parser import Node
+
+        # 必失败的节点：连向不存在的地址
+        node = Node("socks", "bad-node", "192.0.2.1", 1080, {})  # TEST-NET-1，必不通
+        tester = SingBoxTester(sb_path=sb_path, min_latency_ms=0,
+                               startup_wait=0.5, request_timeout=3.0)
+        result = asyncio.run(tester.test_one(node))
+        # 断言：走的是真实逻辑，不是 mock
+        self.assertFalse(result.success, "坏节点应该测试失败")
+        self.assertTrue(result.error, "应该有错误信息")
+        # 清理：临时目录不应残留
+        # （test_one 内部用 mkdtemp，验证无泄漏需要更复杂的钩子，此处只验逻辑）
+
 
 if __name__ == "__main__":
     unittest.main()
