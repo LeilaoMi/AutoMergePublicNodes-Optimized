@@ -19,6 +19,21 @@ import yaml
 from core.parser import Node
 
 
+def atomic_write(path: str, content: str, encoding: str = "utf-8") -> None:
+    """原子写文件：先写 .tmp 再 rename，避免中途崩溃留半截文件。
+
+    §R4 修复：CI 30min timeout 被杀时，直接 open("w") 会留损坏的订阅文件。
+    rename 在 POSIX 上是原子操作，要么旧文件完整，要么新文件完整。
+    """
+    import os
+    tmp_path = path + ".tmp"
+    with open(tmp_path, "w", encoding=encoding) as f:
+        f.write(content)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, path)
+
+
 # ============================================================
 # 国旗 emoji → 地区分组
 # ============================================================
@@ -416,13 +431,11 @@ def write_outputs(
 
     # 1) URL 列表
     urls = [u for n in nodes if (u := node_to_url(n))]
-    with open(f"{output_dir}/{prefix}.urls", "w", encoding="utf-8") as f:
-        f.write("\n".join(urls) + "\n")
+    atomic_write(f"{output_dir}/{prefix}.urls", "\n".join(urls) + "\n")
 
     # 2) base64 订阅
     b64 = base64.b64encode("\n".join(urls).encode()).decode()
-    with open(f"{output_dir}/{prefix}.txt", "w", encoding="utf-8") as f:
-        f.write(b64)
+    atomic_write(f"{output_dir}/{prefix}.txt", b64)
 
     if mode == "light":
         repo_path = repo_path or "LeilaoMi/AutoMergePublicNodes-Optimized"
@@ -492,8 +505,8 @@ def write_outputs(
             "MATCH,🚀 Proxy",
         ],
     }
-    with open(f"{output_dir}/{prefix}.yaml", "w", encoding="utf-8") as f:
-        yaml.dump(clash, f, allow_unicode=True, sort_keys=False)
+    atomic_write(f"{output_dir}/{prefix}.yaml",
+                 yaml.dump(clash, allow_unicode=True, sort_keys=False))
 
     # 4) sing-box JSON (Karing 直接导入) — 带 DNS + 分流规则
     outbounds_list = [n.tag for n in nodes] or ["direct"]
@@ -564,12 +577,12 @@ def write_outputs(
             "auto_detect_interface": True,
         },
     }
-    with open(f"{output_dir}/{prefix}.json", "w", encoding="utf-8") as f:
-        # 大文件(>1000节点)用紧凑格式减小体积, 小文件保留可读性
-        if len(nodes) > 1000:
-            json.dump(singbox, f, ensure_ascii=False, separators=(",", ":"))
-        else:
-            json.dump(singbox, f, ensure_ascii=False, indent=2)
+    # 大文件(>1000节点)用紧凑格式减小体积, 小文件保留可读性
+    if len(nodes) > 1000:
+        json_str = json.dumps(singbox, ensure_ascii=False, separators=(",", ":"))
+    else:
+        json_str = json.dumps(singbox, ensure_ascii=False, indent=2)
+    atomic_write(f"{output_dir}/{prefix}.json", json_str)
 
     # 5) 订阅转换链接（基于 jsdelivr CDN）
     repo_path = repo_path or "LeilaoMi/AutoMergePublicNodes-Optimized"
@@ -616,8 +629,7 @@ def write_chunked_outputs(
         chunk_num = i // chunk_size + 1
         b64 = base64.b64encode("\n".join(chunk_urls).encode()).decode()
         path = os.path.join(chunk_dir, f"{prefix}_{chunk_num}.txt")
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(b64)
+        atomic_write(path, b64)
         total_chunks += 1
 
     return total_chunks
@@ -660,8 +672,7 @@ def write_protocol_outputs(
     for proto, urls in sorted(proto_groups.items()):
         b64 = base64.b64encode("\n".join(urls).encode()).decode()
         path = os.path.join(proto_dir, f"{prefix}_{proto}.txt")
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(b64)
+        atomic_write(path, b64)
         count += 1
 
     return count
@@ -702,6 +713,5 @@ def generate_converter_links(sub_url: str, output_dir: str, prefix: str = "nodes
 
     content = "\n".join(lines)
     path = f"{output_dir}/{prefix}.converter.md"
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
+    atomic_write(path, content)
     return path
