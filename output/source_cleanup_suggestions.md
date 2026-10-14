@@ -1,6 +1,6 @@
 # 订阅源清理建议
 
-生成时间：2026-10-14 12:10:33
+生成时间：2026-10-14 12:17:16
 
 本报告默认只读。修改 `config/sources.yaml` 前请人工复核。
 
@@ -39,18 +39,19 @@
 
 | 订阅源 | 评分 | 已测 | 通过率 | 解析数 | 连续死亡 | 原因 | URL |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| ermaozi-get_subscribe | 0.968 | 70 | 0.957 | 598 | 0 | 源评分较高 | https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/clash.yml |
 | zhangkai | 0.927 | 19 | 1.0 | 144 | 0 | 源评分较高 | https://raw.githubusercontent.com/zhangkaiitugithub/passcro/main/speednodes.yaml |
-| ermaozi-get_subscribe | 0.925 | 69 | 0.913 | 598 | 0 | 源评分较高 | https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/clash.yml |
-| mheidari-all | 0.877 | 72 | 0.806 | 23983 | 0 | 源评分较高 | https://raw.githubusercontent.com/mheidari98/.proxy/main/all |
-| Au1rxx-base64 | 0.855 | 211 | 0.787 | 1778 | 0 | 源评分较高 | https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt |
+| mheidari-all | 0.866 | 54 | 0.796 | 23983 | 0 | 源评分较高 | https://raw.githubusercontent.com/mheidari98/.proxy/main/all |
+| Au1rxx-base64 | 0.841 | 211 | 0.773 | 1782 | 0 | 源评分较高 | https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt |
+| Surfboard-tg-mixed | 0.716 | 86 | 0.64 | 7056 | 0 | 源评分较高 | https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/mixed |
 
 ## 继续观察
 
 | 订阅源 | 评分 | 已测 | 通过率 | 解析数 | 连续死亡 | 原因 | URL |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 10ium-HighSpeed | 0.209 | 0 | None | 839 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/10ium/free-config/refs/heads/main/HighSpeed.txt |
+| 10ium-HighSpeed | 0.289 | 1 | 1.0 | 839 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/10ium/free-config/refs/heads/main/HighSpeed.txt |
 | 10ium-ScrapeCategorize-Vless | 0.255 | 0 | None | 5125 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/10ium/ScrapeAndCategorize/refs/heads/main/output_configs/Vless.txt |
-| Au1rxx-clash | 0.246 | 0 | None | 1778 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/clash.yaml |
+| Au1rxx-clash | 0.246 | 0 | None | 1782 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/clash.yaml |
 | Barabama-we | 0.176 | 0 | None | 23 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/wenode.txt |
 | Barabama-yudou | 0.182 | 0 | None | 166 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/yudou66.txt |
 | DeltaKronecker-all | 0.255 | 0 | None | 4803 | 0 | 证据不足或评分中性 | https://github.com/Delta-Kronecker/V2ray-Config/raw/refs/heads/main/config/all_configs.txt |
@@ -59,8 +60,7 @@
 | MatinGhanbari-super-sub | 0.183 | 0 | None | 200 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/refs/heads/main/subscriptions/v2ray/super-sub.txt |
 | Mr8AHAL | 0.175 | 0 | None | 1 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Mr8AHAL/v2ray/main/SERVER.txt |
 | Pawdroid | 0.175 | 0 | None | 10 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub |
-| SoliSpirit-all | 0.255 | 0 | None | 9834 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/SoliSpirit/v2ray-configs/refs/heads/main/all_configs.txt |
-| Surfboard-tg-mixed | 0.616 | 82 | 0.537 | 7056 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/mixed |
+| SoliSpirit-all | 0.255 | 0 | None | 9836 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/SoliSpirit/v2ray-configs/refs/heads/main/all_configs.txt |
 | Surfboard-tg-vless | 0.255 | 0 | None | 5579 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/vless |
 | barabama-nodefree | 0.176 | 0 | None | 23 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/nodefree.yaml |
 | barabama-yudou66 | 0.182 | 0 | None | 163 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/Barabama/FreeNodes/main/nodes/yudou66.yaml |

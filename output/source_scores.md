@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-10-14 12:10:33
+生成时间：2026-10-14 12:17:16
 
 ## 摘要
 
@@ -16,10 +16,11 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ermaozi-get_subscribe | 0.968 | prefer | 70 | 67 | 3 | 0.957 | 598 | 0 |
 | zhangkai | 0.927 | prefer | 19 | 19 | 0 | 1.0 | 144 | 0 |
-| ermaozi-get_subscribe | 0.925 | prefer | 69 | 63 | 6 | 0.913 | 598 | 0 |
-| mheidari-all | 0.877 | prefer | 72 | 58 | 14 | 0.806 | 23983 | 0 |
-| Au1rxx-base64 | 0.855 | prefer | 211 | 166 | 45 | 0.787 | 1778 | 0 |
+| mheidari-all | 0.866 | prefer | 54 | 43 | 11 | 0.796 | 23983 | 0 |
+| Au1rxx-base64 | 0.841 | prefer | 211 | 163 | 48 | 0.773 | 1782 | 0 |
+| Surfboard-tg-mixed | 0.716 | prefer | 86 | 55 | 31 | 0.64 | 7056 | 0 |
 
 ## 建议降权
 
@@ -33,12 +34,13 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ermaozi-get_subscribe | 0.968 | prefer | 70 | 67 | 3 | 0.957 | 598 | 0 |
 | zhangkai | 0.927 | prefer | 19 | 19 | 0 | 1.0 | 144 | 0 |
-| ermaozi-get_subscribe | 0.925 | prefer | 69 | 63 | 6 | 0.913 | 598 | 0 |
-| mheidari-all | 0.877 | prefer | 72 | 58 | 14 | 0.806 | 23983 | 0 |
-| Au1rxx-base64 | 0.855 | prefer | 211 | 166 | 45 | 0.787 | 1778 | 0 |
-| Surfboard-tg-mixed | 0.616 | observe | 82 | 44 | 38 | 0.537 | 7056 | 0 |
-| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 9834 | 0 |
+| mheidari-all | 0.866 | prefer | 54 | 43 | 11 | 0.796 | 23983 | 0 |
+| Au1rxx-base64 | 0.841 | prefer | 211 | 163 | 48 | 0.773 | 1782 | 0 |
+| Surfboard-tg-mixed | 0.716 | prefer | 86 | 55 | 31 | 0.64 | 7056 | 0 |
+| 10ium-HighSpeed | 0.289 | observe | 1 | 1 | 0 | 1.0 | 839 | 0 |
+| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 9836 | 0 |
 | Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 7542 | 0 |
 | xiaoji235-airport-v2ray-all | 0.255 | observe | 0 | 0 | 0 | None | 6752 | 0 |
 | barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 5831 | 0 |
@@ -48,9 +50,8 @@
 | mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 4216 | 0 |
 | MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3999 | 0 |
 | ninja-vless | 0.247 | observe | 0 | 0 | 0 | None | 1791 | 0 |
-| Au1rxx-clash | 0.246 | observe | 0 | 0 | 0 | None | 1778 | 0 |
+| Au1rxx-clash | 0.246 | observe | 0 | 0 | 0 | None | 1782 | 0 |
 | moneyfly1-collectSub | 0.222 | observe | 0 | 0 | 0 | None | 1164 | 0 |
-| 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
 | barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 494 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 490 | 0 |
 | chromego_merge | 0.187 | observe | 0 | 0 | 0 | None | 303 | 0 |
