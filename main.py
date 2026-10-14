@@ -179,6 +179,7 @@ async def run(args):
     total_raw = sum(len(r.nodes) for r in fr_list)
     healthy = sum(1 for r in fr_list if r.success and len(r.nodes) > 0)
     print(f"      抓取完成: {healthy}/{len(sources)} 源有节点, 共 {total_raw} 个原始节点")
+    print(f"[funnel] stage=fetch in=0 out={total_raw}")
 
     all_nodes: List[Node] = []
     proto_count: Dict[str, int] = {}
@@ -208,6 +209,7 @@ async def run(args):
     print(f"      国旗映射: {len(flag_map)} 个 IP")
 
     print(f"[3/6] 去重: {len(all_nodes)} -> {len(nodes)}")
+    print(f"[funnel] stage=dedup in={len(all_nodes)} out={len(nodes)}")
     for k, v in sorted(proto_count.items(), key=lambda x: -x[1]):
         print(f"        {k:14s}: {v}")
 
@@ -241,6 +243,10 @@ async def run(args):
         stage_start = time.time()
         nodes_tcp_reachable = len(tcp_results)  # TCP 真实可达数(下采样前)
         print(f"      TCP 可达: {nodes_tcp_reachable}")
+        print(f"[funnel] stage=tcp out={nodes_tcp_reachable}")
+        if tcp_errors:
+            _tcp_top = sorted(tcp_errors.items(), key=lambda x: -x[1])[:5]
+            print(f"      TCP 失败 Top: {', '.join(f'{k}={v}' for k, v in _tcp_top)}")
         nodes = [n for n, _ in tcp_results]
         tcp_latency = {n.fingerprint(): lat for n, lat in tcp_results}
     else:
@@ -257,6 +263,7 @@ async def run(args):
 
     # 4.5) lightweight probe 轻量探活（可选）
     nodes_before_probe = len(nodes)  # TCP 后、probe 前的节点数
+    probe_error_top = []  # 防御性初始化：nodes 为空时 580 行引用不崩溃
     if args.lightweight_probe and args.real_test and nodes:
         from core.tester import SingBoxTester
         print(f"[4.5/6] 轻量探活（并发 {args.probe_concurrency}, 超时 {args.probe_timeout}s）...")
@@ -275,6 +282,7 @@ async def run(args):
         stage_durations["probe"] = round(time.time() - stage_start, 1)
         stage_start = time.time()
         print(f"      探活通过: {len(nodes)}/{before_probe}")
+        print(f"[funnel] stage=probe in={before_probe} out={len(nodes)}")
         # 记录 probe 失败原因分布, 填补可观测性空白
         probe_error_counts: Dict[str, int] = {}
         for r in probe_results:
@@ -304,8 +312,6 @@ async def run(args):
             min_latency_ms=args.min_latency,
         )
         results = await tester.test_all(nodes)
-        stage_durations["real_test"] = round(time.time() - stage_start, 1)
-        stage_start = time.time()
 
         # Load node stability for scoring boost
         stability_data = load_node_stability(args.output_dir)
@@ -346,6 +352,7 @@ async def run(args):
         valid = [(n, lat, jit) for n, lat, jit, _, _, _, _, _ in scored_valid]
         real_test_passed = bool(valid)
         print(f"      真实可用: {len(valid)}/{len(nodes)}")
+        print(f"[funnel] stage=real_test in={len(nodes)} out={len(valid)}")
         if valid:
             print(f"      最快: {valid[0][1]:.1f}ms  最慢: {valid[-1][1]:.1f}ms")
 
@@ -367,6 +374,9 @@ async def run(args):
                     key=lambda x: x[1],
                 )
                 print(f"      Global 追加可用: {len(cn_block_retry_valid)}/{len(cn_block_nodes)}")
+        # real_test 计时包含评分循环 + cn-block 复测（之前在 test_all 后提前结算，归属错误）
+        stage_durations["real_test"] = round(time.time() - stage_start, 1)
+        stage_start = time.time()
     else:
         print(f"[5/6] 跳过真实测试")
         stage_durations["real_test"] = 0.0
@@ -465,6 +475,7 @@ async def run(args):
             print(f"      国内检查失败（{e}），保留海外结果")
     stage_durations["china_check"] = round(time.time() - gen_start, 1)
     gen_start = time.time()
+    stage_start = time.time()  # generate 只计文件写入，不含 china_check（去双重计数）
     top = valid[:args.top_n]
     final_nodes = build_output_nodes(valid, flag_map, args.top_n)
     global_valid = sorted(valid + cn_block_retry_valid, key=lambda x: x[1])
@@ -488,11 +499,13 @@ async def run(args):
         }
         print(f"      verified.* 保留上一轮: {previous_verified}（本轮 {proposed_verified} 低于阈值）")
     else:
+        _w0 = time.time()
         n_top = write_outputs(final_nodes, args.output_dir, prefix="verified", repo_path=args.repo, branch=args.branch)
         # P0: 分块输出 (verified)
         write_chunked_outputs(final_nodes, args.output_dir, prefix="verified",
                              repo_path=args.repo, branch=args.branch, chunk_size=100)
         # P1: 协议分文件输出 (verified)
+        stage_durations["write_verified"] = round(time.time() - _w0, 1)
         write_protocol_outputs(final_nodes, args.output_dir, prefix="verified",
                               repo_path=args.repo, branch=args.branch)
         output_guard["verified"] = {"preserved": False, "previous_count": previous_verified, "proposed_count": n_top}
@@ -510,6 +523,7 @@ async def run(args):
             }
             print(f"      global.* 保留上一轮: {previous_global}（本轮 {proposed_global} 低于阈值）")
         else:
+            _w0 = time.time()
             n_global = write_outputs(global_nodes, args.output_dir, prefix="global", repo_path=args.repo, branch=args.branch)
             # P0: 分块输出 (global)
             write_chunked_outputs(global_nodes, args.output_dir, prefix="global",
@@ -523,6 +537,7 @@ async def run(args):
     # 同时生成全量备份(未测速,供客户端再测)
     # all.* = dedup 后完整池(不含质量过滤/TCP/测速),客户端可全测
     all_valid = dedup_pool
+    _w0 = time.time()
     n_all = write_outputs(
         all_valid,
         args.output_dir,
@@ -540,7 +555,9 @@ async def run(args):
     print(f"│  • 原始节点:  {total_raw:>6}")
     print(f"│  • 去重后:    {len(set(nd.fingerprint() for nd in all_nodes)):>6}")
     print(f"│  • TCP 可达:  {len(nodes):>6}")
+    print(f"│  • 探活通过:  {nodes_after_probe:>6}")
     print(f"│  • 真实可用:  {len(valid):>6}")
+    print(f"│  • 国内可达:  {china_reachable_count:>6}")
     print(f"│  • Verified:  {n_top:>6}")
     if args.global_output:
         print(f"│  • Global:    {n_global:>6}")
