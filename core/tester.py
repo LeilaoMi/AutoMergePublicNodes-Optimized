@@ -139,7 +139,8 @@ class SingBoxTester:
                  startup_wait: float = 0.6, request_timeout: float = 6.0,
                  min_latency_ms: float = DEFAULT_MIN_LATENCY_MS,
                  skip_target_kinds: Iterable[str] | None = None,
-                 probe_only: bool = False):
+                 probe_only: bool = False,
+                 test_one_timeout: float = 15.0):
         if not os.path.exists(sb_path):
             raise FileNotFoundError(f"sing-box binary not found: {sb_path}")
         self.sb_path = os.path.abspath(sb_path)
@@ -149,6 +150,7 @@ class SingBoxTester:
         self.min_latency_ms = min_latency_ms
         self.skip_target_kinds = set(skip_target_kinds or [])
         self.probe_only = probe_only
+        self.test_one_timeout = test_one_timeout  # 单节点总超时，防 tail latency
         self._port_counter = 30000
 
     def _alloc_port(self) -> int:
@@ -239,9 +241,10 @@ class SingBoxTester:
                         continue
 
                     if target_kind == "204":
-                        # 多采样：对 204 目标做 3 次取中位数
+                        # 多采样：对 204 目标做 3 次取中位数；probe_only 模式下只做 1 次（过滤器不需要精度）
+                        sample_count = 1 if self.probe_only else 3
                         samples = []
-                        for _ in range(3):
+                        for _ in range(sample_count):
                             tstart = time.monotonic()
                             try:
                                 timeout = aiohttp.ClientTimeout(total=self.request_timeout)
@@ -385,7 +388,13 @@ class SingBoxTester:
 
         async def _wrap(n: Node) -> TestResult:
             async with sem:
-                return await self.test_one(n)
+                try:
+                    return await asyncio.wait_for(
+                        self.test_one(n), timeout=self.test_one_timeout)
+                except asyncio.TimeoutError:
+                    r = TestResult(node=n)
+                    r.error = f"test_one_timeout:{self.test_one_timeout}s"
+                    return r
 
         tasks = [asyncio.create_task(_wrap(n)) for n in nodes]
         for fut in asyncio.as_completed(tasks):
