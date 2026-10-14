@@ -66,6 +66,15 @@ class Node:
             return r.get("uuid", "")
         if self.type in ("trojan", "shadowsocks", "hysteria", "hysteria2", "tuic"):
             return r.get("password", "") or r.get("uuid", "")
+        if self.type == "anytls":
+            return r.get("password", "")
+        if self.type == "ssr":
+            return r.get("password", "")
+        if self.type in ("socks", "http"):
+            # socks/http 可能带认证，username+password 组合区分
+            u = r.get("username", "")
+            p = r.get("password", "")
+            return f"{u}:{p}" if (u or p) else ""
         return ""
 
     def to_singbox(self) -> Dict[str, Any]:
