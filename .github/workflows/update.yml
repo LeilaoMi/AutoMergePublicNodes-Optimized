@@ -185,6 +185,21 @@ jobs:
               if git pull --rebase --autostash --strategy-option=theirs origin "$BRANCH"; then
                 git push origin HEAD:"$BRANCH" && break
               else
+                # rebase 冲突：output/ 和 README.md 是本轮自动生成的，以 CI 版本为准
+                # （rebase 语境下 --ours = 正在 replay 的 CI commit）
+                CONFLICTS=$(git diff --name-only --diff-filter=U || true)
+                if [ -n "$CONFLICTS" ]; then
+                  echo "$CONFLICTS" | while read -r f; do
+                    case "$f" in
+                      output/*|README.md) git checkout --ours -- "$f" && git add "$f" ;;
+                    esac
+                  done
+                  # 还有未解决的冲突则放弃
+                  REMAIN=$(git diff --name-only --diff-filter=U || true)
+                  if [ -z "$REMAIN" ] && git rebase --continue; then
+                    git push origin HEAD:"$BRANCH" && break
+                  fi
+                fi
                 git rebase --abort 2>/dev/null || true
                 echo "::error::rebase failed; refusing to force push automatically"
                 exit 1
