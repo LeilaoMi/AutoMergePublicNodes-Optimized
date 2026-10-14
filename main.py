@@ -15,6 +15,7 @@ import argparse
 import asyncio
 import json
 import os
+import socket
 import sys
 import time
 from pathlib import Path
@@ -29,7 +30,7 @@ __version__ = "2.4.0"  # chunked output + protocol split + node stability + unlo
 from core.fetcher import fetch_all, load_sources
 from core.geo import geo_flag_map, flag_for_server
 from core.parser import Node
-from core.filtering import load_filter_rules, quality_prefilter, filter_ssrf
+from core.filtering import load_filter_rules, quality_prefilter, filter_ssrf, is_ssrf_target
 from core.sampling import protocol_priority, sample_for_real_test, sample_for_real_test_weighted
 from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history, update_node_stability, load_node_stability, get_stable_nodes
 from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
@@ -107,6 +108,20 @@ async def tcp_check_batch(
             t0 = time.perf_counter()
             writer = None
             try:
+                # SSRF 纵深防御：域名先解析，对每个解析出的 IP 跑 is_ssrf_target。
+                # filter_ssrf 只拦字面 IP，恶意域名 DNS 到内网 IP 会绕过它。
+                try:
+                    infos = await asyncio.wait_for(
+                        asyncio.get_event_loop().getaddrinfo(
+                            n.server, n.server_port, type=socket.SOCK_STREAM),
+                        timeout=timeout)
+                except Exception as exc:
+                    key = type(exc).__name__
+                    errors[key] = errors.get(key, 0) + 1
+                    continue
+                if any(is_ssrf_target(info[4][0]) for info in infos):
+                    errors["SSRFBlocked"] = errors.get("SSRFBlocked", 0) + 1
+                    continue
                 fut = asyncio.open_connection(n.server, n.server_port)
                 _, writer = await asyncio.wait_for(fut, timeout=timeout)
                 lat_ms = (time.perf_counter() - t0) * 1000
