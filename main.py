@@ -441,6 +441,24 @@ async def run(args):
 
     # 取 Top N 并改名加入延迟。构造新 Node，避免污染 all.* 的原始去重池。
     # §2.1 tag 不再在 main.py 截断 30 字符, 留给 generator._clamp_tag 统一处理
+    # 国内可达性检查：海外 CI 测的是"节点能力"，GlobalPing 补"中国用户连得上"视角
+    china_reachable_count = 0
+    china_unreachable_count = 0
+    if args.china_check and valid:
+        print(f"[5.5/6] 国内可达性检查（GlobalPing）: {len(valid)} 个节点...")
+        try:
+            from core.globalping import check_china_reachability
+            china_map = await check_china_reachability(valid)
+            china_valid = [(n, lat, jit) for n, lat, jit in valid if china_map.get(n.fingerprint(), False)]
+            china_reachable_count = len(china_valid)
+            china_unreachable_count = len(valid) - china_reachable_count
+            print(f"      国内可达: {china_reachable_count}, 不可达: {china_unreachable_count}")
+            if china_valid:
+                valid = china_valid
+            else:
+                print("      警告：国内全不可达（可能是 GlobalPing 故障），保留海外结果")
+        except Exception as e:
+            print(f"      国内检查失败（{e}），保留海外结果")
     top = valid[:args.top_n]
     final_nodes = build_output_nodes(valid, flag_map, args.top_n)
     global_valid = sorted(valid + cn_block_retry_valid, key=lambda x: x[1])
@@ -639,6 +657,8 @@ def main():
     p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--tcp-concurrency", type=int, default=500)
     p.add_argument("--tcp-timeout", type=float, default=3.0)
+    p.add_argument("--china-check", action=argparse.BooleanOptionalAction, default=True,
+                   help="用 GlobalPing 国内探针验证节点 TCP 可达性（补海外 CI 视角缺失）")
 
     p.add_argument("--real-test", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--test-concurrency", type=int, default=50)
