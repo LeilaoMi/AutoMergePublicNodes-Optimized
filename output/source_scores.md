@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-10-14 13:04:56
+生成时间：2026-10-14 13:17:05
 
 ## 摘要
 
@@ -17,9 +17,9 @@
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | zhangkai | 0.927 | prefer | 19 | 19 | 0 | 1.0 | 144 | 0 |
-| Au1rxx-base64 | 0.853 | prefer | 209 | 164 | 45 | 0.785 | 1782 | 0 |
-| mheidari-all | 0.797 | prefer | 90 | 65 | 25 | 0.722 | 23983 | 0 |
-| Surfboard-tg-mixed | 0.794 | prefer | 33 | 24 | 9 | 0.727 | 7056 | 0 |
+| Au1rxx-base64 | 0.814 | prefer | 200 | 149 | 51 | 0.745 | 1782 | 0 |
+| mheidari-all | 0.78 | prefer | 78 | 55 | 23 | 0.705 | 23983 | 0 |
+| Surfboard-tg-mixed | 0.736 | prefer | 59 | 39 | 20 | 0.661 | 7056 | 0 |
 
 ## 建议降权
 
@@ -34,11 +34,12 @@
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | zhangkai | 0.927 | prefer | 19 | 19 | 0 | 1.0 | 144 | 0 |
-| Au1rxx-base64 | 0.853 | prefer | 209 | 164 | 45 | 0.785 | 1782 | 0 |
-| mheidari-all | 0.797 | prefer | 90 | 65 | 25 | 0.722 | 23983 | 0 |
-| Surfboard-tg-mixed | 0.794 | prefer | 33 | 24 | 9 | 0.727 | 7056 | 0 |
-| ermaozi-get_subscribe | 0.546 | observe | 9 | 8 | 1 | 0.889 | 515 | 0 |
-| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 9836 | 0 |
+| Au1rxx-base64 | 0.814 | prefer | 200 | 149 | 51 | 0.745 | 1782 | 0 |
+| mheidari-all | 0.78 | prefer | 78 | 55 | 23 | 0.705 | 23983 | 0 |
+| Surfboard-tg-mixed | 0.736 | prefer | 59 | 39 | 20 | 0.661 | 7056 | 0 |
+| ermaozi-get_subscribe | 0.534 | observe | 7 | 7 | 0 | 1.0 | 515 | 0 |
+| 10ium-HighSpeed | 0.289 | observe | 1 | 1 | 0 | 1.0 | 839 | 0 |
+| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 9829 | 0 |
 | Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 7542 | 0 |
 | xiaoji235-airport-v2ray-all | 0.255 | observe | 0 | 0 | 0 | None | 6752 | 0 |
 | barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 5831 | 0 |
@@ -50,7 +51,6 @@
 | ninja-vless | 0.247 | observe | 0 | 0 | 0 | None | 1791 | 0 |
 | Au1rxx-clash | 0.246 | observe | 0 | 0 | 0 | None | 1782 | 0 |
 | moneyfly1-collectSub | 0.222 | observe | 0 | 0 | 0 | None | 1164 | 0 |
-| 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
 | barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 494 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 490 | 0 |
 | chromego_merge | 0.187 | observe | 0 | 0 | 0 | None | 303 | 0 |
@@ -62,7 +62,7 @@
 | tg-LonUp_M | 0.182 | observe | 0 | 0 | 0 | None | 176 | 0 |
 | Barabama-yudou | 0.182 | observe | 0 | 0 | 0 | None | 166 | 0 |
 | barabama-yudou66 | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
-| peasoft-NoMoreWalls | 0.181 | observe | 0 | 0 | 0 | None | 151 | 0 |
+| tg-prrofile_purple | 0.181 | observe | 0 | 0 | 0 | None | 154 | 0 |
 
 ## 综合后 30
 
