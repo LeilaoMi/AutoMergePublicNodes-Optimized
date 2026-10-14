@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-10-14 10:50:30
+生成时间：2026-10-14 11:02:07
 
 ## 摘要
 
@@ -16,10 +16,10 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi-get_subscribe | 0.976 | prefer | 60 | 58 | 2 | 0.967 | 598 | 0 |
-| mheidari-all | 0.88 | prefer | 68 | 55 | 13 | 0.809 | 23983 | 0 |
+| ermaozi-get_subscribe | 0.946 | prefer | 62 | 58 | 4 | 0.935 | 598 | 0 |
+| mheidari-all | 0.898 | prefer | 53 | 44 | 9 | 0.83 | 23983 | 0 |
 | zhangkai | 0.861 | prefer | 17 | 17 | 0 | 1.0 | 144 | 0 |
-| Au1rxx-base64 | 0.786 | prefer | 205 | 147 | 58 | 0.717 | 1786 | 0 |
+| Au1rxx-base64 | 0.773 | prefer | 199 | 140 | 59 | 0.704 | 1786 | 0 |
 
 ## 建议降权
 
@@ -33,13 +33,13 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi-get_subscribe | 0.976 | prefer | 60 | 58 | 2 | 0.967 | 598 | 0 |
-| mheidari-all | 0.88 | prefer | 68 | 55 | 13 | 0.809 | 23983 | 0 |
+| ermaozi-get_subscribe | 0.946 | prefer | 62 | 58 | 4 | 0.935 | 598 | 0 |
+| mheidari-all | 0.898 | prefer | 53 | 44 | 9 | 0.83 | 23983 | 0 |
 | zhangkai | 0.861 | prefer | 17 | 17 | 0 | 1.0 | 144 | 0 |
-| Au1rxx-base64 | 0.786 | prefer | 205 | 147 | 58 | 0.717 | 1786 | 0 |
-| Surfboard-tg-mixed | 0.65 | observe | 84 | 48 | 36 | 0.571 | 7056 | 0 |
+| Au1rxx-base64 | 0.773 | prefer | 199 | 140 | 59 | 0.704 | 1786 | 0 |
+| Surfboard-tg-mixed | 0.634 | observe | 81 | 45 | 36 | 0.556 | 7056 | 0 |
 | SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 10026 | 0 |
-| Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 7616 | 0 |
+| Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 7542 | 0 |
 | xiaoji235-airport-v2ray-all | 0.255 | observe | 0 | 0 | 0 | None | 6752 | 0 |
 | barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 5831 | 0 |
 | Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 5579 | 0 |
@@ -53,7 +53,7 @@
 | 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
 | barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 494 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 490 | 0 |
-| chromego_merge | 0.187 | observe | 0 | 0 | 0 | None | 311 | 0 |
+| chromego_merge | 0.187 | observe | 0 | 0 | 0 | None | 303 | 0 |
 | ts-sf-Fly | 0.183 | observe | 0 | 0 | 0 | None | 201 | 0 |
 | MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-ConfigV2rayNG | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |

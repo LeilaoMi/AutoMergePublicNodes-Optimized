@@ -215572,22 +215572,47 @@ proxies:
     public-key: SXuOS5DMMb3WZ3kP6qwxyx9h68Ump36SJ0tC8fOS4h8
     short-id: 3c29317ad1a0
   client-fingerprint: chrome
-- name: Hong Kong_Hong Kong_vmess_10141
-  server: QxANkY4HDfzQfLyp.v.3dns.vip
-  port: 443
-  type: vmess
-  uuid: b89b702b-31ef-4f6a-85df-c264795a987b
-  alterId: 0
-  cipher: auto
+- name: United States_None_ss_1034
+  server: 64.177.90.30
+  port: 8388
+  type: ss
+  cipher: aes-256-gcm
+  password: BWyPPTusFKhGgzKh
   udp: true
-  tls: true
-  servername: QxANkY4HDfzQfLyp.v.3dns.vip
+- name: Japan_Tokyo_trojan_1081
+  server: 54.238.153.132
+  port: 443
+  type: trojan
+  password: UX82473651
+  sni: 54.238.153.132
   skip-cert-verify: true
+  udp: true
+- name: None_None_trojan_10148
+  server: 104.18.35.86
+  port: 2096
+  type: trojan
+  password: '123456'
+  sni: 321dfbc6.uir-9i6.pages.dev
+  skip-cert-verify: true
+  udp: true
   network: ws
   ws-opts:
-    path: /ws-vmess
+    path: /
     headers:
-      Host: QxANkY4HDfzQfLyp.v.3dns.vip
+      Host: 321dfbc6.uir-9i6.pages.dev
+- name: None_None_trojan_10149
+  server: 104.18.35.86
+  port: 8443
+  type: trojan
+  password: trojan
+  sni: longwanghen.pages.dev
+  skip-cert-verify: true
+  udp: true
+  network: ws
+  ws-opts:
+    path: /
+    headers:
+      Host: longwanghen.pages.dev
 - name: 🇬🇧GB-212.102.63.31-0552
   server: 212.102.63.31
   port: 443
@@ -216400,47 +216425,6 @@ proxies:
   password: ec74bb6a86c2
   sni: px.ads.linkedin.com
   skip-cert-verify: true
-- name: 🇲🇽[www.v2nodes.com] ss-MX-1564...
-  server: 64.177.90.30
-  port: 8388
-  type: ss
-  cipher: aes-256-gcm
-  password: BWyPPTusFKhGgzKh
-  udp: true
-- name: '🇯🇵[www.v2nodes.com] trojan-JP-... #15'
-  server: 54.238.153.132
-  port: 443
-  type: trojan
-  password: UX82473651
-  sni: 54.238.153.132
-  skip-cert-verify: true
-  udp: true
-- name: 🇸🇬 新加坡 | SGP 3
-  server: 104.18.35.86
-  port: 2096
-  type: trojan
-  password: '123456'
-  sni: 321dfbc6.uir-9i6.pages.dev
-  skip-cert-verify: true
-  udp: true
-  network: ws
-  ws-opts:
-    path: /
-    headers:
-      Host: 321dfbc6.uir-9i6.pages.dev
-- name: 🇺🇸 美国 | USA 9
-  server: 104.18.35.86
-  port: 8443
-  type: trojan
-  password: trojan
-  sni: longwanghen.pages.dev
-  skip-cert-verify: true
-  udp: true
-  network: ws
-  ws-opts:
-    path: /
-    headers:
-      Host: longwanghen.pages.dev
 - name: 🇯🇵[openproxylist.com]
   server: 43.247.132.42
   port: 41563
@@ -281707,18 +281691,6 @@ proxies:
   udp: true
   username: Og
   password: ''
-- name: filembad-178
-  server: 45.131.212.151
-  port: 443
-  type: vless
-  uuid: 5aefad36-749b-401c-8b3b-547ef7d2253e
-  udp: true
-  tls: true
-  servername: 45.131.212.151
-  skip-cert-verify: true
-  reality-opts:
-    public-key: ''
-    short-id: ''
 - name: canfingV2rayNG-87
   server: teain.org
   port: 1005
@@ -302579,7 +302551,10 @@ proxy-groups:
   - US_speednode_0141
   - US_speednode_0143
   - W8.WALID
-  - Hong Kong_Hong Kong_vmess_10141
+  - United States_None_ss_1034
+  - Japan_Tokyo_trojan_1081
+  - None_None_trojan_10148
+  - None_None_trojan_10149
   - 🇬🇧GB-212.102.63.31-0552
   - 🇬🇧GB-185.164.138.156-0553
   - 🇩🇪DE-149.36.50.1-0554
@@ -302714,10 +302689,6 @@ proxy-groups:
   - 🇸🇬 新加坡 | SGP 6
   - 🇹🇼 🇨🇳 台湾 | TWN
   - ProxyPool | 🇹🇼 🇨🇳 台湾 | TWN
-  - 🇲🇽[www.v2nodes.com] ss-MX-1564...
-  - '🇯🇵[www.v2nodes.com] trojan-JP-... #15'
-  - 🇸🇬 新加坡 | SGP 3
-  - 🇺🇸 美国 | USA 9
   - 🇯🇵[openproxylist.com]
   - 🇩🇪[openproxylist.com]
   - '@DeltaKroneckerGithub'
@@ -309887,7 +309858,6 @@ proxy-groups:
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#4
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#5
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#6
-  - filembad-178
   - canfingV2rayNG-87
   - filembad-7
   - ProxyMtpVPN-23
@@ -329794,7 +329764,10 @@ proxy-groups:
   - US_speednode_0141
   - US_speednode_0143
   - W8.WALID
-  - Hong Kong_Hong Kong_vmess_10141
+  - United States_None_ss_1034
+  - Japan_Tokyo_trojan_1081
+  - None_None_trojan_10148
+  - None_None_trojan_10149
   - 🇬🇧GB-212.102.63.31-0552
   - 🇬🇧GB-185.164.138.156-0553
   - 🇩🇪DE-149.36.50.1-0554
@@ -329929,10 +329902,6 @@ proxy-groups:
   - 🇸🇬 新加坡 | SGP 6
   - 🇹🇼 🇨🇳 台湾 | TWN
   - ProxyPool | 🇹🇼 🇨🇳 台湾 | TWN
-  - 🇲🇽[www.v2nodes.com] ss-MX-1564...
-  - '🇯🇵[www.v2nodes.com] trojan-JP-... #15'
-  - 🇸🇬 新加坡 | SGP 3
-  - 🇺🇸 美国 | USA 9
   - 🇯🇵[openproxylist.com]
   - 🇩🇪[openproxylist.com]
   - '@DeltaKroneckerGithub'
@@ -337102,7 +337071,6 @@ proxy-groups:
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#4
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#5
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#6
-  - filembad-178
   - canfingV2rayNG-87
   - filembad-7
   - ProxyMtpVPN-23
@@ -352382,7 +352350,8 @@ proxy-groups:
   - US_speednode_0141
   - US_speednode_0143
   - W8.WALID
-  - Hong Kong_Hong Kong_vmess_10141
+  - None_None_trojan_10148
+  - None_None_trojan_10149
   - https://github.com/*********-*...
   - 'github.com/*********-******/**... #1'
   - ProxyPool | 🇹🇼 🇨🇳 台湾 | TWN
@@ -358517,7 +358486,6 @@ proxy-groups:
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#4
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#5
   - Telegram@DarkVPNpro | کانفیگ های پرسرعت بیشتر⚡#6
-  - filembad-178
   - canfingV2rayNG-87
   - filembad-7
   - ProxyMtpVPN-23
@@ -361774,7 +361742,7 @@ proxy-groups:
   - 4Nika-944d7bc791
   - 🇯🇵_JP_日本
   - 🇯🇵_JP_日本#1
-  - '🇯🇵[www.v2nodes.com] trojan-JP-... #15'
+  - Japan_Tokyo_trojan_1081
   - 🇯🇵[openproxylist.com]
   - '@DeltaKroneckerGithub#212'
   - '@DeltaKroneckerGithub#237'
@@ -362060,7 +362028,7 @@ proxy-groups:
   - 🇲🇽#1
   - '@Begoo_VPN#4'
   - 4Sarina-469b0974ab
-  - 🇲🇽[www.v2nodes.com] ss-MX-1564...
+  - United States_None_ss_1034
   url: https://www.gstatic.com/generate_204
   interval: 600
 - name: 🇲🇾 马来西亚
@@ -363306,7 +363274,6 @@ proxy-groups:
   - 🇸🇬SG_1|2.6MB/s
   - 🇸🇬SG_2|1.3MB/s
   - 🇸🇬 新加坡 | SGP 6
-  - 🇸🇬 新加坡 | SGP 3
   - '@DeltaKroneckerGithub#74'
   - '@DeltaKroneckerGithub#122'
   - '@DeltaKroneckerGithub#215'
@@ -364509,7 +364476,6 @@ proxy-groups:
   - 🇺🇸US_13|1.7MB/s
   - 🇺🇸US_14|2.0MB/s
   - 🇺🇸US_15|2.2MB/s
-  - 🇺🇸 美国 | USA 9
   - '@DeltaKroneckerGithub#44'
   - '@DeltaKroneckerGithub#57'
   - '@DeltaKroneckerGithub#110'
