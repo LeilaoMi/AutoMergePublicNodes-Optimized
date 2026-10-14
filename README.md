@@ -11,10 +11,12 @@
 
 ## 🌟 核心特性
 
-- **⚡ 两阶段测活**：先用 100 并发轻量探活（只测 204）快速筛掉不可达节点，再对剩余节点做完整真测，总耗时从 60+ 分钟降到 ~8 分钟。
+- **⚡ 两阶段测活**：先用 100 并发轻量探活（只测 204）快速筛掉不可达节点，再用 75 并发完整真测，单节点 15s 超时防 tail latency，总耗时从 60+ 分钟降到 ~6 分钟。
 - **🎯 7 因子加权评分**：延迟、抖动、TCP、下载速度、指纹抗检测、协议历史、来源历史。REALITY/uTLS 优先，443 端口加成，跨周期稳定节点加分。
-- **🔒 SSRF 防投毒**：拦截指向私有地址与云元数据端点（如 `169.254.169.254`）的恶意节点，保护 CI 运行环境。
+- **🇨🇳 国内可达性检查**：基于 GlobalPing 68 个国内探针的 TCP traceroute，区分"海外可用"与"国内可用"，输出 `verified.*`（国内可达）与 `global.*`（海外可达）两档。
+- **🔒 SSRF 防投毒**：DNS 解析后对每个 IP 做内网检查，拦截指向私有地址与云元数据端点（如 `169.254.169.254`）的恶意节点，保护 CI 运行环境。
 - **📈 节点稳定性追踪**：跨周期连续真测通过的节点获评分加成，历史稳定的老节点优先排在前面。
+- **🧹 僵尸源自动禁用**：连续 20 轮抓取无节点的订阅源自动禁用，不再浪费抓取时间。
 - **🌐 动态订阅网关**：GitHub Pages 浏览器端实时筛选，多 CDN 故障转移，本地测速，一键导出 Clash / Base64 / sing-box JSON。
 
 ---
@@ -97,12 +99,13 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
   → 指纹去重 → GeoIP 标记 → SSRF 防投毒拦截
   → 质量预过滤 → TCP 预筛选 → 历史权重下采样
   → 轻量探活（100 并发只测 204，快速筛掉不可达节点）
-  → sing-box 真实代理测试（50 并发，完整目标）
+  → sing-box 真实代理测试（75 并发，完整目标，单节点 15s 超时）
+  → 国内可达性检查（GlobalPing 国内探针 traceroute）
   → 综合评分排序输出
   → 生成健康报告、日报、源评分与清理建议
 ```
 
-两阶段测试是性能关键：先用高并发探活把 3000 候选筛到 ~1000，再对剩余节点做完整真测，总耗时从 60+ 分钟降到 ~8 分钟。
+两阶段测试是性能关键：先用高并发探活把 3000 候选筛到 ~400，再对剩余节点做完整真测，总耗时从 60+ 分钟降到 ~6 分钟。
 
 完整真测包含：海外 204 检测、出口地理检测（cloudflare trace，避免 ipinfo 限流）、中国站点连通检测（baidu）、小文件下载测速、可疑低延迟过滤、Netflix/ChatGPT/Disney 解锁检测、DNS 泄露检测。
 
@@ -242,7 +245,8 @@ python tools/local_filter.py --input output/global.urls --output-prefix local_ve
 - `test_limit`：进入下采样的节点上限，默认 3000，最大 5000。
 - `min_retain_ratio`：缩水守门比例，默认 0 表示关闭。
 - 轻量探活：默认启用（`--lightweight-probe`），100 并发先筛不可达节点，再真测剩余。
-- 真测并发：50（`--test-concurrency 50`），完整目标测试。
+- 真测并发：75（`--test-concurrency 75`），完整目标测试，单节点 15s 超时防 tail latency。
+- 国内检查：默认启用（`--china-check`），GlobalPing 国内探针 traceroute，60s 轮询超时。
 - 超时上限：30 分钟（`timeout-minutes: 30`）。
 
 CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`health_report.json`、`daily_report.md`、`source_scores.md`、`scoring_profiles.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
@@ -257,8 +261,9 @@ AutoMergePublicNodes-Optimized/
 ├── core/
 │   ├── fetcher.py                  # 异步抓取、重试、jsDelivr/CDN 回退
 │   ├── parser.py                   # 多协议解析（ss/ssr/vmess/vless/trojan/hysteria2/tuic/anytls/socks/http）
-│   ├── tester.py                   # sing-box 真实代理测试（两阶段：轻量探活 + 完整真测）
-│   ├── filtering.py                # 质量预过滤、同源降噪、SSRF 防投毒（拦截私有/元数据地址）
+│   ├── tester.py                   # sing-box 真实代理测试（两阶段：轻量探活 + 完整真测，端口轮询替代固定等待）
+│   ├── globalping.py               # 国内可达性检查（GlobalPing TCP traceroute）
+│   ├── filtering.py                # 质量预过滤、同源降噪、SSRF 防投毒（DNS 解析后逐 IP 检查）
 │   ├── sampling.py                 # 真测下采样与历史权重排序
 │   ├── generator.py                # 多格式订阅输出（yaml/txt/json/urls，大文件紧凑）
 │   ├── scoring.py                  # 综合节点评分（7 因子加权）
@@ -319,39 +324,29 @@ MIT
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-10-14 13:17:05 |
+| 更新时间 | 2026-10-14 21:03:17 |
 | 版本 | 2.4.0 |
-| 订阅源 | 93/107 |
-| 原始节点 | 97972 |
-| 去重后 | 27169 |
-| TCP 可达 | 3000 |
-| 真实可用 | 66 |
-| 真测通过率 | 2.2% |
-| Verified 输出 | 66 |
-| Global 输出 | 72 |
-| All 输出 | 27169 |
+| 订阅源 | 1/1 |
+| 原始节点 | 1 |
+| 去重后 | 1 |
+| TCP 可达 | 1 |
+| 真实可用 | 1 |
+| 真测通过率 | 100.0% |
+| Verified 输出 | 1 |
+| Global 输出 | 0 |
+| All 输出 | 1 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
 ### Top 节点评分
 
-| 评分 | 协议 | 延迟(ms) | 来源 |
-| --- | --- | --- | --- |
-| 75.45 | shadowsocks | 266.3 | Au1rxx-base64 |
-| 72.97 | vless | 294.9 | Au1rxx-base64 |
-| 71.26 | hysteria2 | 366.0 | Au1rxx-base64 |
-| 71.0 | vless | 332.9 | Au1rxx-base64 |
-| 70.01 | shadowsocks | 378.6 | Au1rxx-base64 |
+_暂无评分数据_
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| zhangkai | 0.927 | 19 | prefer |
-| Au1rxx-base64 | 0.814 | 200 | prefer |
-| mheidari-all | 0.78 | 78 | prefer |
-| Surfboard-tg-mixed | 0.736 | 59 | prefer |
-| ermaozi-get_subscribe | 0.534 | 7 | observe |
+| mock-source | 0.175 | 0 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
