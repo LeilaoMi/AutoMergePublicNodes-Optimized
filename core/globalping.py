@@ -18,7 +18,7 @@ API_BASE = "https://api.globalping.io/v1"
 CN_PROBE_LIMIT = 1
 # 创建测量后的轮询间隔与总超时
 POLL_INTERVAL_SEC = 5
-POLL_TIMEOUT_SEC = 120
+POLL_TIMEOUT_SEC = 60
 # 并发创建测量的数量（GlobalPing 限流 250/小时，保守取 30 并发）
 CREATE_CONCURRENCY = 30
 
