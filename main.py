@@ -82,6 +82,18 @@ def should_preserve_previous_output(new_count: int, previous_count: int, min_ret
     return new_count < int(previous_count * min_retain_ratio)
 
 
+async def _resolve_and_check_ssrf(server: str, port: int, timeout: float) -> bool:
+    """解析域名并检查是否命中 SSRF。返回 True=应拦截。抽成独立函数以便测试 mock。"""
+    try:
+        infos = await asyncio.wait_for(
+            asyncio.get_event_loop().getaddrinfo(
+                server, port, type=socket.SOCK_STREAM),
+            timeout=timeout)
+    except Exception:
+        return False  # 解析失败交给 open_connection 处理，不在此拦截
+    return any(is_ssrf_target(info[4][0]) for info in infos)
+
+
 async def tcp_check_batch(
     nodes: List[Node],
     concurrency: int = 200,
@@ -110,16 +122,7 @@ async def tcp_check_batch(
             try:
                 # SSRF 纵深防御：域名先解析，对每个解析出的 IP 跑 is_ssrf_target。
                 # filter_ssrf 只拦字面 IP，恶意域名 DNS 到内网 IP 会绕过它。
-                try:
-                    infos = await asyncio.wait_for(
-                        asyncio.get_event_loop().getaddrinfo(
-                            n.server, n.server_port, type=socket.SOCK_STREAM),
-                        timeout=timeout)
-                except Exception as exc:
-                    key = type(exc).__name__
-                    errors[key] = errors.get(key, 0) + 1
-                    continue
-                if any(is_ssrf_target(info[4][0]) for info in infos):
+                if await _resolve_and_check_ssrf(n.server, n.server_port, timeout):
                     errors["SSRFBlocked"] = errors.get("SSRFBlocked", 0) + 1
                     continue
                 fut = asyncio.open_connection(n.server, n.server_port)
@@ -444,7 +447,7 @@ async def run(args):
     # 国内可达性检查：海外 CI 测的是"节点能力"，GlobalPing 补"中国用户连得上"视角
     china_reachable_count = 0
     china_unreachable_count = 0
-    if args.china_check and valid:
+    if getattr(args, 'china_check', False) and valid:
         print(f"[5.5/6] 国内可达性检查（GlobalPing）: {len(valid)} 个节点...")
         try:
             from core.globalping import check_china_reachability
