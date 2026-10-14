@@ -204,7 +204,20 @@ class SingBoxTester:
             except Exception:
                 stderr_fh.close()
                 raise
-            await asyncio.sleep(self.startup_wait)
+            # 等待 sing-box 就绪：轮询端口而非固定 sleep，快的节点 100ms 就绪
+            deadline = time.monotonic() + max(self.startup_wait, 2.0)
+            while time.monotonic() < deadline:
+                try:
+                    reader, writer = await asyncio.wait_for(
+                        asyncio.open_connection("127.0.0.1", port), timeout=0.05)
+                    writer.close()
+                    await writer.wait_closed()
+                    break
+                except Exception:
+                    await asyncio.sleep(0.05)
+            else:
+                # 轮询超时，回退到固定等待（兼容极慢启动）
+                await asyncio.sleep(self.startup_wait)
 
             if proc.returncode is not None:
                 # 启动立刻失败, 读 stderr 给提示
