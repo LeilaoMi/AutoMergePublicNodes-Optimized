@@ -107,7 +107,7 @@ jobs:
 
       - name: Audit sources
         run: |
-          python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json
+          python tools/audit_sources.py --sources config/sources.yaml --output output/source_audit.json --disable-dead-threshold 20
 
       - name: Compile check
         run: python -m compileall -q main.py core tools tests
