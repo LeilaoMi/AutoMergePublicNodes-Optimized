@@ -174,7 +174,8 @@ jobs:
           git config user.name "GitHub Actions"
           BRANCH="${{ github.event.repository.default_branch }}"
           # 显式 fetch 一次确保 origin/$BRANCH 是最新的, 避免 stale shallow ref
-          git fetch --unshallow origin "$BRANCH" 2>/dev/null || git fetch origin "$BRANCH"
+          # （不需要 --unshallow：rebase 只需要最新 tip，普通 fetch 足够）
+          git fetch origin "$BRANCH"
           git rm -f output/top.* 2>/dev/null || true
           git add output/ README.md 2>/dev/null || true
           if git diff --staged --quiet; then
