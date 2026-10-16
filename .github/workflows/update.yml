@@ -189,6 +189,8 @@ jobs:
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           BRANCH="${{ github.event.repository.default_branch }}"
+          # by_region 文件名是中文：关闭路径转义，否则冲突列表里是 "output/\344..." 带引号的形式，匹配不到 output/* 导致 rebase 失败
+          git config core.quotePath false
           # 显式 fetch 一次确保 origin/$BRANCH 是最新的, 避免 stale shallow ref
           # （不需要 --unshallow：rebase 只需要最新 tip，普通 fetch 足够）
           git fetch origin "$BRANCH"
