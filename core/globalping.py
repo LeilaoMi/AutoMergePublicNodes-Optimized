@@ -1,7 +1,10 @@
 """GlobalPing 国内探针 TCP 连通性检查。
 
-从中国境内的 GlobalPing 探针向节点发起 TCP traceroute，
+从中国境内的 GlobalPing 探针向节点端口发起 TCP ping（真实三次握手），
 验证"中国用户 → 节点"是否可达。补上海外 CI 测不到的视角。
+
+不用 traceroute：国际链路常超过 20 跳且末段不回 ICMP，traceroute 末跳多为空，
+实测把能握手成功的节点也判成不可达。
 
 额度（https://globalping.io/credits）：
 - 匿名：每 IP 每小时 250 次测试（GitHub Runner 的出口 IP 是共享的，额度可能已被他人消耗）
@@ -21,7 +24,6 @@ import asyncio
 import ipaddress
 import json
 import os
-import socket
 import time
 import urllib.error
 import urllib.request
@@ -30,6 +32,8 @@ from typing import Any, Dict, List, Optional, Tuple
 API_BASE = "https://api.globalping.io/v1"
 # 每次测量用的国内探针数（1 个探针 = 1 次测试额度）
 CN_PROBE_LIMIT = 1
+# 每次 TCP ping 的握手次数（额度按探针计，与次数无关）
+TCP_PING_PACKETS = 3
 # 创建测量后的轮询间隔与单测量超时
 POLL_INTERVAL_SEC = 3
 POLL_TIMEOUT_SEC = 60
@@ -92,10 +96,10 @@ def plan_budget(candidates: int, remaining: Optional[int], max_checks: int = DEF
 
 def _create_measurement(server: str, port: int, token: str = "") -> str:
     payload = {
-        "type": "traceroute",
+        "type": "ping",
         "target": server,
         "locations": [{"country": "CN", "limit": CN_PROBE_LIMIT}],
-        "measurementOptions": {"protocol": "TCP", "port": port},
+        "measurementOptions": {"protocol": "TCP", "port": port, "packets": TCP_PING_PACKETS},
     }
     result = _api("POST", "/measurements", payload, token=token)
     return result["id"]
@@ -113,40 +117,27 @@ def _same_ip(a: str, b: str) -> bool:
 
 
 def is_reachable(measurement: dict, target_ip: str = "") -> Optional[bool]:
-    """解析 traceroute 结果。
+    """解析 TCP ping 结果。
 
-    True：最后一跳就是目标 IP（TCP traceroute 到达目标端口）。
-    False：探针正常完成但没到达目标。
+    True：至少一次握手成功。
+    False：探针正常完成但全部握手失败。
     None：探针离线/失败/无结果，无法判断。
     """
     any_finished = False
     for res in measurement.get("results", []) or []:
         result = res.get("result", {}) or {}
-        status = result.get("status")
-        if status in ("failed", "offline"):
+        if result.get("status") in ("failed", "offline"):
             continue
-        hops = result.get("hops") or []
+        stats = result.get("stats") or {}
+        if "rcv" not in stats:
+            continue
         any_finished = True
-        if not hops:
+        try:
+            if int(stats.get("rcv") or 0) > 0:
+                return True
+        except (TypeError, ValueError):
             continue
-        last = hops[-1].get("resolvedAddress") or ""
-        # 优先用探针侧解析结果（域名在国内可能解析到不同 IP）
-        expected = result.get("resolvedAddress") or target_ip or ""
-        if last and expected and _same_ip(last, expected):
-            return True
     return False if any_finished else None
-
-
-def _resolve(server: str) -> str:
-    try:
-        ipaddress.ip_address(server)
-        return server
-    except ValueError:
-        pass
-    try:
-        return socket.gethostbyname(server)
-    except Exception:
-        return ""
 
 
 async def check_china_reachability(
@@ -210,7 +201,6 @@ async def check_china_reachability(
             except Exception:
                 by_target[key] = None
                 return
-        target_ip = await loop.run_in_executor(None, _resolve, server)
         deadline = time.time() + POLL_TIMEOUT_SEC
         while time.time() < deadline:
             await asyncio.sleep(POLL_INTERVAL_SEC)
@@ -219,7 +209,7 @@ async def check_china_reachability(
             except Exception:
                 continue
             if m.get("status") == "finished":
-                by_target[key] = is_reachable(m, target_ip)
+                by_target[key] = is_reachable(m)
                 return
         by_target[key] = None
 

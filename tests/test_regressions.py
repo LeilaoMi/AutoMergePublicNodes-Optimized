@@ -1127,15 +1127,13 @@ weights:
 
 
 class ChinaCheckAndSamplingTests(unittest.TestCase):
-    def test_globalping_reachable_requires_last_hop_equal_target(self):
+    def test_globalping_tcp_ping_reachability(self):
         from core.globalping import is_reachable
-        reached = {"results": [{"result": {"status": "finished", "resolvedAddress": "1.2.3.4",
-                                           "hops": [{"resolvedAddress": "10.0.0.1"}, {"resolvedAddress": "1.2.3.4"}]}}]}
-        stopped = {"results": [{"result": {"status": "finished", "resolvedAddress": "1.2.3.4",
-                                           "hops": [{"resolvedAddress": "10.0.0.1"}, {"resolvedAddress": "5.6.7.8"}]}}]}
-        offline = {"results": [{"result": {"status": "offline", "hops": []}}]}
-        self.assertIs(is_reachable(reached), True)
-        self.assertIs(is_reachable(stopped), False)
+        ok = {"results": [{"result": {"status": "finished", "stats": {"total": 3, "rcv": 1, "loss": 66.7}}}]}
+        blocked = {"results": [{"result": {"status": "finished", "stats": {"total": 3, "rcv": 0, "loss": 100}}}]}
+        offline = {"results": [{"result": {"status": "offline"}}]}
+        self.assertIs(is_reachable(ok), True)
+        self.assertIs(is_reachable(blocked), False)
         self.assertIsNone(is_reachable(offline))
 
     def test_globalping_budget_respects_remaining_and_cap(self):
