@@ -479,20 +479,25 @@ async def run(args):
     # 国内可达性检查：海外 CI 测的是"节点能力"，GlobalPing 补"中国用户连得上"视角
     china_reachable_count = 0
     china_unreachable_count = 0
+    china_unknown_count = 0
+    # 海外真测通过的完整列表：global.* 以它为准，国内检查只决定 verified.*
+    overseas_valid = list(valid)
     gen_start = time.time()
-    if getattr(args, 'china_check', False) and valid:
-        print(f"[5.5/6] 国内可达性检查（GlobalPing）: {len(valid)} 个节点...")
+    if getattr(args, 'china_check', False) and valid and not degraded_mode:
+        print(f"[5.5/6] 国内可达性检查（GlobalPing）: {len(valid)} 个候选...")
         try:
             from core.globalping import check_china_reachability
-            china_map = await check_china_reachability(valid)
-            china_valid = [(n, lat, jit) for n, lat, jit in valid if china_map.get(n.fingerprint(), False)]
+            china_map = await check_china_reachability(
+                valid, max_checks=getattr(args, "china_check_max", 200))
+            china_valid = [(n, lat, jit) for n, lat, jit in valid if china_map.get(n.fingerprint()) is True]
             china_reachable_count = len(china_valid)
-            china_unreachable_count = len(valid) - china_reachable_count
-            print(f"      国内可达: {china_reachable_count}, 不可达: {china_unreachable_count}")
+            china_unreachable_count = sum(1 for n, _, _ in valid if china_map.get(n.fingerprint()) is False)
+            china_unknown_count = len(valid) - china_reachable_count - china_unreachable_count
+            print(f"      国内可达: {china_reachable_count}, 不可达: {china_unreachable_count}, 未知: {china_unknown_count}")
             if china_valid:
                 valid = china_valid
             else:
-                print("      警告：国内全不可达（可能是 GlobalPing 故障），保留海外结果")
+                print("      警告：没有国内实测可达的节点（可能是 GlobalPing 故障或额度用完），verified 保留海外结果")
         except Exception as e:
             print(f"      国内检查失败（{e}），保留海外结果")
     stage_durations["china_check"] = round(time.time() - gen_start, 1)
@@ -500,7 +505,8 @@ async def run(args):
     stage_start = time.time()  # generate 只计文件写入，不含 china_check（去双重计数）
     top = valid[:args.top_n]
     final_nodes = build_output_nodes(valid, flag_map, args.top_n)
-    global_valid = sorted(valid + cn_block_retry_valid, key=lambda x: x[1])
+    # global = 全部海外真测通过 + 跳过百度复测通过（不受国内检查影响）
+    global_valid = sorted(overseas_valid + cn_block_retry_valid, key=lambda x: x[1])
     global_nodes = build_output_nodes(global_valid, flag_map, args.top_n)
 
     # 6) 生成输出
@@ -615,7 +621,10 @@ async def run(args):
         "nodes_tcp_ok": nodes_before_probe,
         "nodes_tcp_reachable": nodes_tcp_reachable if args.tcp_check else len(nodes),
         "nodes_probe_ok": nodes_after_probe,
-        "nodes_real_ok": len(valid),
+        "nodes_real_ok": len(overseas_valid),
+        "nodes_china_reachable": china_reachable_count,
+        "nodes_china_unreachable": china_unreachable_count,
+        "nodes_china_unknown": china_unknown_count,
         "probe_error_details": probe_error_top if (args.lightweight_probe and args.real_test) else [],
         "nodes_verified_output": n_top,
         "nodes_global_output": n_global,
@@ -702,6 +711,8 @@ def main():
     p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--tcp-concurrency", type=int, default=500)
     p.add_argument("--tcp-timeout", type=float, default=2.0)
+    p.add_argument("--china-check-max", type=int, default=200,
+                   help="国内检查单轮最多测多少个节点（GlobalPing 匿名额度 250 次/小时/IP）")
     p.add_argument("--china-check", action=argparse.BooleanOptionalAction, default=True,
                    help="用 GlobalPing 国内探针验证节点 TCP 可达性（补海外 CI 视角缺失）")
 

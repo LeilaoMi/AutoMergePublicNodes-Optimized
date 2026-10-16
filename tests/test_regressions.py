@@ -1126,5 +1126,36 @@ weights:
         # （test_one 内部用 mkdtemp，验证无泄漏需要更复杂的钩子，此处只验逻辑）
 
 
+class ChinaCheckAndSamplingTests(unittest.TestCase):
+    def test_globalping_reachable_requires_last_hop_equal_target(self):
+        from core.globalping import is_reachable
+        reached = {"results": [{"result": {"status": "finished", "resolvedAddress": "1.2.3.4",
+                                           "hops": [{"resolvedAddress": "10.0.0.1"}, {"resolvedAddress": "1.2.3.4"}]}}]}
+        stopped = {"results": [{"result": {"status": "finished", "resolvedAddress": "1.2.3.4",
+                                           "hops": [{"resolvedAddress": "10.0.0.1"}, {"resolvedAddress": "5.6.7.8"}]}}]}
+        offline = {"results": [{"result": {"status": "offline", "hops": []}}]}
+        self.assertIs(is_reachable(reached), True)
+        self.assertIs(is_reachable(stopped), False)
+        self.assertIsNone(is_reachable(offline))
+
+    def test_globalping_budget_respects_remaining_and_cap(self):
+        from core.globalping import plan_budget
+        self.assertEqual(plan_budget(471, 250, max_checks=200, reserve=20), 200)
+        self.assertEqual(plan_budget(471, 100, max_checks=200, reserve=20), 80)
+        self.assertEqual(plan_budget(471, 10, max_checks=200, reserve=20), 0)
+        self.assertEqual(plan_budget(50, None, max_checks=200), 50)
+
+    def test_weighted_sample_explores_sources_without_history(self):
+        nodes, lat, src = [], {}, {}
+        for i in range(20):
+            n = Node("vless", f"rich-{i}", f"1.1.1.{i}", 443, {"uuid": f"u{i}"})
+            nodes.append(n); lat[n.fingerprint()] = 10 + i; src[n.fingerprint()] = "rich"
+        newbie = Node("vless", "new-0", "2.2.2.2", 443, {"uuid": "nu"})
+        nodes.append(newbie); lat[newbie.fingerprint()] = 900; src[newbie.fingerprint()] = "new"
+        sampled = sample_for_real_test_weighted(
+            nodes, lat, 10, src, protocol_rates={}, source_rates={"rich": 0.9, "new": 0.1})
+        self.assertIn("new-0", [n.tag for n in sampled])
+
+
 if __name__ == "__main__":
     unittest.main()
