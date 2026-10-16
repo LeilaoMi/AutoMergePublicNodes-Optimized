@@ -1,338 +1,75 @@
 # AutoMergePublicNodes-Optimized
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11+-blue)]()
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](requirements.txt)
 [![节点更新](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
-> 自动聚合公开代理订阅源，使用 sing-box 真实代理测试，输出可直接导入主流客户端的订阅文件，并提供零服务器成本的浏览器端动态订阅网关。
-> *仅供学习研究。公开节点稳定性不可控，请自行评估可用性与合规风险。*
+每 6 小时从 100 多个公开订阅源收集节点，用 sing-box 逐个做真实代理连接测试，再用国内探针检查能否从中国连上，最后输出可直接导入客户端的订阅。
+
+> 仅供学习研究。公开节点来源不明、随时失效，可能记录流量，请勿用于登录重要账号或传输敏感信息，并自行评估合规风险。
 
 ---
 
-## 🌟 核心特性
+## 怎么选订阅
 
-- **⚡ 两阶段测活**：先用 100 并发轻量探活（只测 204）快速筛掉不可达节点，再用 75 并发完整真测，单节点 15s 超时防 tail latency，总耗时从 60+ 分钟降到 ~6 分钟。
-- **🎯 7 因子加权评分**：延迟、抖动、TCP、下载速度、指纹抗检测、协议历史、来源历史。REALITY/uTLS 优先，443 端口加成，跨周期稳定节点加分。
-- **🇨🇳 国内可达性检查**：基于 GlobalPing 国内探针向节点端口做 TCP 握手（TCP ping），区分"海外可用"与"国内可用"，输出 `verified.*`（国内实测可达）与 `global.*`（全部海外真测通过）两档。按剩余额度自适应，单轮最多新检查 200 个；结果跨轮缓存（可达 12 小时、不可达 24 小时），省下的额度用来检查更多节点。额度不足时未检查的节点记为"未知"，仍保留在 `global.*`。明文 HTTP/SOCKS 代理不进入 `verified.*`/`global.*`（`all.*` 仍保留）。
-- **🔒 SSRF 防投毒**：DNS 解析后对每个 IP 做内网检查，拦截指向私有地址与云元数据端点（如 `169.254.169.254`）的恶意节点，保护 CI 运行环境。
-- **📈 节点稳定性追踪**：跨周期连续真测通过的节点获评分加成，历史稳定的老节点优先排在前面。
-- **🧹 僵尸源自动禁用**：连续 20 轮抓取无节点的订阅源自动禁用，不再浪费抓取时间。
-- **🌐 动态订阅网关**：GitHub Pages 浏览器端实时筛选，多 CDN 故障转移，本地测速，一键导出 Clash / Base64 / sing-box JSON。
-
----
-
-## 🚀 动态订阅网关 (推荐)
-
-访问项目的 **GitHub Pages** 站点，在浏览器端实时过滤并生成专属订阅链接：
-👉 **[点击进入动态网关](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)**
-
-### 订阅网关
-- 按地区、协议、关键词实时筛选全量节点池
-- 多 CDN 自动故障转移（jsDelivr → Statically → GitHub Raw），单源挂了也能用
-- 浏览器端测速：对筛选结果并发 TCP 连通性测试，标红超时节点，超时阈值可调
-- 一键下载 Clash YAML（含多分组策略）/ Base64 通用订阅 / sing-box JSON / 复制专属订阅链接
-- 计算全在本地，保护隐私，零服务器开销
-
-### 订阅源健康面板
-
-👉 **[订阅源健康](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/sources.html)**
-
-- 订阅源抓取状态总览（健康 / 失效 / 自动禁用计数）
-- 趋势图：30 轮运行漏斗（原始节点 → 去重 → TCP → 真测 → Verified）
-- 死源清单：连续死亡计数、抓取错误、抓取耗时
-- 源贡献排行：按解析节点数排序，识别高价值源
-
-*支持条件：地区 (如 `HK,JP`)、协议 (如 `vless,trojan`)。*
-
----
-
-## 快速选择
-
-| 使用场景 | 推荐文件 | 说明 |
+| 你在哪 | 用哪个 | 说明 |
 |---|---|---|
-| Clash / Mihomo | `output/verified.yaml` | 首选，真测通过后输出 |
-| v2rayN / v2rayNG | `output/verified.txt` | base64 通用订阅 |
-| Karing / sing-box | `output/verified.json` | sing-box JSON 配置 |
-| 兼顾数量 | `output/global.yaml` / `output/global.txt` / `output/global.json` | 海外测试通过，但国内站点连通不一定稳定 |
-| 自行测速 | `data` 分支的 `output/all.urls` / `all.txt` / `all.yaml` | 全量去重候选池，不保证可用 |
-| 查看状态 | `output/daily_report.md` / `output/health_report.md` / `output/health_report.json` / `output/source_scores.md` / `output/scoring_profiles.md` / `output/source_cleanup_suggestions.md` | 日报、健康报告、评分模板、源评分、清理建议 |
+| **中国大陆** | `verified` | 海外真测通过，并且国内探针能和节点端口完成 TCP 握手。数量较少（通常几十个），但最有希望直接能用 |
+| 海外，或 verified 不够用 | `global` | 海外真测通过即可，最多 300 个，按综合评分排序。不保证国内能连上 |
+| 想自己测 | `all`（在 `data` 分支） | 去重后的全量候选池，约 2.7 万个，**未经测试** |
 
-`verified.*` 数量不是固定值。`--top-n` 只是上限，实际数量取决于本轮真测结果。
+每个档位都有四种格式：`.yaml`（Clash / Mihomo）、`.txt`（Base64，v2rayN / v2rayNG / Shadowrocket）、`.json`（sing-box / Karing）、`.urls`（明文链接，每行一个）。
 
----
+### 订阅地址
 
-## 订阅地址
+jsDelivr（国内通常更快）：
 
-### GitHub Raw
 ```text
-https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.txt
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.yaml
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.txt
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.json
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.yaml
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.txt
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.json
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@data/output/all.yaml
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@data/output/all.txt
+```
+
+GitHub Raw（jsDelivr 不可用时）：
+
+```text
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.yaml
-https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/verified.json
-https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.txt
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.yaml
-https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.json
-https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/output/all.txt
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/output/all.yaml
 ```
 
-### jsDelivr
-```text
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.txt
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.yaml
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.json
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.txt
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.yaml
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.json
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@data/output/all.txt
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@data/output/all.yaml
-```
-转换链接见 `output/*.converter.md`。第三方转换服务可能不可用或记录订阅地址，优先使用本仓库直接生成的订阅文件。
+> 文件名把 `verified` / `global` 换掉、扩展名换成需要的格式即可。另有按协议（`by_protocol/`）、按地区（`by_region/`）和每 100 个一块（`chunks/`）的拆分订阅，见 [输出文件](#输出文件)。订阅转换链接在 `output/*.converter.md`，第三方转换服务可能失效或记录订阅地址，能直接用本仓库文件就别转换。
+
+### 在线筛选
+
+👉 **[节点筛选页](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)**：在浏览器里按地区、协议、关键词筛选全量池，标出每个节点的 CI 实测结果（国内可达 / 海外可用 + 延迟），可以只看实测通过的、按延迟排序，然后导出 Clash YAML、Base64 或 sing-box JSON。全部在本地计算，不经过任何服务器。
+
+> 浏览器无法直接连接代理协议，所以页面不做测速，延迟数据来自最近一轮 CI。
+
+👉 **[订阅源健康面板](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/sources.html)**：各订阅源的抓取状态、死源清单、贡献排行和最近 30 轮的漏斗趋势。
 
 ---
-
-## 流程概览
-
-```text
-订阅源配置
-  → 异步抓取与重试
-  → 多协议解析
-  → 指纹去重 → GeoIP 标记 → SSRF 防投毒拦截
-  → 质量预过滤 → TCP 预筛选 → 历史权重下采样
-  → 轻量探活（100 并发只测 204，快速筛掉不可达节点）
-  → sing-box 真实代理测试（75 并发，完整目标，单节点 15s 超时）
-  → 国内可达性检查（GlobalPing 国内探针 TCP ping，跨轮缓存）
-  → 综合评分排序输出
-  → 生成健康报告、日报、源评分与清理建议
-```
-
-两阶段测试是性能关键：先用高并发探活把 3000 候选筛到 ~400，再对剩余节点做完整真测，总耗时从 60+ 分钟降到 ~6 分钟。
-
-完整真测包含：海外 204 检测、出口地理检测（cloudflare trace，避免 ipinfo 限流）、中国站点连通检测（baidu）、小文件下载测速、可疑低延迟过滤、Netflix/ChatGPT/Disney 解锁检测、DNS 泄露检测。
-
----
-
-## 评分策略
-
-节点排序不再只看单次延迟，而是使用 `config/scoring.yaml` 的综合评分。默认权重：
-
-| 因子 | 默认权重 | 说明 |
-|---|---:|---|
-| `latency` | 25 | sing-box 真实代理测试延迟，越低越好 |
-| `jitter` | 15 | 多目标测试抖动，越低越稳定 |
-| `tcp` | 10 | TCP 预筛选延迟，用作基础可达性参考 |
-| `speed` | 10 | 小文件下载测速，反映实际带宽 |
-| `fingerprint_resistance` | 5 | 指纹抗识别评分，优先不易被识别的节点 |
-| `protocol_history` | 15 | 协议历史通过率，降低长期低质协议权重 |
-| `source_history` | 20 | 订阅源历史通过率，优先稳定来源 |
-
-权重总和 100，便于分数解释和跨轮对比。配置校验会检查字段、阈值和默认值范围。
-
-可选评分模板：
-
-| 模板 | 适用场景 | 特点 |
-|---|---|---|
-| `config/scoring.yaml` | 默认均衡 | 兼顾延迟、抖动、TCP、协议历史和来源历史 |
-| `config/scoring.low_latency.yaml` | 追求速度 | 提高 `latency` 权重，优先低延迟节点 |
-| `config/scoring.stability.yaml` | 追求稳定 | 提高 `jitter` 和 `source_history` 权重，减少波动节点 |
-| `config/scoring.source_quality.yaml` | 公开池噪声较高 | 强化订阅源和协议历史质量 |
-
-本地运行时可指定模板：
-```bash
-python main.py --scoring-rules config/scoring.stability.yaml
-```
-CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 workflow 中的 `--scoring-rules`。
-
----
-
-## 输出文件
-
-| 文件 | 用途 |
-|---|---|
-| `verified.txt/yaml/json/urls` | 严格真测通过节点 |
-| `global.txt/yaml/json/urls` | 海外可用的扩展节点 |
-| `all.txt/yaml/json/urls` | 全量去重候选节点（在 `data` 分支，每轮覆盖，不保留历史） |
-| `chunks/{verified,global}_*.txt` | 分块订阅（每 100 节点一块，避免单文件过大） |
-| `by_protocol/{verified,global}_*.txt` | 按协议分文件（vmess/vless/trojan/ss/hysteria2 独立订阅） |
-| `by_region/{地区}.txt/urls` | 按地区分文件（香港/日本/美国/新加坡 等，基于 global，每轮重建） |
-
-| `stats.json` | 数量、耗时、协议通过率、错误明细、探活/真测阶段数据、节点速度和解锁状态 |
-| `health_report.md` | 当前流水线健康报告，包含评分、来源质量、失败原因与输出保护 |
-| `health_report.json` | 输出完整性、重复项、报警、源清理摘要 |
-| `daily_report.md` | 面向人工阅读的每日摘要 |
-| `source_scores.md` | 订阅源质量评分 |
-| `scoring_profiles.md` | 评分模板权重、阈值和默认值对比 |
-| `source_cleanup_suggestions.md/json` | 订阅源清理建议 |
-| `source_discovery.json` | 从其他项目扫描发现的候选节点统计 |
-| `node_stability.json`、`geo_cache.json`、`china_cache.json` | 跨轮状态（稳定性、地理位置、国内检查缓存），在 `data` 分支 |
-| `trend_history.json` | 最近 30 轮核心趋势 |
-
-健康状态说明：
-- `ok`：输出结构正常，未发现关键报警。
-- `warning`：输出可用，但存在低通过率协议、真测错误或源质量问题。
-- `critical`：输出缺失、解析异常、`verified` 为 0 或核心结构不满足要求。
-
----
-
-## 源维护
-
-`config/sources.yaml` 维护公开订阅源。建议新增源前检查：
-1. URL 可访问。
-2. 能解析出有效节点。
-3. 与现有源相比有去重贡献。
-4. 大体量源设置 `max_nodes`。
-5. 通过配置校验和回归测试。
-
-清理建议默认只读：
-```bash
-python tools/suggest_source_cleanup.py \
-  --output-dir output \
-  --sources config/sources.yaml \
-  --output output/source_cleanup_suggestions.md \
-  --json-output output/source_cleanup_suggestions.json
-```
-如需应用禁用建议，必须显式确认：
-```bash
-python tools/suggest_source_cleanup.py \
-  --output-dir output \
-  --sources config/sources.yaml \
-  --apply \
-  --confirm-disable \
-  --only source-a,source-b \
-  --exclude source-b
-```
-
----
-
-## 本地运行
-
-```bash
-git clone https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized.git
-cd AutoMergePublicNodes-Optimized
-pip install -r requirements.txt
-
-# 下载 sing-box 后运行
-python main.py --top-n 100 --test-limit 500
-```
-
-常用检查：
-```bash
-python -m compileall -q main.py core tools tests
-python tools/import_contract.py
-python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules config/scoring.yaml
-python tools/doctor.py
-python -m unittest -v tests.test_regressions
-python tools/health_report.py --output-dir output --verified-prefix verified --output output/health_report.json
-python tools/daily_report.py --output-dir output --output output/daily_report.md
-python tools/source_scores_report.py --output-dir output --output output/source_scores.md
-python tools/scoring_profiles_report.py --profiles 'config/scoring*.yaml' --output output/scoring_profiles.md
-python tools/suggest_source_cleanup.py --output-dir output --sources config/sources.yaml --output output/source_cleanup_suggestions.md --json-output output/source_cleanup_suggestions.json
-```
-
-本地二次筛选：
-```bash
-python tools/local_filter.py --input output/global.urls --output-prefix local_verified --top-n 100
-```
-
----
-
-## GitHub Actions
-
-- 自动运行：每 6 小时一次。
-- 手动运行：`Actions → 更新节点 → Run workflow`。
-- `top_n`：`verified.*` 输出上限，默认 300，最大 1000。
-- `test_limit`：进入下采样的节点上限，默认 3000，最大 5000。
-- `min_retain_ratio`：缩水守门比例，默认 0.5：本轮输出少于上一轮的一半时保留上一轮，最多连续保留 3 轮；国内检查完全失败时 verified 也保留上一轮。设为 0 关闭。
-- 轻量探活：默认启用（`--lightweight-probe`），100 并发先筛不可达节点，再真测剩余。
-- 真测并发：75（`--test-concurrency 75`），完整目标测试，单节点 15s 超时防 tail latency。
-- 国内检查：默认启用（`--china-check`），GlobalPing 国内探针 TCP ping，60s 轮询超时，结果缓存在 data 分支的 `china_cache.json`。
-- 超时上限：30 分钟（`timeout-minutes: 30`）。
-
-CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`health_report.json`、`daily_report.md`、`source_scores.md`、`scoring_profiles.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
-
----
-
-## 项目结构
-
-```text
-AutoMergePublicNodes-Optimized/
-├── main.py                         # 主流水线与 CLI
-├── core/
-│   ├── fetcher.py                  # 异步抓取、重试、jsDelivr/CDN 回退
-│   ├── parser.py                   # 多协议解析（ss/ssr/vmess/vless/trojan/hysteria2/tuic/anytls/socks/http）
-│   ├── tester.py                   # sing-box 真实代理测试（两阶段：轻量探活 + 完整真测，端口轮询替代固定等待）
-│   ├── globalping.py               # 国内可达性检查（GlobalPing TCP ping + 跨轮缓存）
-│   ├── filtering.py                # 质量预过滤、同源降噪、SSRF 防投毒（DNS 解析后逐 IP 检查）
-│   ├── sampling.py                 # 真测下采样与历史权重排序
-│   ├── generator.py                # 多格式订阅输出（yaml/txt/json/urls，大文件紧凑）
-│   ├── scoring.py                  # 综合节点评分（7 因子加权）
-│   ├── _fingerprint_test.py        # 协议指纹抗检测评分（REALITY/uTLS/WS+TLS/端口加成）
-│   ├── report.py                   # Markdown 健康报告
-│   ├── readme_updater.py           # README 状态区自动更新
-│   ├── stats.py                    # 源评分、趋势、节点稳定性追踪（EWMA 历史通过率）
-│   └── geo.py                      # GeoIP 标记与缓存（ip-api.com 批量）
-├── tools/
-│   ├── audit_sources.py            # 源健康审计
-│   ├── health_report.py            # 输出健康报告
-│   ├── daily_report.py             # Markdown 日报
-│   ├── source_scores_report.py     # 源质量评分报告
-│   ├── scoring_profiles_report.py  # 评分模板对比报告
-│   ├── suggest_source_cleanup.py   # 源清理建议与安全应用
-│   ├── source_discovery.py         # 从其他项目发现新源
-│   ├── discover_tg_channels.py     # Telegram 频道源发现
-│   ├── validate_config.py          # 配置静态校验
-│   ├── import_contract.py          # 导入契约检查（防悬空 import）
-│   ├── doctor.py                   # 本地环境诊断
-│   ├── local_filter.py             # 本地二次筛选
-│   ├── actions_summary.py          # GitHub Actions 运行摘要
-│   └── prepare_artifact_output.py  # 发布产物整理
-├── config/                         # 源配置、过滤规则、评分模板
-├── tests/                          # 回归测试与协议样例
-├── output/                         # CI 输出文件（订阅 + 报告）
-├── docs/                           # 使用指南、网关页面、发布说明
-│   ├── index.html                  # 动态订阅网关（GitHub Pages）
-│   ├── sources.html                # 订阅源健康面板
-│   ├── client-guide.md             # 客户端导入指南
-│   ├── resources.md                # 测速、转换和排障资源
-│   └── releases/                   # 版本发布说明
-├── CHANGELOG.md                    # 版本变更记录
-└── .github/workflows/update.yml    # 自动更新流程（每 6 小时 + Pages）
-```
-
----
-
-## 文档
-
-- [`docs/index.html`](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)：动态订阅网关（浏览器端筛选生成订阅）。
-- [`docs/sources.html`](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/sources.html)：订阅源健康面板。
-- [`docs/client-guide.md`](docs/client-guide.md)：客户端导入指南。
-- [`docs/resources.md`](docs/resources.md)：测速、转换和排障资源。
-- [`docs/releases/`](docs/releases/)：版本发布说明索引。
-- [`CHANGELOG.md`](CHANGELOG.md)：版本变更记录。
-
-## License
-
-MIT
-
-## 致谢
-- [sing-box](https://github.com/SagerNet/sing-box)
-- 所有公开订阅源维护者与社区贡献者
 
 <!-- AUTONODES_STATS_START -->
 ## 当前运行状态
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-10-16 15:03:20 |
-| 版本 | 2.4.0 |
-| 订阅源 | 93/107 |
-| 原始节点 | 99199 |
-| 去重后 | 27691 |
-| TCP 可达 | 3000 |
-| 真实可用 | 393 |
-| 真测通过率 | 13.1% |
-| Verified 输出 | 79 |
-| Global 输出 | 300 |
-| All 输出 | 27691 |
+| 更新时间 | 2026-10-16 23:03（北京时间） |
+| 订阅源（可用/总数） | 93/107 |
+| 原始节点 → 去重后 | 99199 → 27691 |
+| 送入测试 → 探活通过 → 真测通过 | 3000 → 521 → 393 |
+| 国内可达 / 不可达 / 未知 | 79 / 314 / 0 |
+| 国内检查缓存命中 | 370 |
+| **verified 输出** | 79 |
+| **global 输出** | 300 |
+| all 全量池 | 27691 |
+| 本轮耗时 | 311.8 秒 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -358,3 +95,203 @@ MIT
 
 <!-- AUTONODES_STATS_END -->
 
+---
+
+## 工作原理
+
+```text
+107 个订阅源
+  → 抓取与解析（ss / ssr / vmess / vless / trojan / hysteria2 / tuic / anytls / socks / http）
+  → 指纹去重、GeoIP 标记
+  → 质量预过滤、TCP 预筛（DNS 解析后拦截内网和云元数据地址）
+  → 按协议与来源的历史通过率加权抽样，最多 3000 个送测（15% 名额留给历史数据少的来源）
+  → 轻量探活：100 并发，只测 YouTube generate_204，4 秒超时
+  → 完整真测：75 并发，每个请求 6 秒、每个节点总计 15 秒
+  → 综合评分排序                                  ──→ global（最多 300 个）
+  → 国内检查：GlobalPing 中国探针 TCP 握手（带缓存）──→ verified
+```
+
+### 完整真测测什么
+
+通过 sing-box 本地起代理后依次请求：
+
+| 目标 | 作用 | 不通过的后果 |
+|---|---|---|
+| YouTube / Google `generate_204` | 基本连通，同时采样延迟和抖动 | 淘汰 |
+| `baidu.com/robots.txt` | 出口能否访问中国站点 | 不进 verified，但会再测一次，通过就进 global |
+| Cloudflare `cdn-cgi/trace` | 出口国家；出口在中国大陆的节点翻不了墙 | 出口在中国或请求失败则淘汰 |
+| Cloudflare 100 KB 下载 | 测速，必须完整下载 | 淘汰 |
+| Netflix / ChatGPT | 解锁情况，**只记录、不影响去留** | — |
+
+延迟低于 30 ms 的节点会被当作异常（多为本机回环或假节点）剔除。明文 HTTP / SOCKS 代理（无 TLS）不进入 verified 和 global，all 里仍保留。
+
+### 国内检查
+
+海外 CI 测不出"从中国能不能连上"，所以对真测通过的节点，再让 [GlobalPing](https://globalping.io) 的中国探针向节点的 IP 和端口发起 TCP 握手（3 次，任一次成功即算可达）。
+
+- **额度**：匿名每小时 250 次，GitHub Runner 的出口 IP 是共享的，额度可能已被别人用掉。程序先查剩余额度，每轮最多新检查 200 个。
+- **缓存**：结果存在 `data` 分支的 `china_cache.json`。可达结果 12 小时内复用，不可达 24 小时内复用，省下的额度用来检查排名更靠后的节点，几轮之后基本能覆盖全部真测通过的节点。
+- **三种结果**：可达进 verified；不可达和未检查（未知）的都只进 global，未知不等于坏。
+- **局限**：TCP 握手成功只说明 IP 和端口没被封，不能保证代理协议本身不被识别（比如按 SNI 或流量特征封锁）。
+
+### 综合评分
+
+排序用 `config/scoring.yaml` 的加权分数，满分 100，再加上稳定性奖励：
+
+| 因子 | 权重 | 说明 |
+|---|---:|---|
+| 延迟 | 25 | 真测延迟 |
+| 来源历史 | 20 | 订阅源历史通过率（EWMA） |
+| 抖动 | 15 | 同一节点多次采样的波动 |
+| 协议历史 | 15 | 协议历史通过率 |
+| TCP | 10 | TCP 预筛延迟 |
+| 速度 | 10 | 100 KB 下载速度 |
+| 抗识别 | 5 | REALITY / uTLS / WS+TLS、443 端口等加分 |
+
+连续通过 2 轮及以上的节点额外加分，加分等于连续轮数，最多 +5。另有三个预设模板可在本地用 `--scoring-rules` 切换：`scoring.low_latency.yaml`（偏速度）、`scoring.stability.yaml`（偏稳定）、`scoring.source_quality.yaml`（偏来源质量）。
+
+### 防止输出突然缩水
+
+- 本轮 verified 或 global 少于上一轮的一半时，保留上一轮的文件；最多连续保留 3 轮，避免节点真的变少时一直发布旧数据。
+- 国内检查完全失败（GlobalPing 故障或额度耗尽）时，verified 保留上一轮，不会把未经国内验证的节点当作 verified 发布。
+- 真测全部失败时降级为 TCP 结果，避免订阅变空，并在 `stats.json` 里标记 `degraded_mode`。
+
+---
+
+## 输出文件
+
+`main` 分支 `output/` 下：
+
+| 文件 | 内容 |
+|---|---|
+| `verified.{yaml,txt,json,urls}` | 海外真测通过 + 国内可达 |
+| `global.{yaml,txt,json,urls}` | 海外真测通过，最多 300 个 |
+| `by_protocol/{verified,global}_<协议>.txt` | 按协议拆分（Base64） |
+| `by_region/<地区>.{txt,urls}` | 按地区拆分，基于 global，每轮重建 |
+| `chunks/{verified,global}_<n>.txt` | 每 100 个节点一块（Base64） |
+| `*.converter.md` | 常见订阅转换服务的转换链接 |
+| `stats.json` | 本轮全部统计：各阶段数量和耗时、失败原因、协议和来源通过率 |
+| `health_report.md` / `.json` | 健康检查（ok / warning / critical） |
+| `daily_report.md` | 给人看的每日摘要 |
+| `source_scores.md`、`source_cleanup_suggestions.{md,json}`、`source_audit.json`、`source_discovery.json` | 订阅源评分、清理建议、审计结果、新源发现 |
+| `scoring_profiles.md` | 各评分模板对比 |
+| `trend_history.json` | 最近 30 轮的趋势 |
+
+`data` 分支 `output/` 下（每轮只保留一个提交，不积累历史）：
+
+| 文件 | 内容 |
+|---|---|
+| `all.{yaml,txt,json,urls}` | 去重后的全量候选池（未测试） |
+| `geo_cache.json` | IP 归属地缓存 |
+| `node_stability.json` | 节点跨轮稳定性 |
+| `china_cache.json` | 国内检查缓存 |
+| `score_details.json` | 每个节点的评分明细 |
+
+---
+
+## 自动运行
+
+- **时间**：每 6 小时一次，北京时间约 01:23、07:23、13:23、19:23（GitHub 的定时任务可能晚几分钟到几十分钟）。一轮约 5 到 8 分钟。
+- **手动运行**：`Actions → 更新节点 → Run workflow`，可调 `top_n`（默认 300，上限 1000）、`test_limit`（默认 3000，上限 5000）、`min_retain_ratio`（默认 0.5，0 为关闭缩水保护）。
+- **只有 main 分支的运行会提交结果**，在其他分支手动运行只做测试，不会推送。
+- 失败时自动开 Issue，下一次成功后自动关闭。
+- 每轮结束后刷新 jsDelivr 缓存。
+
+---
+
+## 本地运行
+
+```bash
+git clone https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized.git
+cd AutoMergePublicNodes-Optimized
+pip install -r requirements.txt
+# 把 sing-box 可执行文件放到仓库根目录，然后：
+python main.py --top-n 100 --test-limit 500
+```
+
+常用参数：`--no-china-check`（跳过国内检查）、`--no-real-test`（只做 TCP 测试）、`--scoring-rules config/scoring.stability.yaml`（换评分模板）。完整参数见 `python main.py --help`。
+
+检查命令：
+
+```bash
+python -m unittest -v tests.test_regressions   # 回归测试
+python tools/validate_config.py --sources config/sources.yaml --filter-rules config/filter_rules.yaml --scoring-rules config/scoring.yaml
+python tools/doctor.py                          # 本地环境诊断
+python tools/import_contract.py                 # 检查悬空 import
+```
+
+在 global 基础上本地再筛一遍：
+
+```bash
+python tools/local_filter.py --input output/global.urls --output-prefix local_verified --top-n 100
+```
+
+> 设置环境变量 `GLOBALPING_TOKEN` 可以用自己的 GlobalPing 账号额度（每小时 500 次，同账号所有 token 共用）。
+
+---
+
+## 维护订阅源
+
+订阅源在 `config/sources.yaml`。每轮开始前会审计所有源，连续 20 轮抓不到节点的源自动停用。新增源前建议确认：能访问、能解析出节点、和现有源相比有去重后的新增，大体量源设置 `max_nodes`。
+
+清理建议默认只读，真要停用需要显式确认：
+
+```bash
+python tools/suggest_source_cleanup.py --output-dir output --sources config/sources.yaml \
+  --apply --confirm-disable --only source-a,source-b
+```
+
+---
+
+## 项目结构
+
+```text
+main.py              主流程与命令行参数
+core/
+  fetcher.py         抓取订阅源（重试、CDN 回退）
+  parser.py          协议解析
+  filtering.py       质量预过滤、SSRF 拦截
+  sampling.py        按历史通过率加权抽样
+  tester.py          sing-box 真测（探活 + 完整测试）
+  scoring.py         综合评分
+  _fingerprint_test.py  抗识别评分
+  globalping.py      国内 TCP 检查与缓存
+  geo.py             IP 归属地（ip-api.com，带缓存）
+  generator.py       生成各格式订阅
+  stats.py           来源评分、趋势、稳定性
+  report.py / readme_updater.py  健康报告、更新 README 状态区
+tools/               审计、报告、源清理、源发现、本地筛选、诊断
+config/              订阅源、过滤规则、评分模板
+docs/                筛选页、源健康面板、客户端指南
+tests/               回归测试与协议样例
+.github/workflows/update.yml  自动运行
+```
+
+---
+
+## 关于 2026-10-16 的历史改写
+
+为了给仓库瘦身（完整 clone 从约 1.5 GB 降到约 26 MB），`main` 分支的历史在 2026-10-16 被改写，删除了历史中所有 `output/` 产物，大文件此后发布在 `data` 分支。订阅地址（`@main`、`@data`）不受影响，但旧的 commit 链接已经失效。
+
+如果你在此之前 fork 或 clone 过本仓库，请重新 fork，或在本地执行（会丢弃本地未提交的改动，请先备份）：
+
+```bash
+git fetch origin
+git reset --hard origin/main
+```
+
+---
+
+## 文档
+
+- [客户端导入指南](docs/client-guide.md)
+- [测速、转换和排障资源](docs/resources.md)
+- [变更记录](CHANGELOG.md) · [版本说明](docs/releases/)
+
+## 致谢
+
+[sing-box](https://github.com/SagerNet/sing-box) · [GlobalPing](https://globalping.io) · 所有公开订阅源的维护者
+
+## License
+
+MIT

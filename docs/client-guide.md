@@ -4,9 +4,9 @@
 
 | 输出 | 适合人群 | 说明 |
 |---|---|---|
-| `output/verified.*` | 质量优先 | GitHub Actions 环境下 sing-box 真测通过，数量可能较少 |
-| `output/global.*` | 数量与质量兼顾 | 海外可用但国内站点连通不一定稳定 |
-| `output/all.*` | 自己再测速 | 全量候选池，只去重，不保证可用 |
+| `output/verified.*` | 中国大陆用户 | 海外 sing-box 真测通过，且国内探针能与节点端口完成 TCP 握手，数量通常几十个 |
+| `output/global.*` | 海外用户，或 verified 不够用 | 海外真测通过，最多 300 个，不保证国内能连上 |
+| `all.*`（`data` 分支） | 自己再测速 | 全量候选池，只去重，未经测试 |
 | `output/local_verified.*` | 本地用户 | 需在本机手动运行 `tools/local_filter.py` 生成（CI 不自动产出），更贴近你的网络环境 |
 
 > 建议普通用户优先导入 `verified.yaml` 或 `verified.txt`；如果数量太少，再尝试 `global.*`。
@@ -125,7 +125,7 @@ python tools/local_filter.py --input output/all.txt --output-mode light --top-n 
 
 ### verified 数量很少，是不是项目坏了？
 
-通常不是。公共节点波动大，且本项目筛选严格：TCP 可达后还要通过 sing-box 真实代理测试。
+通常不是。公共节点波动大，而 verified 要同时满足两条：海外 sing-box 真测通过，并且国内探针能连上节点端口。国内检查受 GlobalPing 免费额度限制，每轮最多新检查 200 个，结果会跨轮缓存，几轮后覆盖面会变大。数量不够时用 `global.*`。
 
 ### 导入 Clash 后所有节点都不能用？
 
