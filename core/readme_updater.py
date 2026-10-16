@@ -4,6 +4,7 @@ Keeps the repository homepage synchronized with the latest pipeline stats.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -32,6 +33,15 @@ def _fmt_rate(numerator: object, denominator: object) -> str:
     return f"{n / d * 100:.1f}%"
 
 
+def _beijing_time(ts: object) -> str:
+    """stats.json 的 timestamp 是 UTC，README 显示北京时间。"""
+    try:
+        dt = datetime.strptime(str(ts), "%Y-%m-%d %H:%M:%S") + timedelta(hours=8)
+    except (TypeError, ValueError):
+        return str(ts or "-")
+    return dt.strftime("%Y-%m-%d %H:%M") + "（北京时间）"
+
+
 def _top_sources(stats: Dict[str, Any], limit: int = 5) -> List[List[object]]:
     source_scores = stats.get("source_scores") or {}
     if not isinstance(source_scores, dict):
@@ -55,17 +65,16 @@ def _top_sources(stats: Dict[str, Any], limit: int = 5) -> List[List[object]]:
 
 def build_readme_stats_block(stats: Dict[str, Any]) -> str:
     overview_rows = [
-        ["更新时间", stats.get("timestamp", "-")],
-        ["版本", stats.get("version", "-")],
-        ["订阅源", f"{stats.get('sources_healthy', 0)}/{stats.get('sources_total', 0)}"],
-        ["原始节点", stats.get("nodes_raw", 0)],
-        ["去重后", stats.get("nodes_dedup", 0)],
-        ["TCP 可达", stats.get("nodes_tcp_ok", 0)],
-        ["真实可用", stats.get("nodes_real_ok", 0)],
-        ["真测通过率", _fmt_rate(stats.get("nodes_real_ok"), stats.get("nodes_tcp_ok"))],
-        ["Verified 输出", stats.get("nodes_verified_output", 0)],
-        ["Global 输出", stats.get("nodes_global_output", 0)],
-        ["All 输出", stats.get("nodes_all_output", 0)],
+        ["更新时间", _beijing_time(stats.get("timestamp"))],
+        ["订阅源（可用/总数）", f"{stats.get('sources_healthy', 0)}/{stats.get('sources_total', 0)}"],
+        ["原始节点 → 去重后", f"{stats.get('nodes_raw', 0)} → {stats.get('nodes_dedup', 0)}"],
+        ["送入测试 → 探活通过 → 真测通过", f"{stats.get('nodes_tcp_ok', 0)} → {stats.get('nodes_probe_ok', 0)} → {stats.get('nodes_real_ok', 0)}"],
+        ["国内可达 / 不可达 / 未知", f"{stats.get('nodes_china_reachable', 0)} / {stats.get('nodes_china_unreachable', 0)} / {stats.get('nodes_china_unknown', 0)}"],
+        ["国内检查缓存命中", stats.get("nodes_china_cache_hits", 0)],
+        ["**verified 输出**", stats.get("nodes_verified_output", 0)],
+        ["**global 输出**", stats.get("nodes_global_output", 0)],
+        ["all 全量池", stats.get("nodes_all_output", 0)],
+        ["本轮耗时", f"{stats.get('duration_sec', '-')} 秒"],
     ]
 
     top_score_rows = [

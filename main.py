@@ -657,7 +657,7 @@ async def run(args):
 
     stats = {
         "version": __version__,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()),  # UTC（CI 运行环境本来就是 UTC，本地运行也统一）
         "duration_sec": round(elapsed, 1),
         "degraded_mode": degraded_mode,
         "stage_durations": stage_durations,
