@@ -13,7 +13,7 @@
 
 - **⚡ 两阶段测活**：先用 100 并发轻量探活（只测 204）快速筛掉不可达节点，再用 75 并发完整真测，单节点 15s 超时防 tail latency，总耗时从 60+ 分钟降到 ~6 分钟。
 - **🎯 7 因子加权评分**：延迟、抖动、TCP、下载速度、指纹抗检测、协议历史、来源历史。REALITY/uTLS 优先，443 端口加成，跨周期稳定节点加分。
-- **🇨🇳 国内可达性检查**：基于 GlobalPing 国内探针的 TCP traceroute，区分"海外可用"与"国内可用"，输出 `verified.*`（国内实测可达）与 `global.*`（全部海外真测通过）两档。按剩余额度自适应，单轮最多检查 200 个；额度不足时未检查的节点记为"未知"，仍保留在 `global.*`。
+- **🇨🇳 国内可达性检查**：基于 GlobalPing 国内探针向节点端口做 TCP 握手（TCP ping），区分"海外可用"与"国内可用"，输出 `verified.*`（国内实测可达）与 `global.*`（全部海外真测通过）两档。按剩余额度自适应，单轮最多新检查 200 个；结果跨轮缓存（可达 12 小时、不可达 24 小时），省下的额度用来检查更多节点。额度不足时未检查的节点记为"未知"，仍保留在 `global.*`。明文 HTTP/SOCKS 代理不进入 `verified.*`/`global.*`（`all.*` 仍保留）。
 - **🔒 SSRF 防投毒**：DNS 解析后对每个 IP 做内网检查，拦截指向私有地址与云元数据端点（如 `169.254.169.254`）的恶意节点，保护 CI 运行环境。
 - **📈 节点稳定性追踪**：跨周期连续真测通过的节点获评分加成，历史稳定的老节点优先排在前面。
 - **🧹 僵尸源自动禁用**：连续 20 轮抓取无节点的订阅源自动禁用，不再浪费抓取时间。
@@ -100,7 +100,7 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@data/output/
   → 质量预过滤 → TCP 预筛选 → 历史权重下采样
   → 轻量探活（100 并发只测 204，快速筛掉不可达节点）
   → sing-box 真实代理测试（75 并发，完整目标，单节点 15s 超时）
-  → 国内可达性检查（GlobalPing 国内探针 traceroute）
+  → 国内可达性检查（GlobalPing 国内探针 TCP ping，跨轮缓存）
   → 综合评分排序输出
   → 生成健康报告、日报、源评分与清理建议
 ```
@@ -151,9 +151,9 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 | `verified.txt/yaml/json/urls` | 严格真测通过节点 |
 | `global.txt/yaml/json/urls` | 海外可用的扩展节点 |
 | `all.txt/yaml/json/urls` | 全量去重候选节点（在 `data` 分支，每轮覆盖，不保留历史） |
-| `chunks/verified_*.txt` | 分块订阅（每 100 节点一块，避免单文件过大） |
-| `by_protocol/verified_*.txt` | 按协议分文件（vmess/vless/trojan/ss/hysteria2 独立订阅） |
-| `by_region/{region}.txt/yaml/urls` | 按地区分文件（HK/JP/US/SG 等） |
+| `chunks/{verified,global}_*.txt` | 分块订阅（每 100 节点一块，避免单文件过大） |
+| `by_protocol/{verified,global}_*.txt` | 按协议分文件（vmess/vless/trojan/ss/hysteria2 独立订阅） |
+| `by_region/{地区}.txt/urls` | 按地区分文件（香港/日本/美国/新加坡 等，基于 global，每轮重建） |
 
 | `stats.json` | 数量、耗时、协议通过率、错误明细、探活/真测阶段数据、节点速度和解锁状态 |
 | `health_report.md` | 当前流水线健康报告，包含评分、来源质量、失败原因与输出保护 |
@@ -163,10 +163,8 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 | `scoring_profiles.md` | 评分模板权重、阈值和默认值对比 |
 | `source_cleanup_suggestions.md/json` | 订阅源清理建议 |
 | `source_discovery.json` | 从其他项目扫描发现的候选节点统计 |
-| `node_stability.json` | 节点跨轮稳定性追踪（连续通过/失败计数） |
+| `node_stability.json`、`geo_cache.json`、`china_cache.json` | 跨轮状态（稳定性、地理位置、国内检查缓存），在 `data` 分支 |
 | `trend_history.json` | 最近 30 轮核心趋势 |
-| `signature_manifest.json` | 输出文件签名清单（完整性校验） |
-| `api_docs.json` | Open API 平台接口文档 |
 
 健康状态说明：
 - `ok`：输出结构正常，未发现关键报警。
@@ -243,10 +241,10 @@ python tools/local_filter.py --input output/global.urls --output-prefix local_ve
 - 手动运行：`Actions → 更新节点 → Run workflow`。
 - `top_n`：`verified.*` 输出上限，默认 300，最大 1000。
 - `test_limit`：进入下采样的节点上限，默认 3000，最大 5000。
-- `min_retain_ratio`：缩水守门比例，默认 0 表示关闭。
+- `min_retain_ratio`：缩水守门比例，默认 0.5：本轮输出少于上一轮的一半时保留上一轮，最多连续保留 3 轮；国内检查完全失败时 verified 也保留上一轮。设为 0 关闭。
 - 轻量探活：默认启用（`--lightweight-probe`），100 并发先筛不可达节点，再真测剩余。
 - 真测并发：75（`--test-concurrency 75`），完整目标测试，单节点 15s 超时防 tail latency。
-- 国内检查：默认启用（`--china-check`），GlobalPing 国内探针 traceroute，60s 轮询超时。
+- 国内检查：默认启用（`--china-check`），GlobalPing 国内探针 TCP ping，60s 轮询超时，结果缓存在 data 分支的 `china_cache.json`。
 - 超时上限：30 分钟（`timeout-minutes: 30`）。
 
 CI 会自动生成并上传调试产物：`stats.json`、`health_report.md`、`health_report.json`、`daily_report.md`、`source_scores.md`、`scoring_profiles.md`、`source_cleanup_suggestions.*`、`trend_history.json`。
@@ -262,7 +260,7 @@ AutoMergePublicNodes-Optimized/
 │   ├── fetcher.py                  # 异步抓取、重试、jsDelivr/CDN 回退
 │   ├── parser.py                   # 多协议解析（ss/ssr/vmess/vless/trojan/hysteria2/tuic/anytls/socks/http）
 │   ├── tester.py                   # sing-box 真实代理测试（两阶段：轻量探活 + 完整真测，端口轮询替代固定等待）
-│   ├── globalping.py               # 国内可达性检查（GlobalPing TCP traceroute）
+│   ├── globalping.py               # 国内可达性检查（GlobalPing TCP ping + 跨轮缓存）
 │   ├── filtering.py                # 质量预过滤、同源降噪、SSRF 防投毒（DNS 解析后逐 IP 检查）
 │   ├── sampling.py                 # 真测下采样与历史权重排序
 │   ├── generator.py                # 多格式订阅输出（yaml/txt/json/urls，大文件紧凑）

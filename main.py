@@ -66,6 +66,27 @@ def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int)
 
 
 
+def is_plaintext_proxy(node: Node) -> bool:
+    """明文 HTTP/SOCKS 代理：凭据与目标地址明文传输，且在国内极易被识别封锁。"""
+    if node.type not in ("http", "socks"):
+        return False
+    tls = (node.raw or {}).get("tls") or {}
+    return not (isinstance(tls, dict) and tls.get("enabled"))
+
+
+# 连续保留上一轮的上限：超过后强制写入本轮结果，避免真实缩水时永远发布旧节点
+MAX_PRESERVED_STREAK = 3
+
+
+def previous_preserved_streak(output_dir: str, prefix: str) -> int:
+    try:
+        with open(Path(output_dir) / "stats.json", "r", encoding="utf-8") as f:
+            guard = (json.load(f).get("output_guard") or {}).get(prefix) or {}
+        return int(guard.get("preserved_streak", 0) or 0) if guard.get("preserved") else 0
+    except (OSError, ValueError, TypeError, AttributeError):
+        return 0
+
+
 def count_existing_urls(output_dir: str, prefix: str) -> int:
     path = Path(output_dir) / f"{prefix}.urls"
     if not path.exists():
@@ -480,6 +501,16 @@ async def run(args):
     china_reachable_count = 0
     china_unreachable_count = 0
     china_unknown_count = 0
+    china_cache_hits = 0
+    # 国内检查完全失败时，verified 优先保留上一轮（避免把未经国内验证的节点当作 verified 发布）
+    china_check_failed = False
+    # 明文 HTTP/SOCKS 不进入 verified/global（all.* 仍保留完整池）
+    plaintext_dropped = sum(1 for n, _, _ in valid if is_plaintext_proxy(n))
+    plaintext_dropped += sum(1 for n, _, _ in cn_block_retry_valid if is_plaintext_proxy(n))
+    if plaintext_dropped:
+        valid = [v for v in valid if not is_plaintext_proxy(v[0])]
+        cn_block_retry_valid = [v for v in cn_block_retry_valid if not is_plaintext_proxy(v[0])]
+        print(f"      剔除明文 HTTP/SOCKS 代理: {plaintext_dropped} 个")
     # 海外真测通过的完整列表：global.* 以它为准，国内检查只决定 verified.*
     overseas_valid = list(valid)
     gen_start = time.time()
@@ -488,39 +519,50 @@ async def run(args):
         try:
             from core.globalping import check_china_reachability
             china_map = await check_china_reachability(
-                valid, max_checks=getattr(args, "china_check_max", 200))
+                valid, max_checks=getattr(args, "china_check_max", 200),
+                cache_path=os.path.join(args.output_dir, "china_cache.json"))
             china_valid = [(n, lat, jit) for n, lat, jit in valid if china_map.get(n.fingerprint()) is True]
             china_reachable_count = len(china_valid)
             china_unreachable_count = sum(1 for n, _, _ in valid if china_map.get(n.fingerprint()) is False)
             china_unknown_count = len(valid) - china_reachable_count - china_unreachable_count
             print(f"      国内可达: {china_reachable_count}, 不可达: {china_unreachable_count}, 未知: {china_unknown_count}")
+            china_cache_hits = int(getattr(check_china_reachability, "last_cache_hits", 0) or 0)
             if china_valid:
                 valid = china_valid
             else:
-                print("      警告：没有国内实测可达的节点（可能是 GlobalPing 故障或额度用完），verified 保留海外结果")
+                china_check_failed = True
+                print("      警告：没有国内实测可达的节点（可能是 GlobalPing 故障或额度用完）")
         except Exception as e:
-            print(f"      国内检查失败（{e}），保留海外结果")
+            china_check_failed = True
+            print(f"      国内检查失败（{e}）")
     stage_durations["china_check"] = round(time.time() - gen_start, 1)
     gen_start = time.time()
     stage_start = time.time()  # generate 只计文件写入，不含 china_check（去双重计数）
     top = valid[:args.top_n]
     final_nodes = build_output_nodes(valid, flag_map, args.top_n)
     # global = 全部海外真测通过 + 跳过百度复测通过（不受国内检查影响）
-    global_valid = sorted(overseas_valid + cn_block_retry_valid, key=lambda x: x[1])
+    # 与 verified 一致按综合评分排序（之前按延迟重排，丢掉了评分里的稳定性/抗检测等因子）；复测通过的追加在后
+    global_valid = overseas_valid + cn_block_retry_valid
     global_nodes = build_output_nodes(global_valid, flag_map, args.top_n)
 
     # 6) 生成输出
     print(f"[6/6] 生成订阅文件...")
-    from core.generator import write_outputs, write_chunked_outputs, write_protocol_outputs
+    from core.generator import write_outputs, write_chunked_outputs, write_protocol_outputs, write_region_outputs
 
     output_guard: Dict[str, Dict[str, object]] = {}
 
     previous_verified = count_existing_urls(args.output_dir, "verified")
     proposed_verified = len([n for n in final_nodes if n])
-    if should_preserve_previous_output(proposed_verified, previous_verified, args.min_retain_ratio):
+    verified_streak = previous_preserved_streak(args.output_dir, "verified")
+    if verified_streak < MAX_PRESERVED_STREAK and (
+        (china_check_failed and previous_verified > 0)
+        or should_preserve_previous_output(proposed_verified, previous_verified, args.min_retain_ratio)
+    ):
         n_top = previous_verified
         output_guard["verified"] = {
             "preserved": True,
+            "preserved_streak": verified_streak + 1,
+            "reason": "china_check_failed" if china_check_failed else "min_retain_ratio",
             "previous_count": previous_verified,
             "proposed_count": proposed_verified,
             "min_retain_ratio": args.min_retain_ratio,
@@ -541,10 +583,13 @@ async def run(args):
     if args.global_output:
         previous_global = count_existing_urls(args.output_dir, "global")
         proposed_global = len([n for n in global_nodes if n])
-        if should_preserve_previous_output(proposed_global, previous_global, args.min_retain_ratio):
+        global_streak = previous_preserved_streak(args.output_dir, "global")
+        if global_streak < MAX_PRESERVED_STREAK and should_preserve_previous_output(
+                proposed_global, previous_global, args.min_retain_ratio):
             n_global = previous_global
             output_guard["global"] = {
                 "preserved": True,
+                "preserved_streak": global_streak + 1,
                 "previous_count": previous_global,
                 "proposed_count": proposed_global,
                 "min_retain_ratio": args.min_retain_ratio,
@@ -559,6 +604,8 @@ async def run(args):
             # P1: 协议分文件输出 (global)
             write_protocol_outputs(global_nodes, args.output_dir, prefix="global",
                                   repo_path=args.repo, branch=args.branch)
+            # 按地区分文件（基于 global，覆盖面更大）
+            write_region_outputs(global_nodes, args.output_dir)
             output_guard["global"] = {"preserved": False, "previous_count": previous_global, "proposed_count": n_global}
     else:
         n_global = 0
@@ -625,6 +672,8 @@ async def run(args):
         "nodes_china_reachable": china_reachable_count,
         "nodes_china_unreachable": china_unreachable_count,
         "nodes_china_unknown": china_unknown_count,
+        "nodes_china_cache_hits": china_cache_hits,
+        "nodes_plaintext_dropped": plaintext_dropped,
         "probe_error_details": probe_error_top if (args.lightweight_probe and args.real_test) else [],
         "nodes_verified_output": n_top,
         "nodes_global_output": n_global,
@@ -692,7 +741,8 @@ async def run(args):
             json.dump(stats, f, ensure_ascii=False, indent=2)
     report_path = write_health_report(args.output_dir, stats)
     print(f"      健康报告: {report_path}")
-    if update_readme_stats("README.md", stats):
+    readme_path = getattr(args, "readme_path", "README.md")
+    if readme_path and update_readme_stats(readme_path, stats):
         print("      README 状态区已更新")
 
 

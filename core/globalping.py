@@ -16,6 +16,9 @@
 3. 区分三态：True=国内可达，False=实测不可达，None=未测/额度用完/探针故障（未知）。
    未知不等于不可达，调用方不应把未知节点当坏节点丢弃。
 
+跨轮缓存（cache_path）：可达结果 12 小时内、不可达结果 24 小时内直接复用，
+省下的额度用来检查排名更靠后的节点，让 verified 覆盖面逐轮扩大。未知结果不缓存。
+
 可选环境变量 GLOBALPING_TOKEN：有则带 Bearer 认证（注意与同账号其他项目共用额度）。
 """
 from __future__ import annotations
@@ -43,6 +46,50 @@ CREATE_CONCURRENCY = 20
 DEFAULT_MAX_CHECKS = 200
 # 给同 IP / 同账号的其他任务留的余量
 DEFAULT_RESERVE = 20
+# 跨轮缓存有效期（秒）：可达结果更容易失效（被封），所以比不可达短
+CACHE_TTL_REACHABLE = 12 * 3600
+CACHE_TTL_UNREACHABLE = 24 * 3600
+
+
+def _cache_key(server: str, port: int) -> str:
+    return f"{server}:{int(port)}"
+
+
+def load_cache(path: Optional[str], now: Optional[float] = None) -> Dict[str, Dict[str, Any]]:
+    """读取缓存并丢弃过期条目。文件缺失或损坏时返回空缓存。"""
+    if not path:
+        return {}
+    now = time.time() if now is None else now
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    entries = data.get("entries", {}) if isinstance(data, dict) else {}
+    fresh: Dict[str, Dict[str, Any]] = {}
+    for key, row in entries.items():
+        if not isinstance(row, dict) or not isinstance(row.get("ok"), bool):
+            continue
+        try:
+            ts = float(row.get("ts", 0))
+        except (TypeError, ValueError):
+            continue
+        ttl = CACHE_TTL_REACHABLE if row["ok"] else CACHE_TTL_UNREACHABLE
+        if 0 <= now - ts < ttl:
+            fresh[key] = {"ok": row["ok"], "ts": int(ts)}
+    return fresh
+
+
+def save_cache(path: Optional[str], entries: Dict[str, Dict[str, Any]]) -> None:
+    if not path:
+        return
+    try:
+        tmp = f"{path}.tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"version": 1, "entries": entries}, f, ensure_ascii=False, sort_keys=True)
+        os.replace(tmp, path)
+    except OSError as e:
+        print(f"      国内检查缓存写入失败（{type(e).__name__}），不影响主流程")
 
 
 class RateLimited(Exception):
@@ -146,6 +193,7 @@ async def check_china_reachability(
     max_checks: int = DEFAULT_MAX_CHECKS,
     reserve: int = DEFAULT_RESERVE,
     token: Optional[str] = None,
+    cache_path: Optional[str] = None,
 ) -> Dict[str, Optional[bool]]:
     """对通过海外真测的节点做国内 TCP 可达性检查。
 
@@ -160,31 +208,40 @@ async def check_china_reachability(
         {fingerprint: True/False/None}。None 表示未知（未测、额度用完、探针故障）。
     """
     results: Dict[str, Optional[bool]] = {}
+    check_china_reachability.last_cache_hits = 0
     if not nodes:
         return results
     if token is None:
         token = os.environ.get("GLOBALPING_TOKEN", "")
 
     loop = asyncio.get_event_loop()
-    remaining = await loop.run_in_executor(None, read_remaining_tests, token)
-    budget = plan_budget(len(nodes), remaining, max_checks=max_checks, reserve=reserve)
-    print(f"      GlobalPing 剩余额度: {remaining if remaining is not None else '未知'}，本轮检查 {budget}/{len(nodes)} 个")
+    cache = load_cache(cache_path)
+    by_target: Dict[Tuple[str, int], Optional[bool]] = {}
 
-    # 同一 server:port 只测一次
-    targets: List[Tuple[str, int]] = []
+    # 同一 server:port 只算一次；缓存命中的直接复用，不占额度
+    pending: List[Tuple[str, int]] = []
     seen = set()
     for n, _, _ in nodes:
         key = (n.server, int(n.server_port))
         if key in seen:
             continue
         seen.add(key)
-        targets.append(key)
-        if len(targets) >= budget:
-            break
+        row = cache.get(_cache_key(*key))
+        if row is not None:
+            by_target[key] = row["ok"]
+        else:
+            pending.append(key)
+    cache_hits = len(by_target)
+    check_china_reachability.last_cache_hits = cache_hits
+
+    remaining = await loop.run_in_executor(None, read_remaining_tests, token) if pending else None
+    budget = plan_budget(len(pending), remaining, max_checks=max_checks, reserve=reserve) if pending else 0
+    print(f"      GlobalPing 剩余额度: {remaining if remaining is not None else '未知'}，"
+          f"缓存命中 {cache_hits} 个，本轮新检查 {budget}/{len(pending)} 个")
+    targets = pending[:budget]
 
     sem = asyncio.Semaphore(CREATE_CONCURRENCY)
     rate_limited = asyncio.Event()
-    by_target: Dict[Tuple[str, int], Optional[bool]] = {}
 
     async def _check_one(server: str, port: int) -> None:
         key = (server, port)
@@ -222,6 +279,13 @@ async def check_china_reachability(
         pass
     if rate_limited.is_set():
         print("      GlobalPing 额度用完，剩余节点记为未知")
+
+    now = int(time.time())
+    for key in targets:
+        value = by_target.get(key)
+        if value is not None:
+            cache[_cache_key(*key)] = {"ok": value, "ts": now}
+    save_cache(cache_path, cache)
 
     for n, _, _ in nodes:
         results[n.fingerprint()] = by_target.get((n.server, int(n.server_port)))
