@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](requirements.txt)
 [![节点更新](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
-每 6 小时从 100 多个公开订阅源收集节点，用 sing-box 逐个做真实代理连接测试，再用国内探针检查能否从中国连上，最后输出可直接导入客户端的订阅。
+每 6 小时从 100 多个公开订阅源收集节点，用 sing-box 逐个做真实代理连接测试，再用国内探针检查能否连上，最后输出可直接导入客户端的订阅。
 
 > 仅供学习研究。公开节点来源不明、随时失效，可能记录流量，请勿用于登录重要账号或传输敏感信息，并自行评估合规风险。
 
