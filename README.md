@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](requirements.txt)
 [![节点更新](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml/badge.svg)](https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized/actions/workflows/update.yml)
 
-每 6 小时从 100 多个公开订阅源收集节点，用 sing-box 逐个做真实代理连接测试，再用国内探针检查能否连上，最后输出可直接导入客户端的订阅。
+每 6 小时从 100 多个公开订阅源收集节点，用 sing-box 逐个做真实代理连接测试，再用海内探针检查能否连上，最后输出可直接导入客户端的订阅。
 
 > 仅供学习研究。公开节点来源不明、随时失效，可能记录流量，请勿用于登录重要账号或传输敏感信息，并自行评估合规风险。
 
@@ -14,7 +14,7 @@
 
 | 你在哪 | 用哪个 | 说明 |
 |---|---|---|
-| **中国大陆** | `verified` | 海外真测通过，并且国内探针能和节点端口完成 TCP 握手。数量较少（通常几十个），但最有希望直接能用 |
+| **海内** | `verified` | 海外真测通过，并且国内探针能和节点端口完成 TCP 握手。数量较少（通常几十个），但最有希望直接能用 |
 | 海外，或 verified 不够用 | `global` | 海外真测通过即可，最多 300 个，按综合评分排序。不保证国内能连上 |
 | 想自己测 | `all`（在 `data` 分支） | 去重后的全量候选池，约 2.7 万个，**未经测试** |
 
@@ -22,7 +22,7 @@
 
 ### 订阅地址
 
-jsDelivr（国内通常更快）：
+jsDelivr（海内通常更快）：
 
 ```text
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/verified.yaml
@@ -47,7 +47,7 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 
 ### 在线筛选
 
-👉 **[节点筛选页](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)**：在浏览器里按地区、协议、关键词筛选全量池，标出每个节点的 CI 实测结果（国内可达 / 海外可用 + 延迟），可以只看实测通过的、按延迟排序，然后导出 Clash YAML、Base64 或 sing-box JSON。全部在本地计算，不经过任何服务器。
+👉 **[节点筛选页](https://leilaomi.github.io/AutoMergePublicNodes-Optimized/)**：在浏览器里按地区、协议、关键词筛选全量池，标出每个节点的 CI 实测结果（海内可达 / 海外可用 + 延迟），可以只看实测通过的、按延迟排序，然后导出 Clash YAML、Base64 或 sing-box JSON。全部在本地计算，不经过任何服务器。
 
 > 浏览器无法直接连接代理协议，所以页面不做测速，延迟数据来自最近一轮 CI。
 
@@ -60,12 +60,12 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-10-16 23:17（北京时间） |
+| 更新时间 | 2026-10-16 23:17（当地时间） |
 | 订阅源（可用/总数） | 93/107 |
 | 原始节点 → 去重后 | 99232 → 27717 |
 | 送入测试 → 探活通过 → 真测通过 | 3000 → 536 → 404 |
-| 国内可达 / 不可达 / 未知 | 77 / 326 / 1 |
-| 国内检查缓存命中 | 384 |
+| 海内可达 / 不可达 / 未知 | 77 / 326 / 1 |
+| 海内检查缓存命中 | 384 |
 | **verified 输出** | 77 |
 | **global 输出** | 300 |
 | all 全量池 | 27717 |
@@ -108,7 +108,7 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
   → 轻量探活：100 并发，只测 YouTube generate_204，4 秒超时
   → 完整真测：75 并发，每个请求 6 秒、每个节点总计 15 秒
   → 综合评分排序                                  ──→ global（最多 300 个）
-  → 国内检查：GlobalPing 中国探针 TCP 握手（带缓存）──→ verified
+  → 海内检查：GlobalPing 探针 TCP 握手（带缓存）──→ verified
 ```
 
 ### 完整真测测什么
@@ -118,16 +118,16 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 | 目标 | 作用 | 不通过的后果 |
 |---|---|---|
 | YouTube / Google `generate_204` | 基本连通，同时采样延迟和抖动 | 淘汰 |
-| `baidu.com/robots.txt` | 出口能否访问中国站点 | 不进 verified，但会再测一次，通过就进 global |
-| Cloudflare `cdn-cgi/trace` | 出口国家；出口在中国大陆的节点翻不了墙 | 出口在中国或请求失败则淘汰 |
+| `baidu.com/robots.txt` | 出口能否访问海内站点 | 不进 verified，但会再测一次，通过就进 global |
+| Cloudflare `cdn-cgi/trace` | 出口国家；出口在海内的节点无法连接 | 出口在海内或请求失败则淘汰 |
 | Cloudflare 100 KB 下载 | 测速，必须完整下载 | 淘汰 |
 | Netflix / ChatGPT | 解锁情况，**只记录、不影响去留** | — |
 
 延迟低于 30 ms 的节点会被当作异常（多为本机回环或假节点）剔除。明文 HTTP / SOCKS 代理（无 TLS）不进入 verified 和 global，all 里仍保留。
 
-### 国内检查
+### 海内检查
 
-海外 CI 测不出"从中国能不能连上"，所以对真测通过的节点，再让 [GlobalPing](https://globalping.io) 的中国探针向节点的 IP 和端口发起 TCP 握手（3 次，任一次成功即算可达）。
+海外 CI 测不出"从当地能不能连上"，所以对真测通过的节点，再让 [GlobalPing](https://globalping.io) 的探针向节点的 IP 和端口发起 TCP 握手（3 次，任一次成功即算可达）。
 
 - **额度**：匿名每小时 250 次，GitHub Runner 的出口 IP 是共享的，额度可能已被别人用掉。程序先查剩余额度，每轮最多新检查 200 个。
 - **缓存**：结果存在 `data` 分支的 `china_cache.json`。可达结果 12 小时内复用，不可达 24 小时内复用，省下的额度用来检查排名更靠后的节点，几轮之后基本能覆盖全部真测通过的节点。
@@ -153,7 +153,7 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 ### 防止输出突然缩水
 
 - 本轮 verified 或 global 少于上一轮的一半时，保留上一轮的文件；最多连续保留 3 轮，避免节点真的变少时一直发布旧数据。
-- 国内检查完全失败（GlobalPing 故障或额度耗尽）时，verified 保留上一轮，不会把未经国内验证的节点当作 verified 发布。
+- 海内检查完全失败（GlobalPing 故障或额度耗尽）时，verified 保留上一轮，不会把未经当地验证的节点当作 verified 发布。
 - 真测全部失败时降级为 TCP 结果，避免订阅变空，并在 `stats.json` 里标记 `degraded_mode`。
 
 ---
@@ -164,7 +164,7 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 
 | 文件 | 内容 |
 |---|---|
-| `verified.{yaml,txt,json,urls}` | 海外真测通过 + 国内可达 |
+| `verified.{yaml,txt,json,urls}` | 海外真测通过 + 海内可达 |
 | `global.{yaml,txt,json,urls}` | 海外真测通过，最多 300 个 |
 | `by_protocol/{verified,global}_<协议>.txt` | 按协议拆分（Base64） |
 | `by_region/<地区>.{txt,urls}` | 按地区拆分，基于 global，每轮重建 |
@@ -184,14 +184,14 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 | `all.{yaml,txt,json,urls}` | 去重后的全量候选池（未测试） |
 | `geo_cache.json` | IP 归属地缓存 |
 | `node_stability.json` | 节点跨轮稳定性 |
-| `china_cache.json` | 国内检查缓存 |
+| `china_cache.json` | 海内检查缓存 |
 | `score_details.json` | 每个节点的评分明细 |
 
 ---
 
 ## 自动运行
 
-- **时间**：每 6 小时一次，北京时间约 01:23、07:23、13:23、19:23（GitHub 的定时任务可能晚几分钟到几十分钟）。一轮约 5 到 8 分钟。
+- **时间**：每 6 小时一次，当地时间约 01:23、07:23、13:23、19:23（GitHub 的定时任务可能晚几分钟到几十分钟）。一轮约 5 到 8 分钟。
 - **手动运行**：`Actions → 更新节点 → Run workflow`，可调 `top_n`（默认 300，上限 1000）、`test_limit`（默认 3000，上限 5000）、`min_retain_ratio`（默认 0.5，0 为关闭缩水保护）。
 - **只有 main 分支的运行会提交结果**，在其他分支手动运行只做测试，不会推送。
 - 失败时自动开 Issue，下一次成功后自动关闭。
@@ -209,7 +209,7 @@ pip install -r requirements.txt
 python main.py --top-n 100 --test-limit 500
 ```
 
-常用参数：`--no-china-check`（跳过国内检查）、`--no-real-test`（只做 TCP 测试）、`--scoring-rules config/scoring.stability.yaml`（换评分模板）。完整参数见 `python main.py --help`。
+常用参数：`--no-china-check`（跳过海内检查）、`--no-real-test`（只做 TCP 测试）、`--scoring-rules config/scoring.stability.yaml`（换评分模板）。完整参数见 `python main.py --help`。
 
 检查命令：
 
@@ -255,7 +255,7 @@ core/
   tester.py          sing-box 真测（探活 + 完整测试）
   scoring.py         综合评分
   _fingerprint_test.py  抗识别评分
-  globalping.py      国内 TCP 检查与缓存
+  globalping.py      海内 TCP 检查与缓存
   geo.py             IP 归属地（ip-api.com，带缓存）
   generator.py       生成各格式订阅
   stats.py           来源评分、趋势、稳定性
