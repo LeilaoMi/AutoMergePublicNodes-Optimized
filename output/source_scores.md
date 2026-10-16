@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-10-16 11:41:25
+生成时间：2026-10-16 14:42:20
 
 ## 摘要
 
@@ -16,8 +16,8 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 1.0 | prefer | 86 | 85 | 1 | 0.988 | 693 | 0 |
-| Au1rxx-base64 | 0.848 | prefer | 473 | 364 | 109 | 0.77 | 1990 | 0 |
+| ermaozi | 0.959 | prefer | 59 | 56 | 3 | 0.949 | 618 | 0 |
+| Au1rxx-base64 | 0.789 | prefer | 384 | 273 | 111 | 0.711 | 1991 | 0 |
 
 ## 建议降权
 
@@ -31,43 +31,42 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 1.0 | prefer | 86 | 85 | 1 | 0.988 | 693 | 0 |
-| Au1rxx-base64 | 0.848 | prefer | 473 | 364 | 109 | 0.77 | 1990 | 0 |
-| mheidari-all | 0.58 | observe | 26 | 13 | 13 | 0.5 | 23871 | 0 |
-| Surfboard-tg-mixed | 0.465 | observe | 7 | 5 | 2 | 0.714 | 7090 | 0 |
+| ermaozi | 0.959 | prefer | 59 | 56 | 3 | 0.949 | 618 | 0 |
+| Au1rxx-base64 | 0.789 | prefer | 384 | 273 | 111 | 0.711 | 1991 | 0 |
+| mheidari-all | 0.461 | observe | 11 | 6 | 5 | 0.545 | 23974 | 0 |
+| DeltaKronecker-all | 0.4 | observe | 4 | 3 | 1 | 0.75 | 4946 | 0 |
+| Surfboard-tg-mixed | 0.391 | observe | 2 | 2 | 0 | 1.0 | 7090 | 0 |
+| ninja-vless | 0.291 | observe | 5 | 2 | 3 | 0.4 | 1791 | 0 |
 | 10ium-HighSpeed | 0.289 | observe | 1 | 1 | 0 | 1.0 | 839 | 0 |
-| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 10088 | 0 |
+| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 10094 | 0 |
 | Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 7568 | 0 |
 | xiaoji235-airport-v2ray-all | 0.255 | observe | 0 | 0 | 0 | None | 6752 | 0 |
 | barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 5827 | 0 |
 | Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 5572 | 0 |
 | 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | 0 | 0 | None | 5024 | 0 |
 | mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 4265 | 0 |
-| MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3998 | 0 |
-| Au1rxx-clash | 0.255 | observe | 0 | 0 | 0 | None | 1990 | 0 |
-| ninja-vless | 0.247 | observe | 0 | 0 | 0 | None | 1791 | 0 |
+| MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3999 | 0 |
+| Au1rxx-clash | 0.255 | observe | 0 | 0 | 0 | None | 1991 | 0 |
 | moneyfly1-collectSub | 0.222 | observe | 0 | 0 | 0 | None | 1164 | 0 |
 | tg-oneclickvpnkeys | 0.211 | observe | 2 | 1 | 1 | 0.5 | 79 | 0 |
-| ermaozi-get_subscribe | 0.198 | observe | 0 | 0 | 0 | None | 574 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 492 | 0 |
 | barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 491 | 0 |
+| ermaozi-get_subscribe | 0.194 | observe | 0 | 0 | 0 | None | 484 | 0 |
 | chromego_merge | 0.185 | observe | 0 | 0 | 0 | None | 252 | 0 |
 | ts-sf-Fly | 0.183 | observe | 0 | 0 | 0 | None | 201 | 0 |
 | MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-ConfigV2rayNG | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-Farah_VPN | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | ts-sf | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
+| tg-LonUp_M | 0.182 | observe | 0 | 0 | 0 | None | 174 | 0 |
 | Barabama-yudou | 0.182 | observe | 0 | 0 | 0 | None | 166 | 0 |
-| tg-LonUp_M | 0.182 | observe | 0 | 0 | 0 | None | 166 | 0 |
 | barabama-yudou66 | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
-| roosterkid-openproxylist-v2ray | 0.181 | observe | 0 | 0 | 0 | None | 150 | 0 |
 
 ## 综合后 30
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | tg-V2RAYProxy | 0.136 | observe | 1 | 0 | 1 | 0.0 | 217 | 0 |
-| DeltaKronecker-all | 0.17 | observe | 3 | 0 | 3 | 0.0 | 4946 | 0 |
 | Mr8AHAL | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | ninja-tuic | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | tg-GrizzlyVPN | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
@@ -96,6 +95,7 @@
 | tg-CryptoGuardVPN | 0.176 | observe | 0 | 0 | 0 | None | 16 | 0 |
 | tg-V2SayFree | 0.176 | observe | 0 | 0 | 0 | None | 17 | 0 |
 | tg-freedomofinfor | 0.176 | observe | 0 | 0 | 0 | None | 17 | 0 |
+| tg-v2rayng_channel | 0.176 | observe | 0 | 0 | 0 | None | 17 | 0 |
 
 ## 说明
 
