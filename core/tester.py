@@ -49,6 +49,9 @@ UNLOCK_TARGETS = [
     ("https://chat.openai.com/cdn-cgi/trace",     "chatgpt"),
 ]
 
+# OpenAI 不提供服务的地区（cdn-cgi/trace 在任何地区都返回 200，必须看 loc）
+CHATGPT_UNSUPPORTED = {"CN", "HK", "MO", "RU", "BY", "IR", "KP", "SY", "CU", "VE", "AF"}
+
 # exit-ip geo check 通过时, body 里 country 字段不能等于这个
 GEO_BLOCKED_COUNTRY = "CN"
 
@@ -140,7 +143,8 @@ class SingBoxTester:
                  min_latency_ms: float = DEFAULT_MIN_LATENCY_MS,
                  skip_target_kinds: Iterable[str] | None = None,
                  probe_only: bool = False,
-                 test_one_timeout: float = 15.0):
+                 test_one_timeout: float = 15.0,
+                 unlock_budget_sec: float = 4.0):
         if not os.path.exists(sb_path):
             raise FileNotFoundError(f"sing-box binary not found: {sb_path}")
         self.sb_path = os.path.abspath(sb_path)
@@ -151,6 +155,7 @@ class SingBoxTester:
         self.skip_target_kinds = set(skip_target_kinds or [])
         self.probe_only = probe_only
         self.test_one_timeout = test_one_timeout  # 单节点总超时，防 tail latency
+        self.unlock_budget_sec = unlock_budget_sec  # 解锁检测总预算（不影响 pass/fail）
         self._port_counter = 30000
 
     def _alloc_port(self) -> int:
@@ -169,8 +174,38 @@ class SingBoxTester:
                 continue
         raise RuntimeError("no free ports after 200 attempts")
 
-    async def test_one(self, node: Node) -> TestResult:
-        result = TestResult(node=node)
+    async def _check_unlocks(self, session: aiohttp.ClientSession, result: TestResult) -> None:
+        """Netflix / ChatGPT 能力探测，只记录结果。"""
+        per_req = aiohttp.ClientTimeout(total=max(1.0, self.unlock_budget_sec / 2))
+
+        async def _netflix() -> None:
+            try:
+                async with session.get(UNLOCK_TARGETS[0][0], timeout=per_req, allow_redirects=False) as resp:
+                    # 200 = 该地区可看此非自制剧；403 = 代理/IP 被封；404/重定向 = 地区无此片
+                    result.netflix_ok = resp.status == 200
+            except Exception:
+                pass
+
+        async def _chatgpt() -> None:
+            try:
+                async with session.get(UNLOCK_TARGETS[1][0], timeout=per_req) as resp:
+                    if resp.status != 200:
+                        return
+                    text = await resp.text()
+                    loc = ""
+                    for line in text.splitlines():
+                        if line.startswith("loc="):
+                            loc = line[4:].strip().upper()
+                            break
+                    result.chatgpt_ok = bool(loc) and loc not in CHATGPT_UNSUPPORTED
+            except Exception:
+                pass
+
+        await asyncio.gather(_netflix(), _chatgpt())
+
+    async def test_one(self, node: Node, result: TestResult | None = None) -> TestResult:
+        # result 可由调用方传入：总超时触发时，已经判定通过的结果不会丢
+        result = result if result is not None else TestResult(node=node)
         
         # 分配端口
         try:
@@ -243,6 +278,7 @@ class SingBoxTester:
             async with aiohttp.ClientSession(connector=connector) as session:
                 # 严格测试: 必须每个目标都通过
                 latencies = []
+                sample_spreads: List[float] = []
                 failed_target = None
                 speed_download_bytes = 0
                 speed_download_time = 0.0
@@ -276,6 +312,11 @@ class SingBoxTester:
                         if failed_target:
                             break
                         if samples:
+                            # 抖动 = 同一目标"热连接"采样的极差。第 1 次含握手（冷启动），不计入；
+                            # 之前用不同目标之间的偏差，测到的是距离差而非抖动，评分恒为 0
+                            warm = samples[1:] if len(samples) >= 3 else samples
+                            if len(warm) >= 2:
+                                sample_spreads.append(max(warm) - min(warm))
                             samples.sort()
                             latencies.append((target_kind, samples[len(samples) // 2]))  # 中位数
                         continue
@@ -323,26 +364,11 @@ class SingBoxTester:
                         failed_target = f"{target_kind}:{type(e).__name__}"
                         break
 
-                # 解锁检测（只在核心测试通过后做，不影响 pass/fail）
-                if failed_target is None and latencies:
-                    for unlock_url, unlock_kind in UNLOCK_TARGETS:
-                        try:
-                            timeout = aiohttp.ClientTimeout(total=self.request_timeout)
-                            async with session.get(unlock_url, timeout=timeout, allow_redirects=False) as resp:
-                                if unlock_kind == "netflix":
-                                    # Netflix: 200 或 403 但不是 "Not Available" 页面
-                                    result.netflix_ok = resp.status in (200, 403)
-                                elif unlock_kind == "chatgpt":
-                                    # ChatGPT: 能访问 trace 端点就算可
-                                    result.chatgpt_ok = resp.status == 200
-                        except Exception:
-                            pass  # 解锁检测失败不影响整体
-
                 if failed_target is None and latencies:
                     # 取非下载目标的平均延迟（不算下载耗时）
                     latency_targets = [lat for kind, lat in latencies if kind != "speed"]
                     avg_latency = sum(latency_targets) / len(latency_targets) if latency_targets else latencies[0][1]
-                    jitter = max(abs(l - avg_latency) for l in latency_targets) if len(latency_targets) >= 2 else 0.0
+                    jitter = max(sample_spreads) if sample_spreads else 0.0
                     if self.min_latency_ms > 0 and avg_latency < self.min_latency_ms:
                         result.error = f"latency-too-low:{avg_latency:.1f}ms"
                     else:
@@ -361,6 +387,15 @@ class SingBoxTester:
                         except Exception:
                             result.fingerprint_resistance = "none"
                             result.fingerprint_resistance_score = 0.0
+                        # 解锁检测：在 success 置位之后做，且整体限时，
+                        # 慢的解锁请求不会再把已通过节点拖成 test_one_timeout
+                        if not self.probe_only and self.unlock_budget_sec > 0:
+                            try:
+                                await asyncio.wait_for(
+                                    self._check_unlocks(session, result),
+                                    timeout=self.unlock_budget_sec)
+                            except Exception:
+                                pass  # 解锁检测失败不影响整体
                 else:
                     result.error = failed_target or "no-test-completed"
 
@@ -399,15 +434,27 @@ class SingBoxTester:
         # 避免每个节点都 new ProxyConnector (270 次握手 vs 1 次 keepalive)
         # 注: 单个节点的 session 生命周期与 sing-box 子进程同
 
+        async def _run_once(n: Node) -> TestResult:
+            r = TestResult(node=n)
+            try:
+                return await asyncio.wait_for(
+                    self.test_one(n, r), timeout=self.test_one_timeout)
+            except asyncio.TimeoutError:
+                if r.success:
+                    # 核心目标已通过，只是解锁等可选检测拖到了总超时
+                    return r
+                r = TestResult(node=n)
+                r.error = f"test_one_timeout:{self.test_one_timeout}s"
+                r.error_detail = build_error_detail(r.error)
+                return r
+
         async def _wrap(n: Node) -> TestResult:
             async with sem:
-                try:
-                    return await asyncio.wait_for(
-                        self.test_one(n), timeout=self.test_one_timeout)
-                except asyncio.TimeoutError:
-                    r = TestResult(node=n)
-                    r.error = f"test_one_timeout:{self.test_one_timeout}s"
-                    return r
+                r = await _run_once(n)
+                # 端口竞态：探测空闲端口到 sing-box 真正 bind 之间被别的 worker 抢走，换端口重试一次
+                if not r.success and "address already in use" in (r.error or ""):
+                    r = await _run_once(n)
+                return r
 
         tasks = [asyncio.create_task(_wrap(n)) for n in nodes]
         for fut in asyncio.as_completed(tasks):
