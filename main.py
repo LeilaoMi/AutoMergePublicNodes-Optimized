@@ -572,7 +572,7 @@ async def run(args):
         prefix="all",
         repo_path=args.repo,
         flag_map=flag_map,
-        branch=args.branch,
+        branch=getattr(args, "data_branch", "data"),  # all.* 发布在 data 分支（转换链接指向那里）
         mode=args.all_output_mode,
     )
     stage_durations["generate"] = round(time.time() - stage_start, 1)
@@ -711,6 +711,8 @@ def main():
     p.add_argument("--tcp-check", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--tcp-concurrency", type=int, default=500)
     p.add_argument("--tcp-timeout", type=float, default=2.0)
+    p.add_argument("--data-branch", default="data",
+                   help="all.* 等大文件发布的分支（CI 每轮强推单提交）")
     p.add_argument("--china-check-max", type=int, default=200,
                    help="国内检查单轮最多测多少个节点（GlobalPing 匿名额度 250 次/小时/IP）")
     p.add_argument("--china-check", action=argparse.BooleanOptionalAction, default=True,
