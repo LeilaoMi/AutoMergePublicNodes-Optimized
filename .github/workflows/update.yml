@@ -232,7 +232,8 @@ jobs:
                 if [ -n "$CONFLICTS" ]; then
                   echo "$CONFLICTS" | while read -r f; do
                     case "$f" in
-                      output/*|README.md) git checkout --ours -- "$f" && git add "$f" ;;
+                      # 本轮删除、上游修改（如迁到 data 分支的大文件）时 --ours 取不到文件，按删除处理
+                      output/*|README.md) if git checkout --ours -- "$f" 2>/dev/null; then git add "$f"; else git rm -q -- "$f"; fi ;;
                     esac
                   done
                   # 还有未解决的冲突则放弃
