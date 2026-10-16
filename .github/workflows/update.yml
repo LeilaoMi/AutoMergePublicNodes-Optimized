@@ -52,6 +52,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Restore state from data branch
+        # 大文件（全量池、geo 缓存、稳定性历史）放在 data 分支，每轮只保留一个提交，不再撑大 main 的历史
+        run: |
+          set -euo pipefail
+          if git fetch --depth 1 origin data 2>/dev/null; then
+            mkdir -p output
+            for f in geo_cache.json node_stability.json; do
+              if git show "FETCH_HEAD:output/$f" > "/tmp/$f" 2>/dev/null; then
+                mv "/tmp/$f" "output/$f"
+                echo "restored output/$f from data branch"
+              fi
+            done
+          else
+            echo "data branch not found; using state files from checkout (first run after migration)"
+          fi
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -180,7 +196,27 @@ jobs:
           # 显式 fetch 一次确保 origin/$BRANCH 是最新的, 避免 stale shallow ref
           # （不需要 --unshallow：rebase 只需要最新 tip，普通 fetch 足够）
           git fetch origin "$BRANCH"
+
+          # 1) 大文件发布到 data 分支：孤立单提交 + 强推，历史不增长
+          DATA_FILES="all.txt all.yaml all.json all.urls all.converter.md geo_cache.json node_stability.json score_details.json"
+          DATA_PATHS=""
+          for f in $DATA_FILES; do
+            [ -f "output/$f" ] && DATA_PATHS="$DATA_PATHS output/$f"
+          done
+          if [ -n "$DATA_PATHS" ]; then
+            DATA_INDEX="$(mktemp -u)"
+            GIT_INDEX_FILE="$DATA_INDEX" git add -f $DATA_PATHS
+            DATA_TREE=$(GIT_INDEX_FILE="$DATA_INDEX" git write-tree)
+            DATA_COMMIT=$(echo "data: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')" | git commit-tree "$DATA_TREE")
+            rm -f "$DATA_INDEX"
+            git push -f origin "$DATA_COMMIT:refs/heads/data"
+          fi
+
+          # 2) 其余小文件照常提交到默认分支（订阅地址不变）
           git rm -f output/top.* 2>/dev/null || true
+          for f in $DATA_FILES; do
+            git rm -q --cached --ignore-unmatch "output/$f"
+          done
           git add output/ README.md 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "no changes"
@@ -233,7 +269,6 @@ jobs:
             output/source_cleanup_suggestions.md
             output/source_cleanup_suggestions.json
             output/source_discovery.json
-            output/node_stability.json
             output/trend_history.json
             output/*.converter.md
 
@@ -285,7 +320,7 @@ jobs:
           REPO="${{ github.repository }}"
           BRANCH="${{ github.event.repository.default_branch }}"
           failed=0
-          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md all.txt all.yaml all.json all.urls all.converter.md stats.json source_audit.json health_report.json health_report.md daily_report.md source_scores.md scoring_profiles.md source_cleanup_suggestions.md source_cleanup_suggestions.json source_discovery.json node_stability.json trend_history.json geo_cache.json; do
+          for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md stats.json source_audit.json health_report.json health_report.md daily_report.md source_scores.md scoring_profiles.md source_cleanup_suggestions.md source_cleanup_suggestions.json source_discovery.json trend_history.json; do
             code=$(curl -s -o /tmp/jsdelivr-purge.json -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@${BRANCH}/output/${f}" || true)
             if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then
               echo "::warning::jsDelivr purge failed for output/${f} HTTP ${code}"
@@ -293,6 +328,9 @@ jobs:
             else
               echo "purged output/${f} HTTP ${code}"
             fi
+          done
+          for f in all.txt all.yaml all.json all.urls all.converter.md; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@data/output/${f}" || true) && echo "purged data:output/${f} HTTP ${code}" || true
           done
           # Purge chunk files and protocol files
           for f in chunks/verified_1.txt chunks/verified_2.txt chunks/verified_3.txt chunks/global_1.txt chunks/global_2.txt chunks/global_3.txt by_protocol/verified_vmess.txt by_protocol/verified_vless.txt by_protocol/verified_trojan.txt by_protocol/verified_shadowsocks.txt; do

@@ -2,6 +2,13 @@
 
 本项目所有 notable 变更记录于此。按时间倒序排列。
 
+## 2026-10-16 大文件迁到 data 分支
+
+- `all.*`（约 30 MB）、`geo_cache.json`、`node_stability.json`、`score_details.json` 不再提交到 `main`，改为每轮以**单个孤立提交强推到 `data` 分支**。`main` 每轮新增从约 35 MB 降到约 1 MB，`data` 分支始终只有一个提交。
+- CI 开跑前从 `data` 分支恢复 `geo_cache.json` / `node_stability.json`。迁移后的第一轮 `data` 分支还不存在，沿用 `main` 里的旧副本。
+- **订阅地址变化**：`verified.*` / `global.*` 不变；`all.*` 改为 `.../AutoMergePublicNodes-Optimized@data/output/all.yaml`（raw 为 `.../data/output/all.yaml`）。Pages 网关已同步修改。
+- `main` 已有的约 1.5 GB 历史不在本次处理范围（需要改写历史并强推）。
+
 ## 2026-10-16 国内检查、评分与测试器修复
 
 ### 🐛 产出修复

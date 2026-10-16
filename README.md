@@ -54,7 +54,7 @@
 | v2rayN / v2rayNG | `output/verified.txt` | base64 通用订阅 |
 | Karing / sing-box | `output/verified.json` | sing-box JSON 配置 |
 | 兼顾数量 | `output/global.yaml` / `output/global.txt` / `output/global.json` | 海外测试通过，但国内站点连通不一定稳定 |
-| 自行测速 | `output/all.urls` / `output/all.txt` / `output/all.yaml` | 全量去重候选池，不保证可用 |
+| 自行测速 | `data` 分支的 `output/all.urls` / `all.txt` / `all.yaml` | 全量去重候选池，不保证可用 |
 | 查看状态 | `output/daily_report.md` / `output/health_report.md` / `output/health_report.json` / `output/source_scores.md` / `output/scoring_profiles.md` / `output/source_cleanup_suggestions.md` | 日报、健康报告、评分模板、源评分、清理建议 |
 
 `verified.*` 数量不是固定值。`--top-n` 只是上限，实际数量取决于本轮真测结果。
@@ -71,8 +71,8 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/o
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.txt
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.yaml
 https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/global.json
-https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.txt
-https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/main/output/all.yaml
+https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/output/all.txt
+https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/output/all.yaml
 ```
 
 ### jsDelivr
@@ -83,8 +83,8 @@ https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.txt
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.yaml
 https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/global.json
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.txt
-https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@main/output/all.yaml
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@data/output/all.txt
+https://cdn.jsdelivr.net/gh/LeilaoMi/AutoMergePublicNodes-Optimized@data/output/all.yaml
 ```
 转换链接见 `output/*.converter.md`。第三方转换服务可能不可用或记录订阅地址，优先使用本仓库直接生成的订阅文件。
 
@@ -150,7 +150,7 @@ CI 默认仍使用 `config/scoring.yaml`。如需切换默认策略，请修改 
 |---|---|
 | `verified.txt/yaml/json/urls` | 严格真测通过节点 |
 | `global.txt/yaml/json/urls` | 海外可用的扩展节点 |
-| `all.txt/yaml/json/urls` | 全量去重候选节点 |
+| `all.txt/yaml/json/urls` | 全量去重候选节点（在 `data` 分支，每轮覆盖，不保留历史） |
 | `chunks/verified_*.txt` | 分块订阅（每 100 节点一块，避免单文件过大） |
 | `by_protocol/verified_*.txt` | 按协议分文件（vmess/vless/trojan/ss/hysteria2 独立订阅） |
 | `by_region/{region}.txt/yaml/urls` | 按地区分文件（HK/JP/US/SG 等） |
