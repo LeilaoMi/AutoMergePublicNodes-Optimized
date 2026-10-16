@@ -677,6 +677,48 @@ def write_protocol_outputs(
 
     return count
 
+# 国旗 emoji → by_region 文件名
+REGION_NAMES = {
+    "HK": "香港", "TW": "台湾", "JP": "日本", "KR": "韩国", "SG": "新加坡", "US": "美国",
+    "CA": "加拿大", "GB": "英国", "FR": "法国", "DE": "德国", "NL": "荷兰", "RU": "俄罗斯",
+    "TR": "土耳其", "MX": "墨西哥", "IN": "印度", "AU": "澳大利亚", "BR": "巴西", "IT": "意大利",
+    "ES": "西班牙", "SE": "瑞典", "CH": "瑞士", "FI": "芬兰", "PL": "波兰", "UA": "乌克兰",
+    "VN": "越南", "TH": "泰国", "MY": "马来西亚", "ID": "印度尼西亚", "PH": "菲律宾", "AE": "阿联酋",
+}
+
+
+def region_of_tag(tag: str) -> str:
+    """从节点名开头的国旗 emoji 推出地区名；无法识别归入"其他"。"""
+    chars = list(tag or "")
+    if len(chars) >= 2 and all(0x1F1E6 <= ord(c) <= 0x1F1FF for c in chars[:2]):
+        code = "".join(chr(ord(c) - 0x1F1E6 + ord("A")) for c in chars[:2])
+        return REGION_NAMES.get(code, "其他")
+    return "其他"
+
+
+def write_region_outputs(nodes: List[Node], output_dir: str) -> int:
+    """按地区分文件输出：output/by_region/{地区}.txt（base64）与 .urls（明文）。
+
+    每轮先清空目录，避免上一轮的地区文件残留旧节点。
+    """
+    import os
+    import glob
+    region_dir = os.path.join(output_dir, "by_region")
+    os.makedirs(region_dir, exist_ok=True)
+    groups: Dict[str, List[str]] = {}
+    for n in _prepare_nodes(nodes):
+        url = node_to_url(n)
+        if url:
+            groups.setdefault(region_of_tag(n.tag), []).append(url)
+    for old in glob.glob(os.path.join(region_dir, "*")):
+        if os.path.isfile(old):
+            os.remove(old)
+    for region, urls in sorted(groups.items()):
+        text = "\n".join(urls)
+        atomic_write(os.path.join(region_dir, f"{region}.urls"), text + "\n")
+        atomic_write(os.path.join(region_dir, f"{region}.txt"), base64.b64encode(text.encode()).decode())
+    return len(groups)
+
 # 常用订阅转换后端
 CONVERTERS = [
     ("sub-web",    "https://sub.xeton.dev/sub"),

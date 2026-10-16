@@ -26,13 +26,9 @@ on:
         required: false
         default: '3000'
       min_retain_ratio:
-        description: '缩水守门比例，0=关闭并强制写入本轮真测结果(默认 0)'
+        description: '缩水守门比例：本轮少于上一轮×该比例时保留上一轮，0=关闭(默认 0.5)'
         required: false
-        default: '0'
-      audit:
-        description: '同时跑订阅源审计'
-        type: boolean
-        default: false
+        default: '0.5'
 
 permissions:
   contents: write
@@ -58,7 +54,7 @@ jobs:
           set -euo pipefail
           if git fetch --depth 1 origin data 2>/dev/null; then
             mkdir -p output
-            for f in geo_cache.json node_stability.json; do
+            for f in geo_cache.json node_stability.json china_cache.json; do
               if git show "FETCH_HEAD:output/$f" > "/tmp/$f" 2>/dev/null; then
                 mv "/tmp/$f" "output/$f"
                 echo "restored output/$f from data branch"
@@ -146,7 +142,7 @@ jobs:
           set -euo pipefail
           TOP_N="${{ github.event.inputs.top_n || '300' }}"
           TEST_LIMIT="${{ github.event.inputs.test_limit || '3000' }}"
-          MIN_RETAIN_RATIO="${{ github.event.inputs.min_retain_ratio || '0' }}"
+          MIN_RETAIN_RATIO="${{ github.event.inputs.min_retain_ratio || '0.5' }}"
           [[ "$TOP_N" =~ ^[0-9]+$ ]] || { echo "::error::top_n must be a non-negative integer"; exit 1; }
           [[ "$TEST_LIMIT" =~ ^[0-9]+$ ]] || { echo "::error::test_limit must be a non-negative integer"; exit 1; }
           [[ "$MIN_RETAIN_RATIO" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "::error::min_retain_ratio must be a non-negative number"; exit 1; }
@@ -198,7 +194,7 @@ jobs:
           git fetch origin "$BRANCH"
 
           # 1) 大文件发布到 data 分支：孤立单提交 + 强推，历史不增长
-          DATA_FILES="all.txt all.yaml all.json all.urls all.converter.md geo_cache.json node_stability.json score_details.json"
+          DATA_FILES="all.txt all.yaml all.json all.urls all.converter.md geo_cache.json node_stability.json score_details.json china_cache.json"
           DATA_PATHS=""
           for f in $DATA_FILES; do
             [ -f "output/$f" ] && DATA_PATHS="$DATA_PATHS output/$f"
@@ -232,7 +228,7 @@ jobs:
                 if [ -n "$CONFLICTS" ]; then
                   echo "$CONFLICTS" | while read -r f; do
                     case "$f" in
-                      # 本轮删除、上游修改（如迁到 data 分支的大文件）时 --ours 取不到文件，按删除处理
+                      # 本轮删除、上游修改（如迁到 data 分支的大文件）时 --theirs 取不到文件，按删除处理
                       output/*|README.md) if git checkout --theirs -- "$f" 2>/dev/null; then git add "$f"; else git rm -q -- "$f"; fi ;;
                     esac
                   done
@@ -333,8 +329,15 @@ jobs:
           for f in all.txt all.yaml all.json all.urls all.converter.md; do
             code=$(curl -s -o /dev/null -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@data/output/${f}" || true) && echo "purged data:output/${f} HTTP ${code}" || true
           done
-          # Purge chunk files and protocol files
-          for f in chunks/verified_1.txt chunks/verified_2.txt chunks/verified_3.txt chunks/global_1.txt chunks/global_2.txt chunks/global_3.txt by_protocol/verified_vmess.txt by_protocol/verified_vless.txt by_protocol/verified_trojan.txt by_protocol/verified_shadowsocks.txt; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@${BRANCH}/output/${f}" || true) && echo "purged output/${f} HTTP ${code}" || true
+          # 分块 / 按协议 / 按地区文件按实际生成结果动态 purge（地区文件名是中文，需要 URL 编码）
+          python3 - "$REPO" "$BRANCH" <<'PY' | while read -r path; do
+          import pathlib, sys, urllib.parse
+          for d in ("chunks", "by_protocol", "by_region"):
+              for f in sorted(pathlib.Path("output", d).glob("*")):
+                  if f.is_file():
+                      print(urllib.parse.quote(f"output/{d}/{f.name}"))
+          PY
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@${BRANCH}/${path}" || true)
+            echo "purged ${path} HTTP ${code}"
           done
           echo "jsDelivr purge warnings: ${failed}"

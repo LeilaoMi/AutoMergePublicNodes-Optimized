@@ -101,14 +101,15 @@
       <input id="keyword" type="text" placeholder="关键词(匹配节点名/server,如 443 / HK)">
       <label>数量上限</label>
       <input id="maxN" type="number" value="100" min="1" max="10000" style="width:90px">
-      <label>测速超时(ms)</label>
-      <input id="testTimeout" type="number" value="4000" min="500" max="10000" style="width:90px">
       <select id="sortBy">
         <option value="default">默认(原始顺序)</option>
         <option value="name">按名称</option>
         <option value="region">按地区</option>
         <option value="proto">按协议</option>
+        <option value="latency">按 CI 实测延迟</option>
       </select>
+      <label><input id="onlyTested" type="checkbox"> 只看 CI 实测通过</label>
+      <label><input id="onlyChina" type="checkbox"> 只看国内可达</label>
       <button id="btnReset" class="btn ghost">重置</button>
     </div>
     <div class="toolbar">
@@ -120,7 +121,7 @@
     <div class="section-title">📋 筛选结果预览(前 50 条)</div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>#</th><th>名称</th><th>协议</th><th>地区</th><th>server:port</th></tr></thead>
+        <thead><tr><th>#</th><th>名称</th><th>协议</th><th>地区</th><th>server:port</th><th>CI 实测</th></tr></thead>
         <tbody id="previewBody"></tbody>
       </table>
     </div>
@@ -131,22 +132,13 @@
       <button id="btnBase64" class="btn">下载 Base64 通用订阅</button>
       <button id="btnCopyClash" class="btn ghost">复制 Clash 内容</button>
       <button id="btnCopyBase64" class="btn ghost">复制 Base64 内容</button>
-      <button id="btnCopyLink" class="btn ghost">复制专属订阅链接</button>
+      <button id="btnCopyLink" class="btn ghost" title="data: 链接只有少数客户端支持；需要长期订阅请用 README 里的固定地址">复制 data: 链接</button>
       <button id="btnSingbox" class="btn green">下载 sing-box JSON</button>
     </div>
     <div class="stat" id="genStat" style="margin-top:8px"></div>
 
-    <div class="section-title" style="margin-top:16px">⚡ 网关连通性测速</div>
-    <div class="row">
-      <button id="btnTest" class="btn">测速筛选结果(并发 10)</button>
-      <span class="stat" id="testStat"></span>
-    </div>
-    <div style="overflow-x:auto;margin-top:8px">
-      <table>
-        <thead><tr><th>#</th><th>名称</th><th>协议</th><th>地区</th><th>延迟(ms)</th><th>状态</th></tr></thead>
-        <tbody id="testBody"></tbody>
-      </table>
-    </div>
+    <div class="section-title" style="margin-top:16px">⚡ 关于测速</div>
+    <div class="stat" id="testStat">浏览器无法直接连接代理协议，网页里做不了真实测速。“CI 实测”一列来自 GitHub Actions 每 6 小时用 sing-box 做的真实连接测试：“国内可达”表示还通过了国内探针的 TCP 握手检查（verified），“海外可用”表示只在海外测试通过（global）。没有标记的节点本轮未测或未通过，建议导入客户端后自行测速。按 server:port 匹配，同一地址的多个节点会显示同一结果。</div>
   </div>
 
   <div class="footer">
@@ -163,6 +155,7 @@ let allProxies = [];      // 全量 clash proxies
 let filtered = [];        // 筛选后
 let activeRegions = new Set();
 let activeProtos = new Set();
+let ciResults = new Map(); // "server:port" → { lat, china }
 
 const $ = (id) => document.getElementById(id);
 const REPO = "LeilaoMi/AutoMergePublicNodes-Optimized";
@@ -173,6 +166,53 @@ const DATA_SOURCES = [
   `https://raw.githubusercontent.com/${REPO}/data/output/all.yaml`,
 ];
 const DATA_URL = DATA_SOURCES[0]; // 兼容旧引用
+// CI 实测结果（verified = 海外真测 + 国内可达；global = 海外真测通过）
+const CI_SOURCES = (name) => [
+  `https://cdn.jsdelivr.net/gh/${REPO}@main/output/${name}.yaml`,
+  `https://raw.githubusercontent.com/${REPO}/main/output/${name}.yaml`,
+];
+
+async function fetchFirstOk(urls) {
+  for (const url of urls) {
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 20000);
+      const resp = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (resp.ok) return await resp.text();
+    } catch (e) { /* 尝试下一个源 */ }
+  }
+  return "";
+}
+
+function parseCiLatency(name) {
+  const m = String(name || "").match(/\[\s*([\d.]+)ms/);
+  return m ? parseFloat(m[1]) : null;
+}
+
+async function loadCiResults() {
+  const map = new Map();
+  const [globalText, verifiedText] = await Promise.all([
+    fetchFirstOk(CI_SOURCES("global")),
+    fetchFirstOk(CI_SOURCES("verified")),
+  ]);
+  for (const [text, china] of [[globalText, false], [verifiedText, true]]) {
+    if (!text) continue;
+    try {
+      const doc = yaml.load(text);
+      for (const p of (doc && Array.isArray(doc.proxies)) ? doc.proxies : []) {
+        if (!p || !p.server) continue;
+        const key = `${p.server}:${p.port}`;
+        const prev = map.get(key);
+        const lat = parseCiLatency(p.name);
+        map.set(key, { lat: prev && prev.lat != null ? prev.lat : lat, china: china || (prev ? prev.china : false) });
+      }
+    } catch (e) { /* 忽略解析失败 */ }
+  }
+  return map;
+}
+
+function ciOf(p) { return ciResults.get(`${p.server}:${p.port}`); }
 
 // 国旗 emoji → 国家代码(覆盖常见代理地区)
 const FLAG_TO_CC = {
@@ -238,11 +278,13 @@ $("btnLoad").onclick = async () => {
   $("loadStat").textContent = "正在拉取 all.yaml...";
   setStatus("info", "正在拉取全量节点池,自动在 jsDelivr / Statically / GitHub Raw 间故障转移...");
   try {
-    const text = await fetchWithFallback();
+    const [text, ci] = await Promise.all([fetchWithFallback(), loadCiResults()]);
+    ciResults = ci;
     const doc = yaml.load(text);
     allProxies = (doc && Array.isArray(doc.proxies)) ? doc.proxies.filter(p => p && p.name && p.server) : [];
     if (allProxies.length === 0) throw new Error("解析后无有效 proxies");
-    $("loadStat").innerHTML = `已加载 <b>${allProxies.length}</b> 个节点 (源: ${loadedSource})`;
+    const chinaCount = [...ciResults.values()].filter(v => v.china).length;
+    $("loadStat").innerHTML = `已加载 <b>${allProxies.length}</b> 个节点 (源: ${loadedSource})，其中 CI 实测通过 <b>${ciResults.size}</b> 个、国内可达 <b>${chinaCount}</b> 个`;
     setStatus("ok", `加载成功: ${allProxies.length} 个节点, 数据源 ${loadedSource}。下方设置筛选条件。`);
     buildFilters();
     $("filters").classList.remove("hidden");
@@ -306,6 +348,9 @@ function applyFilter() {
   const sortBy = $("sortBy").value;
   let out = allProxies.filter((p) => {
     if (activeProtos.size > 0 && !activeProtos.has(p.type)) return false;
+    const ci = ciOf(p);
+    if ($("onlyTested").checked && !ci) return false;
+    if ($("onlyChina").checked && !(ci && ci.china)) return false;
     const r = extractRegion(p);
     if (activeRegions.size > 0 && !activeRegions.has(r)) return false;
     if (kw) {
@@ -317,6 +362,10 @@ function applyFilter() {
   if (sortBy === "name") out.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   else if (sortBy === "region") out.sort((a, b) => extractRegion(a).localeCompare(extractRegion(b)));
   else if (sortBy === "proto") out.sort((a, b) => (a.type || "").localeCompare(b.type || ""));
+  else if (sortBy === "latency") {
+    const latOf = (p) => { const c = ciOf(p); return c && c.lat != null ? c.lat : Infinity; };
+    out.sort((a, b) => latOf(a) - latOf(b));
+  }
   filtered = out.slice(0, maxN);
   $("filterStat").innerHTML = `筛选结果: <b>${filtered.length}</b> / ${allProxies.length} 个节点`;
   renderPreview();
@@ -330,11 +379,15 @@ function renderPreview() {
     const p = filtered[i];
     const r = extractRegion(p);
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${i + 1}</td><td class="name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</td><td>${p.type}</td><td>${r}</td><td>${escapeHtml(p.server || "")}:${p.port || ""}</td>`;
+    const ci = ciOf(p);
+    const ciCell = ci
+      ? `<span class="${ci.china ? "ok" : "warn"}">${ci.china ? "国内可达" : "海外可用"}${ci.lat != null ? " · " + Math.round(ci.lat) + "ms" : ""}</span>`
+      : '<span style="color:var(--muted)">—</span>';
+    tr.innerHTML = `<td>${i + 1}</td><td class="name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</td><td>${escapeHtml(p.type || "")}</td><td>${escapeHtml(r)}</td><td>${escapeHtml(p.server || "")}:${escapeHtml(p.port || "")}</td><td>${ciCell}</td>`;
     body.appendChild(tr);
   }
   if (filtered.length === 0) {
-    body.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center">无匹配节点,请放宽筛选条件</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center">无匹配节点,请放宽筛选条件</td></tr>';
   }
 }
 
@@ -346,9 +399,12 @@ function escapeHtml(s) {
 $("keyword").oninput = applyFilter;
 $("maxN").oninput = applyFilter;
 $("sortBy").onchange = applyFilter;
+$("onlyTested").onchange = applyFilter;
+$("onlyChina").onchange = applyFilter;
 $("btnReset").onclick = () => {
   activeRegions.clear(); activeProtos.clear();
   $("keyword").value = ""; $("maxN").value = 100; $("sortBy").value = "default";
+  $("onlyTested").checked = false; $("onlyChina").checked = false;
   document.querySelectorAll(".chip.active").forEach((c) => c.classList.remove("active"));
   applyFilter();
 };
@@ -376,52 +432,6 @@ function buildClashYaml() {
     ],
   };
   return yaml.dump(doc, { lineWidth: -1 });
-}
-
-// 本地测速: 直接对 server:port 做 TCP 连通性测试 (fetch 超时即不可达)
-async function testOneTcp(p) {
-  const t0 = performance.now();
-  const timeoutMs = parseInt($("testTimeout").value) || 4000;
-  try {
-    const url = `https://speed.cloudflare.com/__down?bytes=1&host=${encodeURIComponent(p.server + ":" + p.port)}`;
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
-    await fetch(url, { signal: ctrl.signal, mode: "no-cors" });
-    clearTimeout(tid);
-    return Math.round(performance.now() - t0);
-  } catch (e) {
-    return -1;
-  }
-}
-
-async function runTest() {
-  if (!filtered.length) { setStatus("warn", "请先筛选出节点再测速"); return; }
-  const btn = $("btnTest"); btn.disabled = true; btn.textContent = "测速中...";
-  $("testStat").textContent = `0/${filtered.length}`;
-  const body = $("testBody"); body.innerHTML = "";
-  const sample = filtered.slice(0, 100);
-  const CONC = 10;
-  let done = 0;
-  const results = [];
-  for (let i = 0; i < sample.length; i += CONC) {
-    const batch = sample.slice(i, i + CONC);
-    const got = await Promise.all(batch.map(async (p, j) => {
-      const lat = await testOneTcp(p);
-      return { p, lat, idx: i + j };
-    }));
-    results.push(...got);
-    done += got.length;
-    $("testStat").textContent = `${done}/${sample.length}`;
-  }
-  results.sort((a, b) => (b.lat < 0 ? -1 : 0) - (a.lat < 0 ? -1 : 0) || a.lat - b.lat);
-  body.innerHTML = results.map((r, i) => {
-    const cc = extractRegion(r.p);
-    const lat = r.lat < 0 ? "超时" : r.lat;
-    const cls = r.lat < 0 ? "err" : (r.lat < 200 ? "ok" : "warn");
-    return `<tr><td>${i + 1}</td><td>${escapeHtml(r.p.name || "")}</td><td>${r.p.type}</td><td>${cc || "?"}</td><td class="${cls}">${lat}</td><td>${r.lat < 0 ? "❌" : "✅"}</td></tr>`;
-  }).join("");
-  btn.disabled = false; btn.textContent = "测速筛选结果(并发 10)";
-  $("testStat").textContent = `完成 ${results.filter(r => r.lat > 0).length}/${results.length} 可达`;
 }
 
 // clash proxy → URI(支持 ss/vmess/vless/trojan/hysteria2/tuic/socks5/http)
@@ -590,7 +600,7 @@ $("btnCopyLink").onclick = async () => {
   if (!filtered.length) return;
   const link = `data:text/plain;base64,${buildBase64()}`;
   await navigator.clipboard.writeText(link);
-  $("genStat").textContent = `专属订阅链接已复制(含 ${filtered.length} 节点)`;
+  $("genStat").textContent = `data: 链接已复制(含 ${filtered.length} 节点，仅少数客户端支持)`;
 };
 
 // sing-box JSON 导出
@@ -601,8 +611,6 @@ $("btnSingbox").onclick = () => {
   $("genStat").innerHTML = `已生成 sing-box JSON: <b>${json.length}</b> 字节(${filtered.length} 节点)`;
 };
 
-// 绑定测速
-$("btnTest").onclick = runTest;
 </script>
 </body>
 </html>

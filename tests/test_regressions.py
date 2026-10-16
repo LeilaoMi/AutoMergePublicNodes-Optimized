@@ -385,6 +385,7 @@ class RegressionTests(unittest.TestCase):
             min_retain_ratio = 0.7
             all_output_mode = "full"
             lightweight_probe = False
+            readme_path = ""  # 测试不要改写仓库里的 README
 
         source = Source(url="https://example.com/sub.txt", name="mock-source")
         node = Node("http", "mock", "8.8.8.8", 8080, {})
@@ -438,6 +439,7 @@ class RegressionTests(unittest.TestCase):
             global_output = True
             min_retain_ratio = 0.7
             all_output_mode = "light"
+            readme_path = ""  # 测试不要改写仓库里的 README
             lightweight_probe = False
             singbox = __file__
             test_concurrency = 1
@@ -446,8 +448,9 @@ class RegressionTests(unittest.TestCase):
             min_latency = 0
 
         source = Source(url="https://example.com/sub.txt", name="mock-source")
-        strict_node = Node("http", "strict", "8.8.8.8", 8080, {})
-        global_node = Node("http", "global", "8.8.8.9", 8080, {})
+        # 明文 HTTP 会被剔除出 verified/global，这里用 HTTPS 代理
+        strict_node = Node("http", "strict", "8.8.8.8", 8080, {"tls": {"enabled": True}})
+        global_node = Node("http", "global", "8.8.8.9", 8080, {"tls": {"enabled": True}})
         fetch_result = type("FetchResult", (), {
             "source": source,
             "success": True,
@@ -1127,6 +1130,76 @@ weights:
 
 
 class ChinaCheckAndSamplingTests(unittest.TestCase):
+    def test_globalping_cache_reuses_fresh_results_and_skips_quota(self):
+        import time as _time
+        from core import globalping as g
+        node_a = Node("vless", "a", "1.1.1.1", 443, {})
+        node_b = Node("vless", "b", "2.2.2.2", 443, {})
+        node_c = Node("vless", "c", "3.3.3.3", 443, {})
+        now = _time.time()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "china_cache.json")
+            g.save_cache(path, {
+                "1.1.1.1:443": {"ok": True, "ts": int(now - 3600)},
+                "2.2.2.2:443": {"ok": True, "ts": int(now - 13 * 3600)},  # 可达结果已过期
+                "9.9.9.9:443": {"ok": False, "ts": int(now - 25 * 3600)},  # 不可达结果已过期
+            })
+            created = []
+            def fake_create(server, port, token=""):
+                created.append(server)
+                return server
+            def fake_get(mid, token=""):
+                rcv = 1 if mid == "2.2.2.2" else 0
+                return {"status": "finished", "results": [{"result": {"status": "finished", "stats": {"rcv": rcv}}}]}
+            with patch.object(g, "read_remaining_tests", return_value=250), \
+                 patch.object(g, "_create_measurement", side_effect=fake_create), \
+                 patch.object(g, "_get_measurement", side_effect=fake_get), \
+                 patch.object(g, "POLL_INTERVAL_SEC", 0):
+                result = asyncio.run(g.check_china_reachability(
+                    [(node_a, 1, 0), (node_b, 1, 0), (node_c, 1, 0)], cache_path=path))
+            self.assertEqual(sorted(created), ["2.2.2.2", "3.3.3.3"])
+            self.assertIs(result[node_a.fingerprint()], True)
+            self.assertIs(result[node_b.fingerprint()], True)
+            self.assertIs(result[node_c.fingerprint()], False)
+            self.assertEqual(g.check_china_reachability.last_cache_hits, 1)
+            saved = g.load_cache(path)
+            self.assertEqual(set(saved), {"1.1.1.1:443", "2.2.2.2:443", "3.3.3.3:443"})
+
+    def test_region_outputs_rebuilt_each_run(self):
+        from core.generator import region_of_tag, write_region_outputs
+        self.assertEqual(region_of_tag("🇭🇰 [10ms] a"), "香港")
+        self.assertEqual(region_of_tag("🇿🇿 x"), "其他")
+        self.assertEqual(region_of_tag("[10ms] plain"), "其他")
+        nodes = parse_content(Path("tests/fixtures/protocols/trojan-ws.txt").read_text(encoding="utf-8"))
+        self.assertTrue(nodes)
+        from dataclasses import replace as _replace
+        tagged = [_replace(nodes[0], tag="🇯🇵 [50ms] t")]
+        with tempfile.TemporaryDirectory() as tmp:
+            stale = Path(tmp, "by_region")
+            stale.mkdir()
+            (stale / "火星.txt").write_text("old", encoding="utf-8")
+            self.assertEqual(write_region_outputs(tagged, tmp), 1)
+            self.assertEqual(sorted(p.name for p in stale.iterdir()), ["日本.txt", "日本.urls"])
+            self.assertIn("trojan://", (stale / "日本.urls").read_text(encoding="utf-8"))
+
+    def test_plaintext_proxy_detection(self):
+        from main import is_plaintext_proxy
+        self.assertTrue(is_plaintext_proxy(Node("http", "h", "1.1.1.1", 80, {})))
+        self.assertTrue(is_plaintext_proxy(Node("socks", "s", "1.1.1.1", 1080, {"version": "5"})))
+        self.assertFalse(is_plaintext_proxy(Node("http", "h", "1.1.1.1", 443, {"tls": {"enabled": True}})))
+        self.assertFalse(is_plaintext_proxy(Node("vless", "v", "1.1.1.1", 443, {})))
+
+    def test_preserved_streak_reads_previous_stats(self):
+        from main import previous_preserved_streak
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(previous_preserved_streak(tmp, "verified"), 0)
+            Path(tmp, "stats.json").write_text(json.dumps({"output_guard": {
+                "verified": {"preserved": True, "preserved_streak": 2},
+                "global": {"preserved": False, "preserved_streak": 5},
+            }}), encoding="utf-8")
+            self.assertEqual(previous_preserved_streak(tmp, "verified"), 2)
+            self.assertEqual(previous_preserved_streak(tmp, "global"), 0)
+
     def test_globalping_tcp_ping_reachability(self):
         from core.globalping import is_reachable
         ok = {"results": [{"result": {"status": "finished", "stats": {"total": 3, "rcv": 1, "loss": 66.7}}}]}
