@@ -227,18 +227,18 @@ jobs:
                 git push origin HEAD:"$BRANCH" && break
               else
                 # rebase 冲突：output/ 和 README.md 是本轮自动生成的，以 CI 版本为准
-                # （rebase 语境下 --ours = 正在 replay 的 CI commit）
+                # （rebase 语境下 --theirs = 正在 replay 的 CI commit，--ours = 上游）
                 CONFLICTS=$(git diff --name-only --diff-filter=U || true)
                 if [ -n "$CONFLICTS" ]; then
                   echo "$CONFLICTS" | while read -r f; do
                     case "$f" in
                       # 本轮删除、上游修改（如迁到 data 分支的大文件）时 --ours 取不到文件，按删除处理
-                      output/*|README.md) if git checkout --ours -- "$f" 2>/dev/null; then git add "$f"; else git rm -q -- "$f"; fi ;;
+                      output/*|README.md) if git checkout --theirs -- "$f" 2>/dev/null; then git add "$f"; else git rm -q -- "$f"; fi ;;
                     esac
                   done
                   # 还有未解决的冲突则放弃
                   REMAIN=$(git diff --name-only --diff-filter=U || true)
-                  if [ -z "$REMAIN" ] && git rebase --continue; then
+                  if [ -z "$REMAIN" ] && GIT_EDITOR=true git rebase --continue; then
                     git push origin HEAD:"$BRANCH" && break
                   fi
                 fi
