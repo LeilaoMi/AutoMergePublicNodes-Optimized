@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-10-16 06:25:17
+生成时间：2026-10-16 06:34:51
 
 ## 摘要
 
@@ -8,22 +8,20 @@
 | --- | --- |
 | 已评分订阅源总数 | 94 |
 | 建议优先 | 2 |
-| 继续观察 | 91 |
-| 建议降权 | 1 |
+| 继续观察 | 92 |
+| 建议降权 | 0 |
 | 建议禁用 | 0 |
 
 ## 建议优先
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.984 | prefer | 89 | 86 | 3 | 0.966 | 693 | 0 |
-| Au1rxx-base64 | 0.878 | prefer | 465 | 372 | 93 | 0.8 | 1992 | 0 |
+| ermaozi | 1.0 | prefer | 89 | 88 | 1 | 0.989 | 693 | 0 |
+| Au1rxx-base64 | 0.887 | prefer | 470 | 380 | 90 | 0.809 | 1992 | 0 |
 
 ## 建议降权
 
-| 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ninja-vless | 0.145 | downweight | 5 | 0 | 5 | 0.0 | 1791 | 0 |
+无记录。
 
 ## 建议禁用
 
@@ -33,10 +31,11 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.984 | prefer | 89 | 86 | 3 | 0.966 | 693 | 0 |
-| Au1rxx-base64 | 0.878 | prefer | 465 | 372 | 93 | 0.8 | 1992 | 0 |
-| mheidari-all | 0.642 | observe | 30 | 17 | 13 | 0.567 | 23985 | 0 |
-| Surfboard-tg-mixed | 0.488 | observe | 47 | 19 | 28 | 0.404 | 7054 | 0 |
+| ermaozi | 1.0 | prefer | 89 | 88 | 1 | 0.989 | 693 | 0 |
+| Au1rxx-base64 | 0.887 | prefer | 470 | 380 | 90 | 0.809 | 1992 | 0 |
+| Surfboard-tg-mixed | 0.4 | observe | 4 | 3 | 1 | 0.75 | 7054 | 0 |
+| 10ium-HighSpeed | 0.289 | observe | 1 | 1 | 0 | 1.0 | 839 | 0 |
+| mheidari-all | 0.276 | observe | 110 | 21 | 89 | 0.191 | 23985 | 0 |
 | tg-oneclickvpnkeys | 0.258 | observe | 1 | 1 | 0 | 1.0 | 79 | 0 |
 | SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 10060 | 0 |
 | Epodonios-all | 0.255 | observe | 0 | 0 | 0 | None | 7651 | 0 |
@@ -47,22 +46,21 @@
 | mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 4265 | 0 |
 | MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3999 | 0 |
 | Au1rxx-clash | 0.255 | observe | 0 | 0 | 0 | None | 1992 | 0 |
+| ninja-vless | 0.247 | observe | 0 | 0 | 0 | None | 1791 | 0 |
 | moneyfly1-collectSub | 0.222 | observe | 0 | 0 | 0 | None | 1164 | 0 |
-| DeltaKronecker-all | 0.207 | observe | 1 | 0 | 1 | 0.0 | 5147 | 0 |
 | ermaozi-get_subscribe | 0.198 | observe | 0 | 0 | 0 | None | 574 | 0 |
 | barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 493 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 492 | 0 |
 | chromego_merge | 0.186 | observe | 0 | 0 | 0 | None | 270 | 0 |
+| DeltaKronecker-all | 0.184 | observe | 2 | 0 | 2 | 0.0 | 5147 | 0 |
 | ts-sf-Fly | 0.183 | observe | 0 | 0 | 0 | None | 201 | 0 |
 | tg-ConfigV2rayNG | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-Farah_VPN | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | ts-sf | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 199 | 0 |
-| tg-LonUp_M | 0.182 | observe | 0 | 0 | 0 | None | 177 | 0 |
+| tg-LonUp_M | 0.182 | observe | 0 | 0 | 0 | None | 176 | 0 |
 | Barabama-yudou | 0.182 | observe | 0 | 0 | 0 | None | 166 | 0 |
 | barabama-yudou66 | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
-| tg-prrofile_purple | 0.181 | observe | 0 | 0 | 0 | None | 154 | 0 |
-| roosterkid-openproxylist-v2ray | 0.181 | observe | 0 | 0 | 0 | None | 150 | 0 |
 
 ## 综合后 30
 
@@ -70,8 +68,6 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | tg-ArV2ray | 0.025 | observe | 0 | 0 | 0 | None | 0 | 1 |
 | tg-V2RAYProxy | 0.136 | observe | 1 | 0 | 1 | 0.0 | 217 | 0 |
-| ninja-vless | 0.145 | downweight | 5 | 0 | 5 | 0.0 | 1791 | 0 |
-| 10ium-HighSpeed | 0.161 | observe | 1 | 0 | 1 | 0.0 | 839 | 0 |
 | Mr8AHAL | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | ninja-tuic | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | tg-GrizzlyVPN | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
@@ -98,6 +94,8 @@
 | tg-PrivateVPNs | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
 | tg-VlessConfig | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
 | tg-CryptoGuardVPN | 0.176 | observe | 0 | 0 | 0 | None | 16 | 0 |
+| tg-V2SayFree | 0.176 | observe | 0 | 0 | 0 | None | 17 | 0 |
+| tg-freedomofinfor | 0.176 | observe | 0 | 0 | 0 | None | 17 | 0 |
 
 ## 说明
 
