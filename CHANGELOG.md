@@ -2,6 +2,12 @@
 
 本项目所有 notable 变更记录于此。按时间倒序排列。
 
+## 2026-10-16 改写历史：移除 output/ 的历史版本
+
+- 已从 `main` 的全部历史中删除 `output/` 目录（这些是每轮自动生成的产物），代码、文档、配置的历史完整保留，当前产物另作为一个提交恢复。仓库克隆体积从约 1.5 GB 降到约 20 MB。
+- 所有提交 SHA 已变化。fork 或本地克隆请执行 `git fetch origin && git reset --hard origin/main`（会丢弃本地改动，请先备份），或者重新 fork。
+- 改写前的 `main` 保留在 `refs/backup/main-pre-rewrite`（默认克隆不会拉取）。
+
 ## 2026-10-16 大文件迁到 data 分支
 
 - `all.*`（约 30 MB）、`geo_cache.json`、`node_stability.json`、`score_details.json` 不再提交到 `main`，改为每轮以**单个孤立提交强推到 `data` 分支**。`main` 每轮新增从约 35 MB 降到约 1 MB，`data` 分支始终只有一个提交。
