@@ -2,7 +2,7 @@ name: Update Nodes
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '23 */6 * * *'  # 避开整点高峰，整点调度常被延迟 3~4 小时
   push:
     paths:
       - 'core/**'

@@ -57,12 +57,39 @@ def sample_for_real_test_weighted(
     node_source_map: Dict[str, str],
     protocol_rates: Dict[str, float],
     source_rates: Dict[str, float],
+    explore_ratio: float = 0.15,
 ) -> List[Node]:
     if limit <= 0 or len(nodes) <= limit:
         return nodes
     base_quota = max(limit // 5, 1)
     sampled = sample_for_real_test(nodes, tcp_latency, min(base_quota, limit))
     used = {n.fingerprint() for n in sampled}
+
+    # 探索配额：每个来源轮流取 TCP 最快的节点，避免"历史分低 → 不被测 → 分数永远低"的反馈环
+    explore_quota = max(int(limit * explore_ratio), 0)
+    if explore_quota > 0:
+        by_source: Dict[str, List[Node]] = {}
+        for n in nodes:
+            fp = n.fingerprint()
+            if fp in used:
+                continue
+            by_source.setdefault(node_source_map.get(fp, ""), []).append(n)
+        for lst in by_source.values():
+            lst.sort(key=lambda n: tcp_latency.get(n.fingerprint(), float("inf")))
+        # 没有历史数据的来源优先
+        order = sorted(by_source, key=lambda src: (src in source_rates, src))
+        added = 0
+        idx = 0
+        while added < explore_quota and any(idx < len(by_source[src]) for src in order):
+            for src in order:
+                if added >= explore_quota or len(sampled) >= limit:
+                    break
+                if idx < len(by_source[src]):
+                    n = by_source[src][idx]
+                    sampled.append(n)
+                    used.add(n.fingerprint())
+                    added += 1
+            idx += 1
 
     def score(n: Node) -> Tuple[float, float, int]:
         fp = n.fingerprint()
