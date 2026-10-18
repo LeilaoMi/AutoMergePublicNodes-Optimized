@@ -60,16 +60,16 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-10-18 12:50（北京时间） |
+| 更新时间 | 2026-10-18 19:27（北京时间） |
 | 订阅源（可用/总数） | 93/107 |
-| 原始节点 → 去重后 | 99074 → 27914 |
-| 送入测试 → 探活通过 → 真测通过 | 3000 → 682 → 512 |
-| 国内可达 / 不可达 / 未知 | 130 / 341 / 41 |
-| 国内检查缓存命中 | 271 |
-| **verified 输出** | 130 |
+| 原始节点 → 去重后 | 98405 → 27711 |
+| 送入测试 → 探活通过 → 真测通过 | 3000 → 648 → 470 |
+| 国内可达 / 不可达 / 未知 | 143 / 327 / 0 |
+| 国内检查缓存命中 | 319 |
+| **verified 输出** | 143 |
 | **global 输出** | 300 |
-| all 全量池 | 27914 |
-| 本轮耗时 | 329.2 秒 |
+| all 全量池 | 27711 |
+| 本轮耗时 | 328.3 秒 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -77,21 +77,21 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 94.19 | shadowsocks | 241.8 | Au1rxx-base64 |
-| 92.13 | shadowsocks | 241.6 | Au1rxx-base64 |
-| 89.05 | shadowsocks | 331.6 | Au1rxx-base64 |
-| 89.01 | vless | 296.5 | Au1rxx-base64 |
-| 88.92 | shadowsocks | 272.0 | Au1rxx-base64 |
+| 94.24 | vless | 207.9 | Au1rxx-base64 |
+| 93.16 | vless | 200.1 | Au1rxx-base64 |
+| 92.72 | vless | 203.5 | Au1rxx-base64 |
+| 91.8 | vless | 263.1 | Au1rxx-base64 |
+| 91.69 | shadowsocks | 298.6 | Au1rxx-base64 |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| ermaozi | 0.989 | 99 | prefer |
-| Au1rxx-base64 | 0.948 | 413 | prefer |
-| Surfboard-tg-mixed | 0.643 | 10 | observe |
-| DeltaKronecker-all | 0.519 | 5 | observe |
-| Surfboard-tg-vless | 0.372 | 9 | observe |
+| ermaozi | 0.98 | 102 | prefer |
+| Au1rxx-base64 | 0.879 | 378 | prefer |
+| Surfboard-tg-mixed | 0.58 | 52 | observe |
+| DeltaKronecker-all | 0.478 | 101 | observe |
+| mheidari-all | 0.418 | 10 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
