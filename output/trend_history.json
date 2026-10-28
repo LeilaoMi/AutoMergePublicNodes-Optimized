@@ -1,37 +1,7 @@
 {
-  "updated_at": "2026-10-28 06:00:25",
+  "updated_at": "2026-10-28 13:18:02",
   "keep": 30,
   "runs": [
-    {
-      "timestamp": "2026-10-20 11:55:25",
-      "duration_sec": 300.6,
-      "nodes_raw": 94098,
-      "nodes_dedup": 26454,
-      "nodes_tcp_ok": 3000,
-      "nodes_real_ok": 472,
-      "nodes_verified_output": 136,
-      "nodes_global_output": 300,
-      "nodes_global_extra_from_cn_block": 9,
-      "real_test_errors": {
-        "speed": 12,
-        "204": 34,
-        "cn-block": 18,
-        "test_one_timeout": 89,
-        "geo": 36
-      },
-      "output_guard": {
-        "verified": {
-          "preserved": false,
-          "previous_count": 91,
-          "proposed_count": 136
-        },
-        "global": {
-          "preserved": false,
-          "previous_count": 300,
-          "proposed_count": 300
-        }
-      }
-    },
     {
       "timestamp": "2026-10-20 17:23:59",
       "duration_sec": 276.0,
@@ -904,7 +874,47 @@
           "proposed_count": 300
         }
       }
+    },
+    {
+      "timestamp": "2026-10-28 13:18:02",
+      "duration_sec": 303.9,
+      "nodes_raw": 97874,
+      "nodes_dedup": 26563,
+      "nodes_tcp_ok": 3000,
+      "nodes_real_ok": 394,
+      "nodes_verified_output": 66,
+      "nodes_global_output": 300,
+      "nodes_global_extra_from_cn_block": 7,
+      "real_test_errors": {
+        "geo": 25,
+        "204": 18,
+        "test_one_timeout": 79,
+        "cn-block": 14
+      },
+      "output_guard": {
+        "verified": {
+          "preserved": false,
+          "previous_count": 68,
+          "proposed_count": 66
+        },
+        "global": {
+          "preserved": false,
+          "previous_count": 300,
+          "proposed_count": 300
+        }
+      }
     }
   ],
-  "alerts": []
+  "alerts": [
+    {
+      "type": "verified_downtrend_4_runs",
+      "message": "verified output decreased for 4 consecutive runs",
+      "values": [
+        143,
+        85,
+        68,
+        66
+      ]
+    }
+  ]
 }
