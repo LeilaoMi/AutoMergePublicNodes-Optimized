@@ -1,37 +1,7 @@
 {
-  "updated_at": "2026-10-31 06:00:38",
+  "updated_at": "2026-10-31 12:51:42",
   "keep": 30,
   "runs": [
-    {
-      "timestamp": "2026-10-22 17:24:24",
-      "duration_sec": 293.4,
-      "nodes_raw": 96736,
-      "nodes_dedup": 26708,
-      "nodes_tcp_ok": 3000,
-      "nodes_real_ok": 351,
-      "nodes_verified_output": 111,
-      "nodes_global_output": 300,
-      "nodes_global_extra_from_cn_block": 7,
-      "real_test_errors": {
-        "speed": 13,
-        "204": 7,
-        "cn-block": 10,
-        "geo": 9,
-        "test_one_timeout": 67
-      },
-      "output_guard": {
-        "verified": {
-          "preserved": false,
-          "previous_count": 123,
-          "proposed_count": 111
-        },
-        "global": {
-          "preserved": false,
-          "previous_count": 300,
-          "proposed_count": 300
-        }
-      }
-    },
     {
       "timestamp": "2026-10-22 21:49:39",
       "duration_sec": 287.5,
@@ -903,7 +873,48 @@
           "proposed_count": 300
         }
       }
+    },
+    {
+      "timestamp": "2026-10-31 12:51:42",
+      "duration_sec": 291.2,
+      "nodes_raw": 80647,
+      "nodes_dedup": 26392,
+      "nodes_tcp_ok": 3000,
+      "nodes_real_ok": 399,
+      "nodes_verified_output": 146,
+      "nodes_global_output": 300,
+      "nodes_global_extra_from_cn_block": 8,
+      "real_test_errors": {
+        "204": 19,
+        "cn-block": 15,
+        "test_one_timeout": 90,
+        "geo": 21,
+        "speed": 3
+      },
+      "output_guard": {
+        "verified": {
+          "preserved": true,
+          "preserved_streak": 1,
+          "reason": "min_retain_ratio",
+          "previous_count": 146,
+          "proposed_count": 68,
+          "min_retain_ratio": 0.5
+        },
+        "global": {
+          "preserved": false,
+          "previous_count": 300,
+          "proposed_count": 300
+        }
+      }
     }
   ],
-  "alerts": []
+  "alerts": [
+    {
+      "type": "output_guard_preserved",
+      "message": "output shrink guard preserved previous files",
+      "prefixes": [
+        "verified"
+      ]
+    }
+  ]
 }
