@@ -281,7 +281,19 @@ def node_to_url(n: Node) -> str:
 # Node → Clash YAML proxy
 # ============================================================
 
+# Xray 26.9.8+ 的 REALITY 服务端要求 ClientHello 带 X25519MLKEM768。
+# mihomo 当前锁定的 utls v1.8.7 里只有 chrome（HelloChrome_133）带这个 key share，
+# firefox / safari / ios / qq 等都不带，random 约一半概率抽不到 chrome（MetaCubeX/mihomo#3193）。
+# 所以 Clash 输出里 REALITY 节点统一用 chrome；mihomo 升级 utls 后可放开。
+_REALITY_CLASH_FINGERPRINT = "chrome"
+
+
 def node_to_clash(n: Node) -> Optional[Dict[str, Any]]:
+    """把内部 Node 转成 Clash/mihomo 的 proxy 字典；不支持的协议返回 None。
+
+    VLESS REALITY 节点固定使用 chrome 指纹并开启 support-x25519mlkem768，
+    原因见 _REALITY_CLASH_FINGERPRINT 的注释。
+    """
     t, r = n.type, n.raw
     base: Dict[str, Any] = {"name": n.tag, "server": n.server, "port": n.server_port}
 
@@ -323,6 +335,8 @@ def node_to_clash(n: Node) -> Optional[Dict[str, Any]]:
                     "support-x25519mlkem768": True,
                 }
             fp = (tls.get("utls") or {}).get("fingerprint")
+            if tls.get("reality"):
+                fp = _REALITY_CLASH_FINGERPRINT
             if fp:
                 proxy["client-fingerprint"] = fp
         tp = r.get("transport", {})

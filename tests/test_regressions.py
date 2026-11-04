@@ -48,6 +48,21 @@ class RegressionTests(unittest.TestCase):
         self.assertTrue(proxy["reality-opts"]["support-x25519mlkem768"])
         self.assertEqual(proxy["reality-opts"]["public-key"], "abc")
 
+    def test_vless_reality_clash_forces_chrome_fingerprint(self):
+        base = "vless://11111111-1111-1111-1111-111111111111@example.com:443?security=reality&pbk=abc&sid=123&sni=example.com&type=tcp"
+        for fp in ("firefox", "safari", "ios", "qq", "random", "chrome", ""):
+            with self.subTest(fp=fp):
+                url = base + (f"&fp={fp}" if fp else "") + "#r"
+                proxy = node_to_clash(parse_content(url)[0])
+                self.assertEqual(proxy["client-fingerprint"], "chrome")
+                self.assertTrue(proxy["reality-opts"]["support-x25519mlkem768"])
+
+    def test_vless_tls_non_reality_keeps_fingerprint(self):
+        url = "vless://11111111-1111-1111-1111-111111111111@example.com:443?security=tls&fp=firefox&sni=example.com&type=tcp#t"
+        proxy = node_to_clash(parse_content(url)[0])
+        self.assertNotEqual(proxy.get("client-fingerprint"), "chrome")
+        self.assertNotIn("reality-opts", proxy)
+
     def test_write_outputs_does_not_mutate_or_duplicate_clamped_tags(self):
         n1 = Node("vless", "A" * 48 + "X", "s1.example", 443, {"uuid": "u1"})
         n2 = Node("vless", "A" * 48 + "Y", "s2.example", 443, {"uuid": "u2"})
