@@ -227,6 +227,8 @@ python tools/local_filter.py --input output/global.urls --output-prefix local_ve
 ```
 
 > 设置环境变量 `GLOBALPING_TOKEN` 可以用自己的 GlobalPing 账号额度（每小时 500 次，同账号所有 token 共用）。
+>
+> Clash 输出的 REALITY 节点默认开启 ML-KEM 并统一 chrome 指纹（兼容 Xray 26.9.8+）。主要连旧版 REALITY 服务端时，设置环境变量 `CLASH_REALITY_MLKEM=0` 恢复旧行为。
 
 ---
 

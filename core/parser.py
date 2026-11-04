@@ -164,9 +164,9 @@ def parse_vless(url: str) -> Optional[Node]:
                 "public_key": q.get("pbk", [""])[0],
                 "short_id": q.get("sid", [""])[0],
             }
-            fp = q.get("fp", [""])[0]
-            if fp:
-                tls["utls"] = {"enabled": True, "fingerprint": fp}
+        fp = q.get("fp", [""])[0]
+        if fp:
+            tls["utls"] = {"enabled": True, "fingerprint": fp}
         raw["tls"] = tls
 
     net = (q.get("type", ["tcp"])[0] or "tcp").lower()
