@@ -318,6 +318,9 @@ def node_to_clash(n: Node) -> Optional[Dict[str, Any]]:
                 proxy["reality-opts"] = {
                     "public-key": tls["reality"].get("public_key", ""),
                     "short-id": tls["reality"].get("short_id", ""),
+                    # Xray 26.9.8+ 的 REALITY 服务端要求 X25519MLKEM768 密钥交换；
+                    # mihomo/FlClash 默认不发，会认证失败（FlClash #2877）。
+                    "support-x25519mlkem768": True,
                 }
             fp = (tls.get("utls") or {}).get("fingerprint")
             if fp:

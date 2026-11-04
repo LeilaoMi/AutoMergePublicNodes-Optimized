@@ -40,6 +40,14 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(node_to_url(n), "http://u:p@example.com:8080#http-test")
         self.assertEqual(node_to_clash(n)["type"], "http")
 
+    def test_vless_reality_clash_enables_mlkem(self):
+        url = Path(__file__).parent.joinpath("fixtures/protocols/vless-reality.txt").read_text().strip()
+        nodes = parse_content(url)
+        self.assertEqual(len(nodes), 1)
+        proxy = node_to_clash(nodes[0])
+        self.assertTrue(proxy["reality-opts"]["support-x25519mlkem768"])
+        self.assertEqual(proxy["reality-opts"]["public-key"], "abc")
+
     def test_write_outputs_does_not_mutate_or_duplicate_clamped_tags(self):
         n1 = Node("vless", "A" * 48 + "X", "s1.example", 443, {"uuid": "u1"})
         n2 = Node("vless", "A" * 48 + "Y", "s2.example", 443, {"uuid": "u2"})

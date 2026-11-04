@@ -2,6 +2,10 @@
 
 本项目所有 notable 变更记录于此。按时间倒序排列。
 
+## 2026-11-04 Clash REALITY 开启 ML-KEM
+
+- 修复：Clash 输出的 VLESS REALITY 节点在 `reality-opts` 中加入 `support-x25519mlkem768: true`。Xray 26.9.8 起 REALITY 服务端要求 X25519MLKEM768，mihomo/FlClash 默认不发送会导致认证失败（FlClash #2877）。sing-box 与 V2Ray 链接输出不变。
+
 ## 2026-10-16 国内检查缓存、守门与 Pages 测速
 
 - 修复：by_region 中文文件名在 rebase 冲突列表里被 git 转义成带引号的形式，自动解决冲突失效导致推送失败；提交步骤设置 `core.quotePath false`。
