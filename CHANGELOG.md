@@ -2,6 +2,12 @@
 
 本项目所有 notable 变更记录于此。按时间倒序排列。
 
+## 2026-11-04 Clash REALITY 开启 ML-KEM
+
+- 修复：Clash 输出的 VLESS REALITY 节点在 `reality-opts` 中加入 `support-x25519mlkem768: true`。Xray 26.9.8 起 REALITY 服务端要求 X25519MLKEM768，mihomo/FlClash 默认不发送会导致认证失败（FlClash #2877）。同时把 Clash 输出中 REALITY 节点的 `client-fingerprint` 统一为 `chrome`：mihomo 当前的 utls 只有 chrome 指纹带 ML-KEM，firefox/safari/ios/qq 和约一半的 random 即使开了开关也会失败（MetaCubeX/mihomo#3193）。代价是 chrome 指纹更易被 DPI 识别，且旧版 REALITY 服务端可能不接受 ML-KEM。非 REALITY 节点的指纹不变，sing-box 与 V2Ray 链接输出不变。
+- 新增环境变量 `CLASH_REALITY_MLKEM`（默认开启）：设为 `0`/`false` 时恢复旧行为，不加 ML-KEM 开关、保留节点原指纹，供主要连旧版 REALITY 服务端的 fork 使用。
+- 修复：普通 `vless+tls` 链接的 `fp` 参数以前被解析器丢弃，现在会保留，Clash 输出带上 `client-fingerprint`，sing-box 配置带上 `utls`。
+
 ## 2026-10-16 国内检查缓存、守门与 Pages 测速
 
 - 修复：by_region 中文文件名在 rebase 冲突列表里被 git 转义成带引号的形式，自动解决冲突失效导致推送失败；提交步骤设置 `core.quotePath false`。

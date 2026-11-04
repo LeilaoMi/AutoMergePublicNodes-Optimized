@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from dataclasses import replace
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
@@ -281,7 +282,28 @@ def node_to_url(n: Node) -> str:
 # Node → Clash YAML proxy
 # ============================================================
 
+# Xray 26.9.8+ 的 REALITY 服务端要求 ClientHello 带 X25519MLKEM768。
+# mihomo 当前锁定的 utls v1.8.7 里只有 chrome（HelloChrome_133）带这个 key share，
+# firefox / safari / ios / qq 等都不带，random 约一半概率抽不到 chrome（MetaCubeX/mihomo#3193）。
+# 所以 Clash 输出里 REALITY 节点统一用 chrome；mihomo 升级 utls 后可放开。
+_REALITY_CLASH_FINGERPRINT = "chrome"
+
+
+def _clash_reality_mlkem_enabled() -> bool:
+    """环境变量 CLASH_REALITY_MLKEM 设为 0/false/no/off 时关闭 REALITY 的 ML-KEM 处理。
+
+    关闭后 Clash 输出的 REALITY 节点不再带 support-x25519mlkem768，也不再强制 chrome
+    指纹，恢复旧行为，供主要连接旧版 REALITY 服务端的 fork 使用。默认开启。
+    """
+    return os.environ.get("CLASH_REALITY_MLKEM", "1").strip().lower() not in ("0", "false", "no", "off")
+
+
 def node_to_clash(n: Node) -> Optional[Dict[str, Any]]:
+    """把内部 Node 转成 Clash/mihomo 的 proxy 字典；不支持的协议返回 None。
+
+    VLESS REALITY 节点默认固定使用 chrome 指纹并开启 support-x25519mlkem768，
+    原因见 _REALITY_CLASH_FINGERPRINT 的注释；可用环境变量 CLASH_REALITY_MLKEM=0 关闭。
+    """
     t, r = n.type, n.raw
     base: Dict[str, Any] = {"name": n.tag, "server": n.server, "port": n.server_port}
 
@@ -314,12 +336,19 @@ def node_to_clash(n: Node) -> Optional[Dict[str, Any]]:
             proxy["tls"] = True
             proxy["servername"] = tls.get("server_name", "")
             proxy["skip-cert-verify"] = True
+            mlkem = bool(tls.get("reality")) and _clash_reality_mlkem_enabled()
             if tls.get("reality"):
                 proxy["reality-opts"] = {
                     "public-key": tls["reality"].get("public_key", ""),
                     "short-id": tls["reality"].get("short_id", ""),
                 }
+                if mlkem:
+                    # Xray 26.9.8+ 的 REALITY 服务端要求 X25519MLKEM768 密钥交换；
+                    # mihomo/FlClash 默认不发，会认证失败（FlClash #2877）。
+                    proxy["reality-opts"]["support-x25519mlkem768"] = True
             fp = (tls.get("utls") or {}).get("fingerprint")
+            if mlkem:
+                fp = _REALITY_CLASH_FINGERPRINT
             if fp:
                 proxy["client-fingerprint"] = fp
         tp = r.get("transport", {})

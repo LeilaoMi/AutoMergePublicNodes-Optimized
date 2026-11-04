@@ -40,6 +40,40 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(node_to_url(n), "http://u:p@example.com:8080#http-test")
         self.assertEqual(node_to_clash(n)["type"], "http")
 
+    @patch.dict(os.environ, {"CLASH_REALITY_MLKEM": "1"})
+    def test_vless_reality_clash_enables_mlkem(self):
+        url = Path(__file__).parent.joinpath("fixtures/protocols/vless-reality.txt").read_text().strip()
+        nodes = parse_content(url)
+        self.assertEqual(len(nodes), 1)
+        proxy = node_to_clash(nodes[0])
+        self.assertTrue(proxy["reality-opts"]["support-x25519mlkem768"])
+        self.assertEqual(proxy["reality-opts"]["public-key"], "abc")
+
+    @patch.dict(os.environ, {"CLASH_REALITY_MLKEM": "1"})
+    def test_vless_reality_clash_forces_chrome_fingerprint(self):
+        base = "vless://11111111-1111-1111-1111-111111111111@example.com:443?security=reality&pbk=abc&sid=123&sni=example.com&type=tcp"
+        for fp in ("firefox", "safari", "ios", "qq", "random", "chrome", ""):
+            with self.subTest(fp=fp):
+                url = base + (f"&fp={fp}" if fp else "") + "#r"
+                proxy = node_to_clash(parse_content(url)[0])
+                self.assertEqual(proxy["client-fingerprint"], "chrome")
+                self.assertTrue(proxy["reality-opts"]["support-x25519mlkem768"])
+
+    def test_vless_tls_non_reality_keeps_fingerprint(self):
+        url = "vless://11111111-1111-1111-1111-111111111111@example.com:443?security=tls&fp=firefox&sni=example.com&type=tcp#t"
+        proxy = node_to_clash(parse_content(url)[0])
+        self.assertEqual(proxy.get("client-fingerprint"), "firefox")
+        self.assertNotIn("reality-opts", proxy)
+
+    def test_vless_reality_clash_mlkem_can_be_disabled(self):
+        url = "vless://11111111-1111-1111-1111-111111111111@example.com:443?security=reality&pbk=abc&sid=123&sni=example.com&fp=firefox&type=tcp#r"
+        for val in ("0", "false", "OFF"):
+            with self.subTest(val=val), patch.dict(os.environ, {"CLASH_REALITY_MLKEM": val}):
+                proxy = node_to_clash(parse_content(url)[0])
+                self.assertNotIn("support-x25519mlkem768", proxy["reality-opts"])
+                self.assertEqual(proxy["client-fingerprint"], "firefox")
+                self.assertEqual(proxy["reality-opts"]["public-key"], "abc")
+
     def test_write_outputs_does_not_mutate_or_duplicate_clamped_tags(self):
         n1 = Node("vless", "A" * 48 + "X", "s1.example", 443, {"uuid": "u1"})
         n2 = Node("vless", "A" * 48 + "Y", "s2.example", 443, {"uuid": "u2"})
