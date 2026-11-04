@@ -40,6 +40,7 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(node_to_url(n), "http://u:p@example.com:8080#http-test")
         self.assertEqual(node_to_clash(n)["type"], "http")
 
+    @patch.dict(os.environ, {"CLASH_REALITY_MLKEM": "1"})
     def test_vless_reality_clash_enables_mlkem(self):
         url = Path(__file__).parent.joinpath("fixtures/protocols/vless-reality.txt").read_text().strip()
         nodes = parse_content(url)
@@ -48,6 +49,7 @@ class RegressionTests(unittest.TestCase):
         self.assertTrue(proxy["reality-opts"]["support-x25519mlkem768"])
         self.assertEqual(proxy["reality-opts"]["public-key"], "abc")
 
+    @patch.dict(os.environ, {"CLASH_REALITY_MLKEM": "1"})
     def test_vless_reality_clash_forces_chrome_fingerprint(self):
         base = "vless://11111111-1111-1111-1111-111111111111@example.com:443?security=reality&pbk=abc&sid=123&sni=example.com&type=tcp"
         for fp in ("firefox", "safari", "ios", "qq", "random", "chrome", ""):
