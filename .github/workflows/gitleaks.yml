@@ -21,17 +21,21 @@ name: Gitleaks
 # AutoMerge note: output/ is generated public node data (rebuilt every
 # 6h from 100+ public subscription sources; the node credentials in it
 # are the product, not repo secrets), so it is allowlisted below --
-# otherwise this check can never go green on this repo. snippets/ and
-# the root list.yml / list.meta.yml are the same class of data from an
-# old layout (a 42k-line generated Clash node list): the files were
-# deleted from HEAD, but the full-history scan still reads them.
-# All patterns are ANCHORED to the repo root (gitleaks MatchString is
-# an unanchored substring search, so an unanchored `output/.*` would
-# also swallow src/output/credentials.env): `^(./)?` covers the
-# `./` prefix some scan modes report, `$` pins the two exact SARIF
-# filenames this workflow writes, so the working-tree scan does not
-# flag this workflow's own reports (the history scan's SARIF contains
-# the secrets it found, and the tree scan reads it back).
+# otherwise this check can never go green on this repo. The
+# gitleaks-*.sarif exclusion stops the working-tree scan from flagging
+# this workflow's own reports: the history scan's SARIF contains the
+# secrets it found, and the tree scan reads it back.
+# Both path patterns are ANCHORED to the repo root (gitleaks
+# MatchString is an unanchored substring search, so an unanchored
+# `output/.*` would also swallow src/output/credentials.env, and the
+# `.` in `(./)?` must be escaped or `a/output/...` matches too):
+# `^(\\./)?` covers the `./` prefix some scan modes report.
+# The deleted generated files snippets/nodes.meta.yml, list.yml and
+# list.meta.yml are NOT path-excluded: they are forgiven by COMMIT
+# only (3e386b7, the 2026-05-17 bot commit "Update nodes" that
+# introduced them -- verified: every one of their findings cites
+# that single commit). A new secret in those paths, in any other
+# commit or in the working tree, is still flagged.
 on:
   push:
     branches: [main]
@@ -50,7 +54,11 @@ env:
     useDefault = true
 
     [allowlist]
-    paths = ["^(./)?output/.*", "^(./)?snippets/.*", "^(./)?list\\.meta\\.yml$", "^(./)?list\\.yml$", "^(./)?gitleaks-(full|tree)\\.sarif$"]
+    paths = ["^(\\./)?output/.*", "^(\\./)?gitleaks-(full|tree)\\.sarif$"]
+    # Historical generated node data, forgiven by commit only (see note
+    # above): snippets/nodes.meta.yml, list.yml, list.meta.yml, all
+    # introduced by bot commit 3e386b7 ("Update nodes 2026-05-17").
+    commits = ["3e386b7031ce42403f18514696fb761e8d961915"]
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
