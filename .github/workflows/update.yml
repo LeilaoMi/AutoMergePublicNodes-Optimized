@@ -138,11 +138,14 @@ jobs:
       - name: Run pipeline
         env:
           AUTONODES_BRANCH: ${{ github.event.repository.default_branch }}
+          IN_TOP_N: ${{ github.event.inputs.top_n }}
+          IN_TEST_LIMIT: ${{ github.event.inputs.test_limit }}
+          IN_MIN_RETAIN_RATIO: ${{ github.event.inputs.min_retain_ratio }}
         run: |
           set -euo pipefail
-          TOP_N="${{ github.event.inputs.top_n || '300' }}"
-          TEST_LIMIT="${{ github.event.inputs.test_limit || '3000' }}"
-          MIN_RETAIN_RATIO="${{ github.event.inputs.min_retain_ratio || '0.5' }}"
+          TOP_N="${IN_TOP_N:-300}"
+          TEST_LIMIT="${IN_TEST_LIMIT:-3000}"
+          MIN_RETAIN_RATIO="${IN_MIN_RETAIN_RATIO:-0.5}"
           [[ "$TOP_N" =~ ^[0-9]+$ ]] || { echo "::error::top_n must be a non-negative integer"; exit 1; }
           [[ "$TEST_LIMIT" =~ ^[0-9]+$ ]] || { echo "::error::test_limit must be a non-negative integer"; exit 1; }
           [[ "$MIN_RETAIN_RATIO" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "::error::min_retain_ratio must be a non-negative number"; exit 1; }
@@ -279,8 +282,8 @@ jobs:
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `🔴 CI Failed: ${{ github.run_id }}`,
-              body: `The node update workflow failed.\n\n[View run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nTriggered by: ${{ github.event_name }}\nBranch: ${{ github.ref_name }}`,
+              title: `🔴 CI Failed: ${context.runId}`,
+              body: `The node update workflow failed.\n\n[View run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n\nTriggered by: ${context.eventName}\nBranch: ${process.env.GITHUB_REF_NAME}`,
               labels: ['ci-failure']
             })
             .catch(err => core.warning(`Failed to create issue: ${err.message}`))
