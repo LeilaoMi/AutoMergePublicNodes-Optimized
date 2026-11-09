@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-11-09 22:42:08
+生成时间：2026-11-09 22:56:19
 
 ## 摘要
 
@@ -16,10 +16,10 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.942 | prefer | 19 | 19 | 0 | 1.0 | 518 | 0 |
-| Surfboard-tg-mixed | 0.941 | prefer | 192 | 166 | 26 | 0.865 | 8250 | 0 |
-| mheidari-all | 0.941 | prefer | 106 | 92 | 14 | 0.868 | 14061 | 0 |
-| Au1rxx-base64 | 0.898 | prefer | 237 | 197 | 40 | 0.831 | 1751 | 0 |
+| Surfboard-tg-mixed | 0.961 | prefer | 141 | 125 | 16 | 0.887 | 8250 | 0 |
+| Au1rxx-base64 | 0.946 | prefer | 231 | 203 | 28 | 0.879 | 1751 | 0 |
+| ermaozi | 0.909 | prefer | 18 | 18 | 0 | 1.0 | 518 | 0 |
+| mheidari-all | 0.867 | prefer | 134 | 106 | 28 | 0.791 | 14061 | 0 |
 
 ## 建议降权
 
@@ -33,22 +33,22 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.942 | prefer | 19 | 19 | 0 | 1.0 | 518 | 0 |
-| Surfboard-tg-mixed | 0.941 | prefer | 192 | 166 | 26 | 0.865 | 8250 | 0 |
-| mheidari-all | 0.941 | prefer | 106 | 92 | 14 | 0.868 | 14061 | 0 |
-| Au1rxx-base64 | 0.898 | prefer | 237 | 197 | 40 | 0.831 | 1751 | 0 |
-| ninja-vless | 0.383 | observe | 2 | 2 | 0 | 1.0 | 1791 | 0 |
-| xiaoji235-airport-v2ray-all | 0.287 | observe | 2 | 1 | 1 | 0.5 | 6752 | 0 |
+| Surfboard-tg-mixed | 0.961 | prefer | 141 | 125 | 16 | 0.887 | 8250 | 0 |
+| Au1rxx-base64 | 0.946 | prefer | 231 | 203 | 28 | 0.879 | 1751 | 0 |
+| ermaozi | 0.909 | prefer | 18 | 18 | 0 | 1.0 | 518 | 0 |
+| mheidari-all | 0.867 | prefer | 134 | 106 | 28 | 0.791 | 14061 | 0 |
+| ninja-vless | 0.43 | observe | 3 | 3 | 0 | 1.0 | 1791 | 0 |
+| xiaoji235-airport-v2ray-all | 0.335 | observe | 1 | 1 | 0 | 1.0 | 6752 | 0 |
+| DeltaKronecker-all | 0.335 | observe | 1 | 1 | 0 | 1.0 | 2754 | 0 |
 | SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 11213 | 0 |
 | Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 6133 | 0 |
 | barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 6103 | 0 |
 | 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | 0 | 0 | None | 4976 | 0 |
-| mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 4583 | 0 |
 | MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3998 | 0 |
-| DeltaKronecker-all | 0.255 | observe | 0 | 0 | 0 | None | 2754 | 0 |
 | Au1rxx-clash | 0.245 | observe | 0 | 0 | 0 | None | 1751 | 0 |
 | moneyfly1-collectSub | 0.222 | observe | 0 | 0 | 0 | None | 1164 | 0 |
 | 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
+| mahdibland-V2RayAggregator | 0.207 | observe | 1 | 0 | 1 | 0.0 | 4583 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 499 | 0 |
 | barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 492 | 0 |
 | ermaozi-get_subscribe | 0.189 | observe | 0 | 0 | 0 | None | 357 | 0 |
