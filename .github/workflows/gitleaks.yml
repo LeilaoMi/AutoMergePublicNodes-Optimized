@@ -21,13 +21,17 @@ name: Gitleaks
 # AutoMerge note: output/ is generated public node data (rebuilt every
 # 6h from 100+ public subscription sources; the node credentials in it
 # are the product, not repo secrets), so it is allowlisted below --
-# otherwise this check can never go green on this repo. snippets/ is
-# the same class of data (a 42k-line generated Clash node list) that
-# only survives in history now -- the file was deleted from HEAD, but
-# the full-history scan still reads it. The
-# gitleaks-*.sarif exclusion stops the working-tree scan from flagging
-# this workflow's own reports: the history scan's SARIF contains the
-# secrets it found, and the tree scan reads it back.
+# otherwise this check can never go green on this repo. snippets/ and
+# the root list.yml / list.meta.yml are the same class of data from an
+# old layout (a 42k-line generated Clash node list): the files were
+# deleted from HEAD, but the full-history scan still reads them.
+# All patterns are ANCHORED to the repo root (gitleaks MatchString is
+# an unanchored substring search, so an unanchored `output/.*` would
+# also swallow src/output/credentials.env): `^(./)?` covers the
+# `./` prefix some scan modes report, `$` pins the two exact SARIF
+# filenames this workflow writes, so the working-tree scan does not
+# flag this workflow's own reports (the history scan's SARIF contains
+# the secrets it found, and the tree scan reads it back).
 on:
   push:
     branches: [main]
@@ -46,7 +50,7 @@ env:
     useDefault = true
 
     [allowlist]
-    paths = ["output/.*", "snippets/.*", "gitleaks-.*\\.sarif"]
+    paths = ["^(./)?output/.*", "^(./)?snippets/.*", "^(./)?list\\.meta\\.yml$", "^(./)?list\\.yml$", "^(./)?gitleaks-(full|tree)\\.sarif$"]
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
