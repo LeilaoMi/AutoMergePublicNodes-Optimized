@@ -36,7 +36,7 @@ jobs:
         # Pinned: an unpinned install drifts with every release (rule
         # behaviour / SARIF format) and hurts reproducibility. 1.184.0
         # is the version current on PyPI as of 2026-11-09 (verified).
-        run: pip install semgrep==1.184.0
+        run: "pip install --only-binary :all: semgrep==1.184.0"
       - name: Run Semgrep (config auto)
         id: scan
         continue-on-error: true
