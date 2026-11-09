@@ -149,10 +149,10 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Upload Gitleaks full-history results to code scanning
-        # Upload only when the token can write: on fork / Dependabot
-        # PRs GITHUB_TOKEN is read-only and the upload fails even
-        # though nothing leaked (CodeRabbit review).
-        if: ${{ always() && steps.full-check.outputs.exists == 'true' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
+        # No fork/Dependabot guard here on purpose: GitHub docs say code
+        # scanning always allows SARIF upload on pull_request runs, even
+        # with a read-only token; gating would silently drop those results.
+        if: ${{ always() && steps.full-check.outputs.exists == 'true' }}
         # Pinned to the full commit SHA of the v4 tag
         # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
         # codeql-action v4 tag ref) -- same as the tree upload below.
@@ -176,7 +176,10 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Upload Gitleaks working-tree results to code scanning
-        if: ${{ always() && steps.tree-check.outputs.exists == 'true' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
+        # No fork/Dependabot guard here on purpose: GitHub docs say code
+        # scanning always allows SARIF upload on pull_request runs, even
+        # with a read-only token; gating would silently drop those results.
+        if: ${{ always() && steps.tree-check.outputs.exists == 'true' }}
         # Pinned to the full commit SHA of the v4 tag
         # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
         # codeql-action v4 tag ref); both upload-sarif steps in this
