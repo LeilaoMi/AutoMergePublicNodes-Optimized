@@ -40,7 +40,14 @@ jobs:
       - name: Run Semgrep (config auto)
         id: scan
         continue-on-error: true
-        run: semgrep scan --config auto --sarif --output semgrep.sarif
+        # --strict: a WARN-level error (e.g. a file semgrep could not
+        # analyse) must fail the scan instead of silently uploading a
+        # partial SARIF as a complete result. The upload below is
+        # gated on steps.scan.outcome == 'success', so a strict
+        # failure skips the upload and the warning step fires; the
+        # job itself stays report-only via continue-on-error
+        # (CodeRabbit review on sales-copilot-Premium PR #23).
+        run: semgrep scan --config auto --strict --sarif --output semgrep.sarif
       - name: Warn if Semgrep scan failed
         if: steps.scan.outcome == 'failure'
         run: echo "::warning::Semgrep scan failed; no complete results were produced. See the 'Run Semgrep' step log."
