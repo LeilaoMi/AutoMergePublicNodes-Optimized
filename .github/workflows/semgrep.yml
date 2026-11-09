@@ -1,5 +1,5 @@
 name: Semgrep
-# Pilot: static code scanning, report-only (does not block PRs).
+# Static code scanning, report-only (does not block PRs).
 # Note: semgrep-action wrapper is deprecated upstream; this uses the
 # native CLI (pip install semgrep + `semgrep scan --config auto`),
 # no Semgrep AppSec Platform token required.
@@ -23,9 +23,20 @@ jobs:
   semgrep:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      # Pinned to the full commit SHA of the v7.0.1 tag
+      # (3d3c42e5aac5ba805825da76410c181273ba90b1, verified via the API).
+      # persist-credentials is off: this job only reads code and never
+      # pushes, so the token must not linger in .git/config where a
+      # later step (pip install, scan of attacker-influenced code)
+      # could read it (CodeRabbit review).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install Semgrep
-        run: pip install semgrep
+        # Pinned: an unpinned install drifts with every release (rule
+        # behaviour / SARIF format) and hurts reproducibility. 1.184.0
+        # is the version current on PyPI as of 2026-11-09 (verified).
+        run: pip install semgrep==1.184.0
       - name: Run Semgrep (config auto)
         id: scan
         continue-on-error: true
@@ -33,8 +44,9 @@ jobs:
       - name: Warn if Semgrep scan failed
         if: steps.scan.outcome == 'failure'
         run: echo "::warning::Semgrep scan failed; no complete results were produced. See the 'Run Semgrep' step log."
-      # hashFiles returns a hash even for an empty file, so also verify
-      # the SARIF is non-empty before uploading.
+      # The sarif-check below is the single existence + non-empty
+      # guard: `[ -s file ]` is false when the file is missing or
+      # empty, so no separate hashFiles check is needed.
       - name: Check SARIF is non-empty
         id: sarif-check
         if: always()
@@ -45,7 +57,10 @@ jobs:
             echo "non_empty=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Upload Semgrep results to code scanning
-        if: ${{ always() && steps.scan.outcome == 'success' && hashFiles('semgrep.sarif') != '' && steps.sarif-check.outputs.non_empty == 'true' }}
-        uses: github/codeql-action/upload-sarif@v4
+        if: ${{ always() && steps.scan.outcome == 'success' && steps.sarif-check.outputs.non_empty == 'true' }}
+        # Pinned to the full commit SHA of the v4 tag
+        # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
+        # codeql-action v4 tag ref).
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           sarif_file: semgrep.sarif
