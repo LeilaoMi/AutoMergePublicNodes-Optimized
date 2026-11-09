@@ -42,9 +42,13 @@ on:
   push:
     branches: [main]
   pull_request:
+# Workflow-level permissions are minimal (contents: read): the
+# security-events: write needed for SARIF upload lives on the
+# gitleaks-full-history job only, and the gitleaks job below gets
+# just pull-requests: read (the action reads the PR commit list;
+# PR comments are disabled, so it needs no write permission).
 permissions:
   contents: read
-  security-events: write
 env:
   # Shared by all three scans in this file (CLI steps and the action
   # both follow the gitleaks config precedence, which includes
@@ -66,14 +70,13 @@ env:
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
-    # pull-requests: write is scoped to this job only: it is the one
-    # that comments on the PR when a leak is found. Job-level
-    # permissions replace the workflow-level set for this job, so the
-    # other two permissions are repeated here.
+    # Job-level permissions replace the workflow-level set for this
+    # job. pull-requests: read is all the action needs: it reads the
+    # PR commit list, comments are disabled (GITLEAKS_ENABLE_COMMENTS
+    # is false below), and it uploads no SARIF to code scanning.
     permissions:
       contents: read
-      pull-requests: write
-      security-events: write
+      pull-requests: read
     steps:
       # Pinned to the full commit SHA of the v7.0.1 tag
       # (3d3c42e5aac5ba805825da76410c181273ba90b1, verified via the API).
@@ -97,6 +100,11 @@ jobs:
           GITLEAKS_ENABLE_COMMENTS: 'false'
   gitleaks-full-history:
     runs-on: ubuntu-latest
+    # security-events: write is scoped to this job only: it is the one
+    # that uploads SARIF to code scanning.
+    permissions:
+      contents: read
+      security-events: write
     steps:
       # Pinned to the full commit SHA of the v7.0.1 tag
       # (3d3c42e5aac5ba805825da76410c181273ba90b1, verified via the API).
