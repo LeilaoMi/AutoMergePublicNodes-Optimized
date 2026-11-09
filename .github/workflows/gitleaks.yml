@@ -1,0 +1,85 @@
+name: Gitleaks
+# Pilot: detect hardcoded secrets in git history and code.
+# Two jobs:
+# - gitleaks (incremental): gitleaks-action v3 scans the PR/push commit
+#   range and comments on the PR when it finds a leak.
+# - gitleaks-full-history: runs the gitleaks CLI directly over the history
+#   reachable from HEAD, so a leak in an old commit is caught even when it
+#   is outside the current PR/push range, and a PR with more than 30
+#   commits is fully covered -- the action only reads the first page of
+#   the PR commit list, this job does not use the PR commit list at all.
+#   Scope is HEAD only (--log-opts with HEAD, no --all): secrets on
+#   unrelated branches must not fail this PR or main. Merge commits are
+#   covered twice: `-m` makes git log emit a diff per parent, so a secret
+#   introduced by merge resolution shows up in the history scan, and a
+#   `gitleaks dir` scan of the checked-out tree catches any secret present
+#   in the current snapshot. A found leak fails the check by design and
+#   needs human triage. PR comments from the incremental action are
+#   disabled (GITLEAKS_ENABLE_COMMENTS=false): comment bodies can
+#   contain unescaped filenames; leaks still fail the job and surface
+#   via code scanning.
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    # pull-requests: write is scoped to this job only: it is the one
+    # that comments on the PR when a leak is found. Job-level
+    # permissions replace the workflow-level set for this job, so the
+    # other two permissions are repeated here.
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PR comments are disabled: comment bodies can contain
+          # unescaped filenames (CodeRabbit review). A found leak still
+          # fails this job, and the full-history job below uploads
+          # SARIF to code scanning, so nothing is lost silently.
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+  gitleaks-full-history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install Gitleaks v8.30.1
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o /tmp/gitleaks_8.30.1_linux_x64.tar.gz
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_checksums.txt -o /tmp/gitleaks_8.30.1_checksums.txt
+          cd /tmp && sha256sum -c gitleaks_8.30.1_checksums.txt --ignore-missing
+          tar -xzf /tmp/gitleaks_8.30.1_linux_x64.tar.gz -C /tmp gitleaks
+          sudo install -m 755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan full git history
+        run: gitleaks git . --log-opts="--full-history --diff-filter=tuxdb -m HEAD" --redact --report-format sarif --report-path gitleaks-full.sarif
+      - name: Upload Gitleaks full-history results to code scanning
+        if: ${{ always() && hashFiles('gitleaks-full.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: gitleaks-full.sarif
+          category: gitleaks-full-history
+      - name: Scan working tree (merge-commit snapshots)
+        if: always()
+        run: gitleaks dir . --redact --report-format sarif --report-path gitleaks-tree.sarif
+      - name: Upload Gitleaks working-tree results to code scanning
+        if: ${{ always() && hashFiles('gitleaks-tree.sarif') != '' }}
+        # Pinned to the full commit SHA of the v4 tag
+        # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
+        # codeql-action v4 tag ref); other upload-sarif steps in this
+        # repo intentionally stay on the @v4 tag.
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066
+        with:
+          sarif_file: gitleaks-tree.sarif
+          category: gitleaks-tree
