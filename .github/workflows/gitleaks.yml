@@ -1,5 +1,5 @@
 name: Gitleaks
-# Pilot: detect hardcoded secrets in git history and code.
+# Detect hardcoded secrets in git history and code.
 # Two jobs:
 # - gitleaks (incremental): gitleaks-action v3 scans the PR/push commit
 #   range and comments on the PR when it finds a leak.
@@ -18,6 +18,13 @@ name: Gitleaks
 #   disabled (GITLEAKS_ENABLE_COMMENTS=false): comment bodies can
 #   contain unescaped filenames; leaks still fail the job and surface
 #   via code scanning.
+# AutoMerge note: output/ is generated public node data (rebuilt every
+# 6h from 100+ public subscription sources; the node credentials in it
+# are the product, not repo secrets), so it is allowlisted below --
+# otherwise this check can never go green on this repo. The
+# gitleaks-*.sarif exclusion stops the working-tree scan from flagging
+# this workflow's own reports: the history scan's SARIF contains the
+# secrets it found, and the tree scan reads it back.
 on:
   push:
     branches: [main]
@@ -25,6 +32,18 @@ on:
 permissions:
   contents: read
   security-events: write
+env:
+  # Shared by all three scans in this file (CLI steps and the action
+  # both follow the gitleaks config precedence, which includes
+  # GITLEAKS_CONFIG_TOML). [extend] useDefault is required: a custom
+  # config without it REPLACES the default rules and nothing is
+  # detected at all (verified locally against gitleaks v8.30.1).
+  GITLEAKS_CONFIG_TOML: |
+    [extend]
+    useDefault = true
+
+    [allowlist]
+    paths = ["output/.*", "gitleaks-.*\\.sarif"]
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
@@ -40,7 +59,10 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v3.0.0
+      # Pinned to the full commit SHA of the v3.0.0 tag
+      # (e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e, verified via the API);
+      # a mutable tag could be re-pointed at malicious code.
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # PR comments are disabled: comment bodies can contain
@@ -65,7 +87,10 @@ jobs:
       - name: Scan full git history
         run: gitleaks git . --log-opts="--full-history --diff-filter=tuxdb -m HEAD" --redact --report-format sarif --report-path gitleaks-full.sarif
       - name: Upload Gitleaks full-history results to code scanning
-        if: ${{ always() && hashFiles('gitleaks-full.sarif') != '' }}
+        # Upload only when the token can write: on fork / Dependabot
+        # PRs GITHUB_TOKEN is read-only and the upload fails even
+        # though nothing leaked (CodeRabbit review).
+        if: ${{ always() && hashFiles('gitleaks-full.sarif') != '' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: gitleaks-full.sarif
@@ -74,7 +99,7 @@ jobs:
         if: always()
         run: gitleaks dir . --redact --report-format sarif --report-path gitleaks-tree.sarif
       - name: Upload Gitleaks working-tree results to code scanning
-        if: ${{ always() && hashFiles('gitleaks-tree.sarif') != '' }}
+        if: ${{ always() && hashFiles('gitleaks-tree.sarif') != '' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         # Pinned to the full commit SHA of the v4 tag
         # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
         # codeql-action v4 tag ref); other upload-sarif steps in this
