@@ -60,16 +60,16 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 
 | 指标 | 数值 |
 | --- | --- |
-| 更新时间 | 2026-11-10 06:56（北京时间） |
+| 更新时间 | 2026-11-10 07:32（北京时间） |
 | 订阅源（可用/总数） | 87/107 |
-| 原始节点 → 去重后 | 81601 → 26712 |
-| 送入测试 → 探活通过 → 真测通过 | 3000 → 530 → 457 |
-| 国内可达 / 不可达 / 未知 | 48 / 403 / 6 |
-| 国内检查缓存命中 | 422 |
-| **verified 输出** | 48 |
+| 原始节点 → 去重后 | 81722 → 26721 |
+| 送入测试 → 探活通过 → 真测通过 | 3000 → 574 → 481 |
+| 国内可达 / 不可达 / 未知 | 49 / 425 / 7 |
+| 国内检查缓存命中 | 447 |
+| **verified 输出** | 49 |
 | **global 输出** | 300 |
-| all 全量池 | 26712 |
-| 本轮耗时 | 260.4 秒 |
+| all 全量池 | 26721 |
+| 本轮耗时 | 299.0 秒 |
 
 > 输出保护：无。完整报告见 `output/health_report.md`、`output/stats.json`。
 
@@ -77,21 +77,21 @@ https://raw.githubusercontent.com/LeilaoMi/AutoMergePublicNodes-Optimized/data/o
 
 | 评分 | 协议 | 延迟(ms) | 来源 |
 | --- | --- | --- | --- |
-| 96.13 | trojan | 257.6 | Au1rxx-base64 |
-| 95.23 | trojan | 241.8 | Au1rxx-base64 |
-| 95.01 | trojan | 251.9 | Au1rxx-base64 |
-| 94.95 | shadowsocks | 238.4 | Au1rxx-base64 |
-| 94.64 | trojan | 267.9 | Au1rxx-base64 |
+| 97.03 | trojan | 235.0 | Au1rxx-base64 |
+| 94.73 | trojan | 235.2 | Au1rxx-base64 |
+| 94.23 | trojan | 286.8 | Au1rxx-base64 |
+| 93.88 | trojan | 179.4 | Au1rxx-base64 |
+| 93.66 | trojan | 265.2 | Au1rxx-base64 |
 
 ### Top 来源质量
 
 | 来源 | 评分 | 测试数 | 建议 |
 | --- | --- | --- | --- |
-| Surfboard-tg-mixed | 0.961 | 141 | prefer |
-| Au1rxx-base64 | 0.946 | 231 | prefer |
-| ermaozi | 0.909 | 18 | prefer |
-| mheidari-all | 0.867 | 134 | prefer |
-| ninja-vless | 0.43 | 3 | observe |
+| Surfboard-tg-mixed | 0.935 | 198 | prefer |
+| ermaozi | 0.93 | 20 | prefer |
+| mheidari-all | 0.923 | 106 | prefer |
+| Au1rxx-base64 | 0.88 | 245 | prefer |
+| DeltaKronecker-all | 0.349 | 3 | observe |
 
 <!-- AUTONODES_STATS_END -->
 
