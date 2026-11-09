@@ -1,0 +1,17 @@
+# gitleaks config, read automatically by the shared Security workflow
+# (LeilaoMi/security-workflows). Keep [extend] useDefault = true:
+# without it the default rules are replaced and nothing is detected.
+
+[extend]
+useDefault = true
+
+[allowlist]
+# output/ is generated public node data (rebuilt every 6h); anchored
+# to the repo root so src/output/... is still scanned.
+paths = ["^(\\./)?output/.*"]
+# Historical generated node data, forgiven by commit only
+# (a new secret in those paths in any other commit is still flagged): snippets/nodes.meta.yml, list.yml, list.meta.yml, all
+# introduced by bot commits 3e386b7 and 45d6437 ("Update nodes").
+# Both SHAs were read off the scanners' own findings, not guessed:
+# every finding in those files cites one of these two commits.
+commits = ["3e386b7031ce42403f18514696fb761e8d961915", "45d6437424179442b0fa54f786cd4a277d40105c"]

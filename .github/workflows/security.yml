@@ -1,0 +1,27 @@
+name: Security
+# Shared scans from LeilaoMi/security-workflows (pinned to a commit SHA;
+# Dependabot's github-actions updates bump it). Job-level permissions
+# cap what each reusable workflow may use.
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  gitleaks:
+    permissions:
+      contents: read
+      pull-requests: read
+      security-events: write
+    uses: LeilaoMi/security-workflows/.github/workflows/gitleaks.yml@be03503715b982c7086315263795cecb108e3edd # v1
+  semgrep:
+    permissions:
+      contents: read
+      security-events: write
+    uses: LeilaoMi/security-workflows/.github/workflows/semgrep.yml@be03503715b982c7086315263795cecb108e3edd # v1
+  trivy:
+    permissions:
+      contents: read
+      security-events: write
+    uses: LeilaoMi/security-workflows/.github/workflows/trivy.yml@be03503715b982c7086315263795cecb108e3edd # v1
