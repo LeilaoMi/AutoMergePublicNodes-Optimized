@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Restore state from data branch
         # 大文件（全量池、geo 缓存、稳定性历史）放在 data 分支，每轮只保留一个提交，不再撑大 main 的历史
@@ -64,7 +64,7 @@ jobs:
             echo "data branch not found; using state files from checkout (first run after migration)"
           fi
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
           cache: pip
@@ -86,7 +86,7 @@ jobs:
 
       - name: Cache sing-box binary
         id: cache-sb
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ./sing-box
           key: sing-box-${{ runner.os }}-${{ steps.sb-version.outputs.version }}
@@ -254,7 +254,7 @@ jobs:
 
       - name: Upload debug artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: autonodes-debug
           path: |
@@ -273,7 +273,7 @@ jobs:
 
       - name: Notify on failure
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             github.rest.issues.create({
@@ -287,7 +287,7 @@ jobs:
 
       - name: Close ci-failure issues on success
         if: success()
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const issues = await github.rest.issues.listForRepo({
