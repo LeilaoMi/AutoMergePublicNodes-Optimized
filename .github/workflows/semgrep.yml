@@ -57,6 +57,13 @@ jobs:
             echo "non_empty=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Upload Semgrep results to code scanning
+        # continue-on-error: this workflow is report-only (does not
+        # block PRs) and the scan step above already tolerates failure
+        # with a warning. A transient code-scanning outage must not
+        # turn the check red for reasons unrelated to the code; the
+        # failed step still shows a warning annotation (CodeRabbit
+        # review on LottoLab PR #72).
+        continue-on-error: true
         if: ${{ always() && steps.scan.outcome == 'success' && steps.sarif-check.outputs.non_empty == 'true' }}
         # Pinned to the full commit SHA of the v4 tag
         # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
