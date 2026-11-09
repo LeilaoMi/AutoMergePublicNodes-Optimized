@@ -75,9 +75,15 @@ jobs:
       pull-requests: write
       security-events: write
     steps:
-      - uses: actions/checkout@v7.0.1
+      # Pinned to the full commit SHA of the v7.0.1 tag
+      # (3d3c42e5aac5ba805825da76410c181273ba90b1, verified via the API).
+      # persist-credentials is off: this job only reads code and never
+      # pushes, so the token must not linger in .git/config (same
+      # rationale as semgrep.yml; CodeRabbit review).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       # Pinned to the full commit SHA of the v3.0.0 tag
       # (e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e, verified via the API);
       # a mutable tag could be re-pointed at malicious code.
@@ -92,9 +98,15 @@ jobs:
   gitleaks-full-history:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      # Pinned to the full commit SHA of the v7.0.1 tag
+      # (3d3c42e5aac5ba805825da76410c181273ba90b1, verified via the API).
+      # persist-credentials is off: this job only reads code and never
+      # pushes, so the token must not linger in .git/config (same
+      # rationale as semgrep.yml; CodeRabbit review).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Gitleaks v8.30.1
         run: |
           curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o /tmp/gitleaks_8.30.1_linux_x64.tar.gz
