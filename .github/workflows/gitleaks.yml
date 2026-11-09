@@ -21,7 +21,10 @@ name: Gitleaks
 # AutoMerge note: output/ is generated public node data (rebuilt every
 # 6h from 100+ public subscription sources; the node credentials in it
 # are the product, not repo secrets), so it is allowlisted below --
-# otherwise this check can never go green on this repo. The
+# otherwise this check can never go green on this repo. snippets/ is
+# the same class of data (a 42k-line generated Clash node list) that
+# only survives in history now -- the file was deleted from HEAD, but
+# the full-history scan still reads it. The
 # gitleaks-*.sarif exclusion stops the working-tree scan from flagging
 # this workflow's own reports: the history scan's SARIF contains the
 # secrets it found, and the tree scan reads it back.
@@ -43,7 +46,7 @@ env:
     useDefault = true
 
     [allowlist]
-    paths = ["output/.*", "gitleaks-.*\\.sarif"]
+    paths = ["output/.*", "snippets/.*", "gitleaks-.*\\.sarif"]
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
