@@ -115,8 +115,13 @@ jobs:
           tar -xzf /tmp/gitleaks_8.30.1_linux_x64.tar.gz -C /tmp gitleaks
           sudo install -m 755 /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version
+      # --diff-filter letters are lowercase = EXCLUDE. uxdb excludes
+      # unmerged/unknown/deleted/broken only: `t` (typechange) is
+      # deliberately NOT excluded, so a symlink replaced by a
+      # secret-containing regular file is still scanned (verified
+      # locally: tuxdb missed it, uxdb finds it; CodeRabbit review).
       - name: Scan full git history
-        run: gitleaks git . --log-opts="--full-history --diff-filter=tuxdb -m HEAD" --redact --report-format sarif --report-path "${{ runner.temp }}/gitleaks-full.sarif"
+        run: gitleaks git . --log-opts="--full-history --diff-filter=uxdb -m HEAD" --redact --report-format sarif --report-path "${{ runner.temp }}/gitleaks-full.sarif"
       # The SARIF lives in $RUNNER_TEMP (see header note), so the
       # upload needs an explicit existence check -- hashFiles only
       # sees files inside the workspace.
