@@ -21,15 +21,17 @@ name: Gitleaks
 # AutoMerge note: output/ is generated public node data (rebuilt every
 # 6h from 100+ public subscription sources; the node credentials in it
 # are the product, not repo secrets), so it is allowlisted below --
-# otherwise this check can never go green on this repo. The
-# gitleaks-*.sarif exclusion stops the working-tree scan from flagging
-# this workflow's own reports: the history scan's SARIF contains the
-# secrets it found, and the tree scan reads it back.
-# Both path patterns are ANCHORED to the repo root (gitleaks
-# MatchString is an unanchored substring search, so an unanchored
-# `output/.*` would also swallow src/output/credentials.env, and the
-# `.` in `(./)?` must be escaped or `a/output/...` matches too):
-# `^(\\./)?` covers the `./` prefix some scan modes report.
+# otherwise this check can never go green on this repo. The path
+# pattern is ANCHORED to the repo root (gitleaks MatchString is an
+# unanchored substring search, so an unanchored `output/.*` would also
+# swallow src/output/credentials.env, and the `.` in `(./)?` must be
+# escaped or `a/output/...` matches too): `^(\\./)?` covers the `./`
+# prefix some scan modes report.
+# Reports go to $RUNNER_TEMP (outside the repo) on purpose: the
+# history scan's SARIF contains the secrets it found, and if it lived
+# in the workspace the working-tree scan would read it back and flag
+# it -- and allowlisting SARIF filenames instead would let a PR
+# author hide a secret in a committable gitleaks-*.sarif file.
 # The deleted generated files snippets/nodes.meta.yml, list.yml and
 # list.meta.yml are NOT path-excluded: they are forgiven by COMMIT
 # only (3e386b7, the 2026-05-17 bot commit "Update nodes" that
@@ -54,7 +56,7 @@ env:
     useDefault = true
 
     [allowlist]
-    paths = ["^(\\./)?output/.*", "^(\\./)?gitleaks-(full|tree)\\.sarif$"]
+    paths = ["^(\\./)?output/.*"]
     # Historical generated node data, forgiven by commit only (see note
     # above): snippets/nodes.meta.yml, list.yml, list.meta.yml, all
     # introduced by bot commits 3e386b7 and 45d6437 ("Update nodes").
@@ -102,26 +104,47 @@ jobs:
           sudo install -m 755 /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version
       - name: Scan full git history
-        run: gitleaks git . --log-opts="--full-history --diff-filter=tuxdb -m HEAD" --redact --report-format sarif --report-path gitleaks-full.sarif
+        run: gitleaks git . --log-opts="--full-history --diff-filter=tuxdb -m HEAD" --redact --report-format sarif --report-path "${{ runner.temp }}/gitleaks-full.sarif"
+      # The SARIF lives in $RUNNER_TEMP (see header note), so the
+      # upload needs an explicit existence check -- hashFiles only
+      # sees files inside the workspace.
+      - name: Check full-history SARIF exists
+        id: full-check
+        if: always()
+        run: |
+          if [ -s "${{ runner.temp }}/gitleaks-full.sarif" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload Gitleaks full-history results to code scanning
         # Upload only when the token can write: on fork / Dependabot
         # PRs GITHUB_TOKEN is read-only and the upload fails even
         # though nothing leaked (CodeRabbit review).
-        if: ${{ always() && hashFiles('gitleaks-full.sarif') != '' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
+        if: ${{ always() && steps.full-check.outputs.exists == 'true' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: gitleaks-full.sarif
+          sarif_file: ${{ runner.temp }}/gitleaks-full.sarif
           category: gitleaks-full-history
       - name: Scan working tree (merge-commit snapshots)
         if: always()
-        run: gitleaks dir . --redact --report-format sarif --report-path gitleaks-tree.sarif
+        run: gitleaks dir . --redact --report-format sarif --report-path "${{ runner.temp }}/gitleaks-tree.sarif"
+      - name: Check working-tree SARIF exists
+        id: tree-check
+        if: always()
+        run: |
+          if [ -s "${{ runner.temp }}/gitleaks-tree.sarif" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload Gitleaks working-tree results to code scanning
-        if: ${{ always() && hashFiles('gitleaks-tree.sarif') != '' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
+        if: ${{ always() && steps.tree-check.outputs.exists == 'true' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         # Pinned to the full commit SHA of the v4 tag
         # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
         # codeql-action v4 tag ref); other upload-sarif steps in this
         # repo intentionally stay on the @v4 tag.
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066
         with:
-          sarif_file: gitleaks-tree.sarif
+          sarif_file: ${{ runner.temp }}/gitleaks-tree.sarif
           category: gitleaks-tree
