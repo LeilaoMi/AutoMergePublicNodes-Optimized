@@ -122,7 +122,13 @@ jobs:
         # PRs GITHUB_TOKEN is read-only and the upload fails even
         # though nothing leaked (CodeRabbit review).
         if: ${{ always() && steps.full-check.outputs.exists == 'true' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
-        uses: github/codeql-action/upload-sarif@v4
+        # Pinned to the full commit SHA of the v4 tag
+        # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
+        # codeql-action v4 tag ref) -- same as the tree upload below.
+        # A mutable tag could be re-pointed at malicious code, and
+        # this step runs with security-events: write (CodeRabbit
+        # review).
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066
         with:
           sarif_file: ${{ runner.temp }}/gitleaks-full.sarif
           category: gitleaks-full-history
@@ -142,8 +148,9 @@ jobs:
         if: ${{ always() && steps.tree-check.outputs.exists == 'true' && (github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         # Pinned to the full commit SHA of the v4 tag
         # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
-        # codeql-action v4 tag ref); other upload-sarif steps in this
-        # repo intentionally stay on the @v4 tag.
+        # codeql-action v4 tag ref); both upload-sarif steps in this
+        # file are pinned -- a mutable tag could be re-pointed at
+        # malicious code.
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066
         with:
           sarif_file: ${{ runner.temp }}/gitleaks-tree.sarif
