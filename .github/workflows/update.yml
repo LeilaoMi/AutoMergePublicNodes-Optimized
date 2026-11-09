@@ -69,13 +69,13 @@ jobs:
           python-version: '3.12'
           cache: pip
 
-      - run: pip install -r requirements.txt
+      - run: pip install --only-binary=":all:" -r requirements.txt
 
       - name: Get sing-box version
         id: sb-version
         run: |
           set -euo pipefail
-          VERSION=$(curl -fsSL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          VERSION=$(curl --proto '=https' --tlsv1.2 -fsSL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')
           if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
             echo "::error::Failed to fetch sing-box version"
@@ -98,7 +98,7 @@ jobs:
           VERSION="${{ steps.sb-version.outputs.version }}"
           VER_NUM="${VERSION#v}"
           # Try download, fallback to cache if fails
-          if curl -fsSL -L -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VER_NUM}-linux-amd64.tar.gz"; then
+          if curl --proto '=https' --tlsv1.2 -fsSL -L -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${VERSION}/sing-box-${VER_NUM}-linux-amd64.tar.gz"; then
             tar -xzf sb.tar.gz
             mv "sing-box-${VER_NUM}-linux-amd64/sing-box" ./sing-box
             chmod +x ./sing-box
@@ -106,7 +106,7 @@ jobs:
             echo "::warning::sing-box download failed, trying fallback versions"
             for FALLBACK_VER in "v1.11.15" "v1.10.7" "v1.9.7"; do
               FV="${FALLBACK_VER#v}"
-              if curl -fsSL -L -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${FALLBACK_VER}/sing-box-${FV}-linux-amd64.tar.gz"; then
+              if curl --proto '=https' --tlsv1.2 -fsSL -L -o sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/${FALLBACK_VER}/sing-box-${FV}-linux-amd64.tar.gz"; then
                 tar -xzf sb.tar.gz
                 mv "sing-box-${FV}-linux-amd64/sing-box" ./sing-box
                 chmod +x ./sing-box
