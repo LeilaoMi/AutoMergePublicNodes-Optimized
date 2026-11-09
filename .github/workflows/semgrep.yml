@@ -1,0 +1,80 @@
+name: Semgrep
+# Static code scanning, report-only (does not block PRs).
+# Note: semgrep-action wrapper is deprecated upstream; this uses the
+# native CLI (pip install semgrep + `semgrep scan --config auto`),
+# no Semgrep AppSec Platform token required.
+# Metrics are left enabled on purpose: `--config auto` requires metrics,
+# and dropping `--metrics=off` was the fix for the earlier scan failure.
+# The install step deliberately has NO continue-on-error: if pip cannot
+# install semgrep, the job must fail loudly instead of silently
+# reporting "no findings" (the scan step below already tolerates scan
+# failures via continue-on-error, and the upload step is guarded).
+# Upload additionally requires the scan step to have succeeded
+# (steps.scan.outcome == 'success'): a failed scan must not upload
+# a stale or partial SARIF.
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to the full commit SHA of the v7.0.1 tag
+      # (3d3c42e5aac5ba805825da76410c181273ba90b1, verified via the API).
+      # persist-credentials is off: this job only reads code and never
+      # pushes, so the token must not linger in .git/config where a
+      # later step (pip install, scan of attacker-influenced code)
+      # could read it (CodeRabbit review).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Semgrep
+        # Pinned: an unpinned install drifts with every release (rule
+        # behaviour / SARIF format) and hurts reproducibility. 1.184.0
+        # is the version current on PyPI as of 2026-11-09 (verified).
+        run: "pip install --only-binary :all: semgrep==1.184.0"
+      - name: Run Semgrep (config auto)
+        id: scan
+        continue-on-error: true
+        # --strict: a WARN-level error (e.g. a file semgrep could not
+        # analyse) must fail the scan instead of silently uploading a
+        # partial SARIF as a complete result. The upload below is
+        # gated on steps.scan.outcome == 'success', so a strict
+        # failure skips the upload and the warning step fires; the
+        # job itself stays report-only via continue-on-error
+        # (CodeRabbit review on sales-copilot-Premium PR #23).
+        run: semgrep scan --config auto --strict --sarif --output semgrep.sarif
+      - name: Warn if Semgrep scan failed
+        if: steps.scan.outcome == 'failure'
+        run: echo "::warning::Semgrep scan failed; no complete results were produced. See the 'Run Semgrep' step log."
+      # The sarif-check below is the single existence + non-empty
+      # guard: `[ -s file ]` is false when the file is missing or
+      # empty, so no separate hashFiles check is needed.
+      - name: Check SARIF is non-empty
+        id: sarif-check
+        if: always()
+        run: |
+          if [ -s semgrep.sarif ]; then
+            echo "non_empty=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "non_empty=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload Semgrep results to code scanning
+        # continue-on-error: this workflow is report-only (does not
+        # block PRs) and the scan step above already tolerates failure
+        # with a warning. A transient code-scanning outage must not
+        # turn the check red for reasons unrelated to the code; the
+        # failed step still shows a warning annotation (CodeRabbit
+        # review on LottoLab PR #72).
+        continue-on-error: true
+        if: ${{ always() && steps.scan.outcome == 'success' && steps.sarif-check.outputs.non_empty == 'true' }}
+        # Pinned to the full commit SHA of the v4 tag
+        # (33d7b85da1a04171e211befe2c739303b9a4c066, verified via the
+        # codeql-action v4 tag ref).
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        with:
+          sarif_file: semgrep.sarif
