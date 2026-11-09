@@ -109,9 +109,15 @@ jobs:
           persist-credentials: false
       - name: Install Gitleaks v8.30.1
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o /tmp/gitleaks_8.30.1_linux_x64.tar.gz
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_checksums.txt -o /tmp/gitleaks_8.30.1_checksums.txt
-          cd /tmp && sha256sum -c gitleaks_8.30.1_checksums.txt --ignore-missing
+          # SHA256 pinned in the workflow itself: the tarball and the
+          # release's checksums file come from the same source, so
+          # verifying against that file proves nothing if the release
+          # is compromised -- and --ignore-missing cannot guarantee
+          # the target entry was even checked (CodeRabbit review).
+          # This is the published checksum of
+          # gitleaks_8.30.1_linux_x64.tar.gz, verified 2026-11-09.
+          curl -sSL --tlsv1.2 https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o /tmp/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /tmp/gitleaks_8.30.1_linux_x64.tar.gz" | sha256sum -c -
           tar -xzf /tmp/gitleaks_8.30.1_linux_x64.tar.gz -C /tmp gitleaks
           sudo install -m 755 /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version
