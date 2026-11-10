@@ -86,7 +86,7 @@ MAX_PRESERVED_STREAK = 3
 
 def previous_preserved_streak(output_dir: str, prefix: str) -> int:
     try:
-        with open(Path(output_dir) / "stats.json", encoding="utf-8") as f:
+        with open(Path(output_dir) / "stats.json", "r", encoding="utf-8") as f:
             guard = (json.load(f).get("output_guard") or {}).get(prefix) or {}
         return int(guard.get("preserved_streak", 0) or 0) if guard.get("preserved") else 0
     except (OSError, ValueError, TypeError, AttributeError):

@@ -29,7 +29,7 @@ def is_dynamic(url: str) -> bool:
 def load_previous_audit(path: str) -> dict[str, int]:
     """加载上次审计结果，返回 {name: consecutive_dead}。兼容旧 list 格式和新 payload 格式。"""
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8") as f:
             prev = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}

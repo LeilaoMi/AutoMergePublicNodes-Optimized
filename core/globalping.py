@@ -61,7 +61,7 @@ def load_cache(path: str | None, now: float | None = None) -> dict[str, dict[str
         return {}
     now = time.time() if now is None else now
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except (OSError, ValueError):
         return {}

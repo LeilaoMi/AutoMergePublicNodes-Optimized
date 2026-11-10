@@ -200,7 +200,7 @@ async def fetch_all(sources: list[Source], concurrency: int = 30, timeout: int =
 
 def load_sources(path: str) -> list[Source]:
     """从 YAML 配置加载订阅源"""
-    with open(path, encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
     sources: list[Source] = []
