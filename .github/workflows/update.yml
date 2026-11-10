@@ -35,6 +35,7 @@ permissions:
   issues: write
 
 env:
+  DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
@@ -46,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 # zizmor: ignore[artipacked] 该任务需要推送提交
 
       - name: Restore state from data branch
         # 大文件（全量池、geo 缓存、稳定性历史）放在 data 分支，每轮只保留一个提交，不再撑大 main 的历史
@@ -156,7 +157,7 @@ jobs:
             --test-limit "$TEST_LIMIT" \
             --min-retain-ratio "$MIN_RETAIN_RATIO" \
             --repo "${{ github.repository }}" \
-            --branch "${{ github.event.repository.default_branch }}"
+            --branch "$DEFAULT_BRANCH"
 
       - name: Build health report
         run: |
@@ -179,7 +180,7 @@ jobs:
             python tools/actions_summary.py \
               --stats output/stats.json \
               --repo "${{ github.repository }}" \
-              --branch "${{ github.event.repository.default_branch }}"
+              --branch "$DEFAULT_BRANCH"
           else
             echo "# AutoNodes Run Summary" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -191,7 +192,7 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          BRANCH="${{ github.event.repository.default_branch }}"
+          BRANCH="$DEFAULT_BRANCH"
           # by_region 文件名是中文：关闭路径转义，否则冲突列表里是 "output/\344..." 带引号的形式，匹配不到 output/* 导致 rebase 失败
           git config core.quotePath false
           # 显式 fetch 一次确保 origin/$BRANCH 是最新的, 避免 stale shallow ref
@@ -320,7 +321,7 @@ jobs:
         run: |
           set -euo pipefail
           REPO="${{ github.repository }}"
-          BRANCH="${{ github.event.repository.default_branch }}"
+          BRANCH="$DEFAULT_BRANCH"
           failed=0
           for f in verified.txt verified.yaml verified.json verified.urls verified.converter.md global.txt global.yaml global.json global.urls global.converter.md stats.json source_audit.json health_report.json health_report.md daily_report.md source_scores.md scoring_profiles.md source_cleanup_suggestions.md source_cleanup_suggestions.json source_discovery.json trend_history.json; do
             code=$(curl -s -o /tmp/jsdelivr-purge.json -w '%{http_code}' "https://purge.jsdelivr.net/gh/${REPO}@${BRANCH}/output/${f}" || true)
