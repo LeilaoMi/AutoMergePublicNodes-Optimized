@@ -21,11 +21,7 @@ import json
 import os
 import re
 import socket
-import sys
 import time
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-from urllib.parse import unquote
 
 import aiohttp
 
@@ -47,7 +43,7 @@ SERVER_RE = re.compile(r"@([^:/?#]+):(\d+)")
 VMESS_ADDR_RE = re.compile(r'"add"\s*:\s*"([^"]+)".*?"port"\s*:\s*"?(\d+)"?', re.DOTALL)
 
 
-def extract_nodes(html: str) -> List[Tuple[str, str, str]]:
+def extract_nodes(html: str) -> list[tuple[str, str, str]]:
     """从 HTML 提取节点，返回 [(protocol, raw_link, server_ip)]"""
     nodes = []
     seen = set()
@@ -99,7 +95,7 @@ def ip_to_country(ip: str) -> str:
     return "??"
 
 
-async def scan_channel(session: aiohttp.ClientSession, channel: str, timeout: int = 15) -> Dict:
+async def scan_channel(session: aiohttp.ClientSession, channel: str, timeout: int = 15) -> dict:
     """扫描单个频道，返回结果字典"""
     channel = channel.strip().lstrip("@")
     if not channel:
@@ -123,7 +119,7 @@ async def scan_channel(session: aiohttp.ClientSession, channel: str, timeout: in
                 result["error"] = f"HTTP {resp.status}"
                 return result
             html = await resp.text(errors="ignore")
-    except asyncio.TimeoutError:
+    except TimeoutError:
         result["status"] = "timeout"
         result["error"] = "抓取超时"
         return result
@@ -151,9 +147,9 @@ async def scan_channel(session: aiohttp.ClientSession, channel: str, timeout: in
 
     result["status"] = "ok"
     result["node_count"] = len(nodes)
-    proto_counts: Dict[str, int] = {}
+    proto_counts: dict[str, int] = {}
     servers = []
-    for proto, raw, server in nodes:
+    for proto, raw, server in nodes:  # noqa: B007
         proto_counts[proto] = proto_counts.get(proto, 0) + 1
         if server:
             servers.append(server)
@@ -162,11 +158,11 @@ async def scan_channel(session: aiohttp.ClientSession, channel: str, timeout: in
     return result
 
 
-async def scan_all(channels: List[str], concurrency: int = 10, timeout: int = 15) -> List[Dict]:
+async def scan_all(channels: list[str], concurrency: int = 10, timeout: int = 15) -> list[dict]:
     """并发扫描所有频道"""
     sem = asyncio.Semaphore(concurrency)
     async with aiohttp.ClientSession() as session:
-        async def _wrap(ch: str) -> Dict:
+        async def _wrap(ch: str) -> dict:
             async with sem:
                 return await scan_channel(session, ch, timeout)
 
@@ -183,7 +179,7 @@ async def scan_all(channels: List[str], concurrency: int = 10, timeout: int = 15
     return results
 
 
-def generate_report(results: List[Dict]) -> str:
+def generate_report(results: list[dict]) -> str:
     """生成 Markdown 报告"""
     ok = [r for r in results if r["status"] == "ok"]
     ok.sort(key=lambda r: r["node_count"], reverse=True)
@@ -227,7 +223,7 @@ def generate_report(results: List[Dict]) -> str:
         safe_name = r["channel"].lstrip("@").lower()
         lines.append(f"- url: {r['url']}")
         lines.append(f"  name: tg-{safe_name}")
-        lines.append(f"  kind: url")
+        lines.append("  kind: url")
         lines.append(f"  max_nodes: 500  # 扫描时 {r['node_count']} 节点")
         lines.append("")
     lines.append("```")
@@ -249,7 +245,7 @@ def main():
     p.add_argument("--timeout", type=int, default=15, help="单频道抓取超时秒数")
     args = p.parse_args()
 
-    channels: List[str] = []
+    channels: list[str] = []
     if args.channels:
         channels = [c.strip() for c in args.channels.split(",") if c.strip()]
     if args.channels_file:

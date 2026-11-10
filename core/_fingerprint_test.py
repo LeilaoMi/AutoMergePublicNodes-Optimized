@@ -10,10 +10,9 @@ GFW 使用 DPI（深度包检测）识别代理流量。不同协议的抗检测
 """
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from core.parser import Node
-
 
 # 抗检测等级映射
 RESISTANCE_LEVELS = {
@@ -24,7 +23,7 @@ RESISTANCE_LEVELS = {
 }
 
 
-def analyze_fingerprint_resistance(node: Node) -> Dict[str, Any]:
+def analyze_fingerprint_resistance(node: Node) -> dict[str, Any]:
     """分析单个节点的流量指纹抗检测能力。
 
     Returns:

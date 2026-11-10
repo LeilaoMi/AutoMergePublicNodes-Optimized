@@ -12,7 +12,7 @@ import base64
 import json
 import os
 from dataclasses import replace
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import quote
 
 import yaml
@@ -66,7 +66,7 @@ def _flag_to_cc(flag_emoji: str) -> str:
     return ""
 
 
-def _extract_region(tag: str, server: str | None = None, flag_map: Dict[str, str] | None = None) -> str:
+def _extract_region(tag: str, server: str | None = None, flag_map: dict[str, str] | None = None) -> str:
     """从节点 tag 前缀国旗或 GeoIP 映射提取地区分组名。"""
     if tag:
         flag = tag[:2] if len(tag) >= 2 else ""
@@ -98,7 +98,7 @@ def _clamp_tag(tag: str) -> str:
     return tag[:MAX_TAG_LENGTH - 3] + "(…)"
 
 
-def _unique_clamped_tag(tag: str, used: Dict[str, int]) -> str:
+def _unique_clamped_tag(tag: str, used: dict[str, int]) -> str:
     base = _clamp_tag(tag)
     if base not in used:
         used[base] = 0
@@ -108,13 +108,13 @@ def _unique_clamped_tag(tag: str, used: Dict[str, int]) -> str:
     return f"{base[:MAX_TAG_LENGTH - len(suffix)]}{suffix}"
 
 
-def _prepare_nodes(nodes: List[Node]) -> List[Node]:
+def _prepare_nodes(nodes: list[Node]) -> list[Node]:
     """返回 tag 已截断且唯一的新节点列表，不修改输入对象。"""
-    used: Dict[str, int] = {}
+    used: dict[str, int] = {}
     return [replace(n, tag=_unique_clamped_tag(n.tag, used)) for n in nodes]
 
 
-def _ensure_unique_tags(nodes: List[Node]) -> None:
+def _ensure_unique_tags(nodes: list[Node]) -> None:
     """确保所有节点的 tag 唯一，如有重复则添加数字后缀。"""
     prepared = _prepare_nodes(nodes)
     for target, source in zip(nodes, prepared):
@@ -164,7 +164,7 @@ def node_to_url(n: Node) -> str:
         return f"vmess://{body}"
 
     if t == "vless":
-        params: List[str] = []
+        params: list[str] = []
         tls = r.get("tls", {})
         if tls.get("enabled"):
             if tls.get("reality"):
@@ -298,14 +298,14 @@ def _clash_reality_mlkem_enabled() -> bool:
     return os.environ.get("CLASH_REALITY_MLKEM", "1").strip().lower() not in ("0", "false", "no", "off")
 
 
-def node_to_clash(n: Node) -> Optional[Dict[str, Any]]:
+def node_to_clash(n: Node) -> dict[str, Any] | None:
     """把内部 Node 转成 Clash/mihomo 的 proxy 字典；不支持的协议返回 None。
 
     VLESS REALITY 节点默认固定使用 chrome 指纹并开启 support-x25519mlkem768，
     原因见 _REALITY_CLASH_FINGERPRINT 的注释；可用环境变量 CLASH_REALITY_MLKEM=0 关闭。
     """
     t, r = n.type, n.raw
-    base: Dict[str, Any] = {"name": n.tag, "server": n.server, "port": n.server_port}
+    base: dict[str, Any] = {"name": n.tag, "server": n.server, "port": n.server_port}
 
     if t == "vmess":
         proxy = {**base, "type": "vmess", "uuid": r.get("uuid", ""),
@@ -441,11 +441,11 @@ def node_to_clash(n: Node) -> Optional[Dict[str, Any]]:
 # ============================================================
 
 def write_outputs(
-    nodes: List[Node],
+    nodes: list[Node],
     output_dir: str,
     prefix: str = "nodes",
     repo_path: str | None = None,
-    flag_map: Dict[str, str] | None = None,
+    flag_map: dict[str, str] | None = None,
     branch: str = "main",
     mode: str = "full",
 ) -> int:
@@ -483,7 +483,7 @@ def write_outputs(
             node_proxy_pairs.append((n, p))
 
     # 按地区分组
-    region_groups: Dict[str, List[str]] = {}
+    region_groups: dict[str, list[str]] = {}
     for n, p in node_proxy_pairs:
         region = _extract_region(p["name"], n.server, flag_map)
         region_groups.setdefault(region, []).append(p["name"])
@@ -541,7 +541,7 @@ def write_outputs(
     outbounds_list = [n.tag for n in nodes] or ["direct"]
 
     # sing-box 按地区分组
-    sb_region_groups: Dict[str, List[str]] = {}
+    sb_region_groups: dict[str, list[str]] = {}
     for n in nodes:
         region = _extract_region(n.tag, n.server, flag_map)
         sb_region_groups.setdefault(region, []).append(n.tag)
@@ -626,7 +626,7 @@ def write_outputs(
 # ============================================================
 
 def write_chunked_outputs(
-    nodes: List[Node],
+    nodes: list[Node],
     output_dir: str,
     prefix: str = "verified",
     repo_path: str | None = None,
@@ -669,7 +669,7 @@ def write_chunked_outputs(
 # ============================================================
 
 def write_protocol_outputs(
-    nodes: List[Node],
+    nodes: list[Node],
     output_dir: str,
     prefix: str = "verified",
     repo_path: str | None = None,
@@ -686,7 +686,7 @@ def write_protocol_outputs(
     prepared = _prepare_nodes(nodes)
 
     # 按协议分组
-    proto_groups: Dict[str, List[str]] = {}
+    proto_groups: dict[str, list[str]] = {}
     for n in prepared:
         url = node_to_url(n)
         if url:
@@ -725,16 +725,16 @@ def region_of_tag(tag: str) -> str:
     return "其他"
 
 
-def write_region_outputs(nodes: List[Node], output_dir: str) -> int:
+def write_region_outputs(nodes: list[Node], output_dir: str) -> int:
     """按地区分文件输出：output/by_region/{地区}.txt（base64）与 .urls（明文）。
 
     每轮先清空目录，避免上一轮的地区文件残留旧节点。
     """
-    import os
     import glob
+    import os
     region_dir = os.path.join(output_dir, "by_region")
     os.makedirs(region_dir, exist_ok=True)
-    groups: Dict[str, List[str]] = {}
+    groups: dict[str, list[str]] = {}
     for n in _prepare_nodes(nodes):
         url = node_to_url(n)
         if url:
@@ -758,7 +758,6 @@ CONVERTERS = [
 
 def generate_converter_links(sub_url: str, output_dir: str, prefix: str = "nodes"):
     """生成订阅转换器链接（用户可一键复制到客户端）"""
-    import os
     encoded = quote(sub_url, safe="")
     targets = [
         ("Clash",       "clash"),

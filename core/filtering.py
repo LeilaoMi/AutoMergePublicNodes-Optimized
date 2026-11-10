@@ -6,23 +6,22 @@ from __future__ import annotations
 
 import ipaddress
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import yaml
 
 from core.parser import Node
 
-
 # 端口黑名单。80/8080 可能是合法 WS/TLS/HTTP 伪装端口，不再硬删除。
 PORT_BLOCKLIST = {0}
-DEFAULT_FILTER_RULES: Dict[str, Any] = {
+DEFAULT_FILTER_RULES: dict[str, Any] = {
     "enabled": True,
     "mode": "block",
     "blocked": {"ports": sorted(PORT_BLOCKLIST)},
 }
 
 
-def load_filter_rules(path: str | None) -> Dict[str, Any]:
+def load_filter_rules(path: str | None) -> dict[str, Any]:
     """加载质量过滤规则。
 
     配置缺失或解析失败时返回保守默认规则，避免 CI 因本地配置问题中断。
@@ -51,12 +50,12 @@ def _lower_set(values: Any) -> set[str]:
     return {str(v).strip().lower() for v in values if str(v).strip()}
 
 
-def filter_rule_reasons(n: Node, rules: Dict[str, Any]) -> List[str]:
+def filter_rule_reasons(n: Node, rules: dict[str, Any]) -> list[str]:
     """返回节点命中过滤规则的原因列表。"""
     if not rules or rules.get("enabled") is False:
         return []
     blocked = rules.get("blocked") or {}
-    reasons: List[str] = []
+    reasons: list[str] = []
 
     ports = {int(p) for p in blocked.get("ports", list(PORT_BLOCKLIST)) if str(p).lstrip("-").isdigit()}
     if n.server_port in ports:
@@ -89,11 +88,11 @@ def filter_rule_reasons(n: Node, rules: Dict[str, Any]) -> List[str]:
 
 
 def quality_prefilter(
-    nodes: List[Node],
+    nodes: list[Node],
     max_per_server: int = 0,
-    rules: Dict[str, Any] | None = None,
+    rules: dict[str, Any] | None = None,
     protocol_priority=None,
-) -> Tuple[List[Node], Dict[str, int]]:
+) -> tuple[list[Node], dict[str, int]]:
     """质量预过滤：配置化剔除异常协议特征、按 server+protocol 强去重、同 server 限流。
 
     返回 (过滤后的节点, 命中规则统计)。rules.mode=annotate 时只统计不剔除。
@@ -101,9 +100,9 @@ def quality_prefilter(
     rules = rules or dict(DEFAULT_FILTER_RULES)
     mode = str(rules.get("mode", "block")).lower()
     priority = protocol_priority or (lambda t: 9)
-    reason_counts: Dict[str, int] = {}
+    reason_counts: dict[str, int] = {}
 
-    step1: List[Node] = []
+    step1: list[Node] = []
     for n in nodes:
         reasons = filter_rule_reasons(n, rules)
         for reason in reasons:
@@ -113,7 +112,7 @@ def quality_prefilter(
         step1.append(n)
 
     # 同 server+protocol+port 已经被 dedupe 处理；这里按 (server, type) 再去重
-    by_st: Dict[tuple, Node] = {}
+    by_st: dict[tuple, Node] = {}
     for n in step1:
         key = (n.server, n.type)
         if key not in by_st:
@@ -123,11 +122,11 @@ def quality_prefilter(
     # 同 server IP 最多保留 max_per_server 个 (按协议优先级排)
     if max_per_server <= 0:
         return step2, reason_counts
-    by_server: Dict[str, List[Node]] = {}
+    by_server: dict[str, list[Node]] = {}
     for n in step2:
         by_server.setdefault(n.server, []).append(n)
-    out: List[Node] = []
-    for server, lst in by_server.items():
+    out: list[Node] = []
+    for server, lst in by_server.items():  # noqa: B007
         lst.sort(key=lambda n: priority(n.type))
         out.extend(lst[:max_per_server])
     return out, reason_counts
@@ -154,9 +153,9 @@ def is_ssrf_target(server: str) -> bool:
     return False
 
 
-def filter_ssrf(nodes: List[Node]) -> Tuple[List[Node], int]:
+def filter_ssrf(nodes: list[Node]) -> tuple[list[Node], int]:
     """无条件拦截指向私有/元数据地址的节点。返回 (安全节点, 拦截数)。"""
-    safe: List[Node] = []
+    safe: list[Node] = []
     dropped = 0
     for n in nodes:
         if is_ssrf_target(n.server):

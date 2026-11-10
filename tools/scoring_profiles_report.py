@@ -5,10 +5,9 @@ from __future__ import annotations
 import argparse
 import glob
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
-
 
 WEIGHT_KEYS = ["latency", "jitter", "tcp", "speed", "fingerprint_resistance", "protocol_history", "source_history"]
 THRESHOLD_KEYS = [
@@ -23,7 +22,7 @@ THRESHOLD_KEYS = [
 DEFAULT_KEYS = ["missing_tcp_score", "missing_history_score", "missing_fingerprint_score"]
 
 
-def _load_yaml(path: Path) -> Dict[str, Any]:
+def _load_yaml(path: Path) -> dict[str, Any]:
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except Exception:
@@ -31,7 +30,7 @@ def _load_yaml(path: Path) -> Dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
-def _table(headers: List[str], rows: List[List[object]]) -> str:
+def _table(headers: list[str], rows: list[list[object]]) -> str:
     if not rows:
         return "_暂无数据_"
     lines = [
@@ -51,8 +50,8 @@ def _number(value: Any, default: object = "-") -> object:
     return int(number) if number.is_integer() else round(number, 4)
 
 
-def build_scoring_profiles_report(patterns: List[str]) -> str:
-    paths: List[Path] = []
+def build_scoring_profiles_report(patterns: list[str]) -> str:
+    paths: list[Path] = []
     seen = set()
     for pattern in patterns:
         matches = sorted(glob.glob(pattern)) if any(ch in pattern for ch in "*?[") else [pattern]

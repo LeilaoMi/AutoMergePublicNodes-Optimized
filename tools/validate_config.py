@@ -7,7 +7,7 @@ import glob
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -26,12 +26,12 @@ def _load_yaml(path: Path) -> Any:
         return yaml.safe_load(f)
 
 
-def _add(errors: List[str], msg: str) -> None:
+def _add(errors: list[str], msg: str) -> None:
     errors.append(msg)
 
 
-def validate_sources(path: str) -> List[str]:
-    errors: List[str] = []
+def validate_sources(path: str) -> list[str]:
+    errors: list[str] = []
     p = Path(path)
     if not p.exists():
         return [f"缺少源配置文件：{path}"]
@@ -43,8 +43,8 @@ def validate_sources(path: str) -> List[str]:
     if not isinstance(sources, list):
         return ["sources.yaml 必须包含列表字段：sources"]
 
-    seen_urls: Set[str] = set()
-    seen_names: Set[str] = set()
+    seen_urls: set[str] = set()
+    seen_names: set[str] = set()
     for idx, entry in enumerate(sources, 1):
         label = f"sources[{idx}]"
         if isinstance(entry, str):
@@ -91,7 +91,7 @@ def validate_sources(path: str) -> List[str]:
     return errors
 
 
-def _as_list(value: Any, label: str, errors: List[str]) -> List[Any]:
+def _as_list(value: Any, label: str, errors: list[str]) -> list[Any]:
     if value is None:
         return []
     if not isinstance(value, list):
@@ -100,7 +100,7 @@ def _as_list(value: Any, label: str, errors: List[str]) -> List[Any]:
     return value
 
 
-def _as_number(value: Any, label: str, errors: List[str], *, min_value: float | None = None) -> float | None:
+def _as_number(value: Any, label: str, errors: list[str], *, min_value: float | None = None) -> float | None:
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -111,8 +111,8 @@ def _as_number(value: Any, label: str, errors: List[str], *, min_value: float | 
     return number
 
 
-def validate_scoring_rules(path: str) -> List[str]:
-    errors: List[str] = []
+def validate_scoring_rules(path: str) -> list[str]:
+    errors: list[str] = []
     p = Path(path)
     if not p.exists():
         return []
@@ -193,8 +193,8 @@ def validate_scoring_rules(path: str) -> List[str]:
     return errors
 
 
-def validate_scoring_warnings(path: str) -> List[str]:
-    warnings: List[str] = []
+def validate_scoring_warnings(path: str) -> list[str]:
+    warnings: list[str] = []
     p = Path(path)
     if not p.exists():
         return []
@@ -226,8 +226,8 @@ def validate_scoring_warnings(path: str) -> List[str]:
     return warnings
 
 
-def validate_filter_rules(path: str) -> List[str]:
-    errors: List[str] = []
+def validate_filter_rules(path: str) -> list[str]:
+    errors: list[str] = []
     p = Path(path)
     if not p.exists():
         return []
@@ -267,9 +267,9 @@ def validate_filter_rules(path: str) -> List[str]:
     return errors
 
 
-def _expand_paths(patterns: List[str]) -> List[str]:
-    paths: List[str] = []
-    seen: Set[str] = set()
+def _expand_paths(patterns: list[str]) -> list[str]:
+    paths: list[str] = []
+    seen: set[str] = set()
     for pattern in patterns:
         matches = sorted(glob.glob(pattern)) if any(ch in pattern for ch in "*?[") else [pattern]
         if not matches:
@@ -290,7 +290,7 @@ def main() -> None:
 
     scoring_paths = _expand_paths(args.scoring_rules or ["config/scoring.yaml"])
     errors = validate_sources(args.sources) + validate_filter_rules(args.filter_rules)
-    warnings: List[str] = []
+    warnings: list[str] = []
     for scoring_path in scoring_paths:
         errors.extend(validate_scoring_rules(scoring_path))
         warnings.extend(validate_scoring_warnings(scoring_path))

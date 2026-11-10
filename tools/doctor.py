@@ -8,7 +8,6 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -19,7 +18,7 @@ def _check_import(name: str) -> bool:
     return importlib.util.find_spec(name) is not None
 
 
-def _run(cmd: List[str], timeout: int = 5) -> Tuple[bool, str]:
+def _run(cmd: list[str], timeout: int = 5) -> tuple[bool, str]:
     try:
         out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True, timeout=timeout)
         return True, out.strip().splitlines()[0] if out.strip() else "正常"
@@ -27,8 +26,8 @@ def _run(cmd: List[str], timeout: int = 5) -> Tuple[bool, str]:
         return False, str(exc)
 
 
-def build_doctor_report(sources: str, filter_rules: str, singbox: str, output_dir: str) -> Tuple[bool, str]:
-    checks: List[Tuple[str, bool, str]] = []
+def build_doctor_report(sources: str, filter_rules: str, singbox: str, output_dir: str) -> tuple[bool, str]:
+    checks: list[tuple[str, bool, str]] = []
 
     py_ok = sys.version_info >= (3, 11)
     checks.append(("Python >= 3.11", py_ok, platform.python_version()))

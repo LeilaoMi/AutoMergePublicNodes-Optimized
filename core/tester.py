@@ -19,14 +19,14 @@ import shutil
 import socket
 import tempfile
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Iterable
+from typing import Any
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
 
 from core.parser import Node
-
 
 # 测试目标 4 层
 # - 204: youtube / google 204 = 真的墙外节点, 不能直连的才是好节点
@@ -65,7 +65,7 @@ class TestResult:
     latency_ms: float = 0.0
     jitter_ms: float = 0.0  # 延迟抖动（max deviation from avg）
     error: str = ""
-    error_detail: Dict[str, Any] = field(default_factory=dict)
+    error_detail: dict[str, Any] = field(default_factory=dict)
     speed_kbps: float = 0.0  # 下载速度 KB/s
     fingerprint_resistance: str = ""  # high/medium/low/none
     fingerprint_resistance_score: float = 0.0  # 0~1 数值，供评分系统直接使用
@@ -73,14 +73,14 @@ class TestResult:
     chatgpt_ok: bool = False  # ChatGPT 可访问
 
 
-def build_error_detail(error: str) -> Dict[str, Any]:
+def build_error_detail(error: str) -> dict[str, Any]:
     """Parse tester error strings into a stable diagnostic shape."""
     if not error:
         return {"target": "unknown", "reason": "unknown", "raw": ""}
     if ":" not in error:
         return {"target": "general", "reason": error, "raw": error}
     target, rest = error.split(":", 1)
-    detail: Dict[str, Any] = {"target": target, "raw": error}
+    detail: dict[str, Any] = {"target": target, "raw": error}
     if "=" in rest:
         reason, value = rest.split("=", 1)
         detail["reason"] = reason
@@ -165,7 +165,7 @@ class SingBoxTester:
         失败重试 200 次, 每次随机从一段范围取端口
         """
         import random
-        for attempt in range(200):
+        for attempt in range(200):  # noqa: B007
             # 随机从 30000-50000 范围挑, 避免顺序冲突
             start = random.randint(30000, 49999)
             try:
@@ -278,7 +278,7 @@ class SingBoxTester:
             async with aiohttp.ClientSession(connector=connector) as session:
                 # 严格测试: 必须每个目标都通过
                 latencies = []
-                sample_spreads: List[float] = []
+                sample_spreads: list[float] = []
                 failed_target = None
                 speed_download_bytes = 0
                 speed_download_time = 0.0
@@ -413,7 +413,7 @@ class SingBoxTester:
                     proc.terminate()
                     try:
                         await asyncio.wait_for(proc.wait(), timeout=2)
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         proc.kill()
                         await proc.wait()
                 except ProcessLookupError:
@@ -424,9 +424,9 @@ class SingBoxTester:
             result.error_detail = build_error_detail(result.error)
         return result
 
-    async def test_all(self, nodes: List[Node], progress_every: int = 50) -> List[TestResult]:
+    async def test_all(self, nodes: list[Node], progress_every: int = 50) -> list[TestResult]:
         sem = asyncio.Semaphore(self.concurrency)
-        results: List[TestResult] = []
+        results: list[TestResult] = []
         done = 0
         valid = 0
 
@@ -439,7 +439,7 @@ class SingBoxTester:
             try:
                 return await asyncio.wait_for(
                     self.test_one(n, r), timeout=self.test_one_timeout)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 if r.success:
                     # 核心目标已通过，只是解锁等可选检测拖到了总超时
                     return r

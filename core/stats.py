@@ -7,20 +7,19 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
-def smoothed_pass_rate(stats: Dict[str, int]) -> float:
+def smoothed_pass_rate(stats: dict[str, int]) -> float:
     passed = int(stats.get("pass", 0) or 0)
     failed = int(stats.get("fail", 0) or 0)
     return (passed + 1) / (passed + failed + 2)
 
 
 def build_source_scores(
-    source_nodes: Dict[str, int],
-    source_pass_rate: Dict[str, Dict[str, int]],
-    source_dead_counts: Dict[str, int] | None = None,
-) -> Dict[str, Dict[str, object]]:
+    source_nodes: dict[str, int],
+    source_pass_rate: dict[str, dict[str, int]],
+    source_dead_counts: dict[str, int] | None = None,
+) -> dict[str, dict[str, object]]:
     """Build stable source quality scores for reporting and weighted sampling.
 
     score roughly means: historical real-test quality, with small confidence bonus
@@ -28,7 +27,7 @@ def build_source_scores(
     """
     source_dead_counts = source_dead_counts or {}
     names = set(source_nodes) | set(source_pass_rate) | set(source_dead_counts)
-    scores: Dict[str, Dict[str, object]] = {}
+    scores: dict[str, dict[str, object]] = {}
     for name in sorted(names):
         counts = source_pass_rate.get(name, {})
         passed = int(counts.get("pass", 0) or 0)
@@ -64,7 +63,7 @@ def build_source_scores(
     return scores
 
 
-def load_historical_pass_rates(output_dir: str) -> Tuple[Dict[str, float], Dict[str, float]]:
+def load_historical_pass_rates(output_dir: str) -> tuple[dict[str, float], dict[str, float]]:
     stats_path = Path(output_dir) / "stats.json"
     if not stats_path.exists():
         return {}, {}
@@ -96,7 +95,7 @@ def load_historical_pass_rates(output_dir: str) -> Tuple[Dict[str, float], Dict[
 # Node stability tracking (per-fingerprint pass/fail history)
 # ============================================================
 
-def load_node_stability(output_dir: str) -> Dict[str, Dict[str, object]]:
+def load_node_stability(output_dir: str) -> dict[str, dict[str, object]]:
     """Load node stability history from node_stability.json.
 
     Returns a dict keyed by fingerprint:
@@ -116,18 +115,18 @@ def load_node_stability(output_dir: str) -> Dict[str, Dict[str, object]]:
 
 def update_node_stability(
     output_dir: str,
-    passed_fingerprints: List[str],
-    failed_fingerprints: List[str],
+    passed_fingerprints: list[str],
+    failed_fingerprints: list[str],
     timestamp: str,
     keep_recent: int = 5000,
-) -> Dict[str, Dict[str, object]]:
+) -> dict[str, dict[str, object]]:
     """Update node stability history with this run's results.
 
     Tracks consecutive pass/fail and total pass/fail per fingerprint.
     Keeps only the most recent `keep_recent` fingerprints to bound file size.
     """
     path = Path(output_dir) / "node_stability.json"
-    nodes: Dict[str, Dict[str, object]] = load_node_stability(str(Path(output_dir)))
+    nodes: dict[str, dict[str, object]] = load_node_stability(str(Path(output_dir)))
 
     all_fps = set(passed_fingerprints) | set(failed_fingerprints)
 
@@ -170,7 +169,7 @@ def update_node_stability(
     return payload
 
 
-def get_stable_nodes(stability: Dict[str, Dict[str, object]], min_consecutive: int = 3) -> List[str]:
+def get_stable_nodes(stability: dict[str, dict[str, object]], min_consecutive: int = 3) -> list[str]:
     """Return fingerprints with >= min_consecutive consecutive passes."""
     return [
         fp for fp, data in stability.items()
@@ -178,7 +177,7 @@ def get_stable_nodes(stability: Dict[str, Dict[str, object]], min_consecutive: i
     ]
 
 
-def build_trend_entry(stats: Dict[str, object]) -> Dict[str, object]:
+def build_trend_entry(stats: dict[str, object]) -> dict[str, object]:
     return {
         "timestamp": stats.get("timestamp"),
         "duration_sec": stats.get("duration_sec"),
@@ -194,8 +193,8 @@ def build_trend_entry(stats: Dict[str, object]) -> Dict[str, object]:
     }
 
 
-def build_trend_alerts(runs: List[Dict[str, object]]) -> List[Dict[str, object]]:
-    alerts: List[Dict[str, object]] = []
+def build_trend_alerts(runs: list[dict[str, object]]) -> list[dict[str, object]]:
+    alerts: list[dict[str, object]] = []
     if len(runs) < 2:
         return alerts
 
@@ -245,9 +244,9 @@ def build_trend_alerts(runs: List[Dict[str, object]]) -> List[Dict[str, object]]
     return alerts
 
 
-def update_trend_history(output_dir: str, stats: Dict[str, object], keep: int = 30) -> Dict[str, object]:
+def update_trend_history(output_dir: str, stats: dict[str, object], keep: int = 30) -> dict[str, object]:
     path = Path(output_dir) / "trend_history.json"
-    runs: List[Dict[str, object]] = []
+    runs: list[dict[str, object]] = []
     if path.exists():
         try:
             previous = json.loads(path.read_text(encoding="utf-8"))

@@ -8,8 +8,9 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Set
+from typing import Any
 
 import yaml
 
@@ -22,7 +23,7 @@ def _load_json(path: Path, default: Any) -> Any:
         return default
 
 
-def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> List[str]:
+def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> list[str]:
     headers = [str(h) for h in headers]
     lines = ["| " + " | ".join(headers) + " |", "| " + " | ".join("---" for _ in headers) + " |"]
     for row in rows:
@@ -30,7 +31,7 @@ def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> List[str
     return lines
 
 
-def _audit_by_name(source_audit: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+def _audit_by_name(source_audit: dict[str, Any]) -> dict[str, dict[str, Any]]:
     rows = source_audit.get("sources", []) if isinstance(source_audit, dict) else []
     if not isinstance(rows, list):
         return {}
@@ -38,20 +39,20 @@ def _audit_by_name(source_audit: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
 
 
 def build_cleanup_suggestions(
-    stats: Dict[str, Any],
-    source_audit: Dict[str, Any],
+    stats: dict[str, Any],
+    source_audit: dict[str, Any],
     min_tested: int = 5,
     disable_dead_threshold: int = 2,
-) -> Dict[str, List[Dict[str, Any]]]:
+) -> dict[str, list[dict[str, Any]]]:
     scores = stats.get("source_scores", {}) if isinstance(stats, dict) else {}
     if not isinstance(scores, dict):
         scores = {}
     audit = _audit_by_name(source_audit)
 
-    disable: List[Dict[str, Any]] = []
-    downweight: List[Dict[str, Any]] = []
-    prefer: List[Dict[str, Any]] = []
-    observe: List[Dict[str, Any]] = []
+    disable: list[dict[str, Any]] = []
+    downweight: list[dict[str, Any]] = []
+    prefer: list[dict[str, Any]] = []
+    observe: list[dict[str, Any]] = []
 
     names = set(scores) | set(audit)
     for name in sorted(names):
@@ -92,7 +93,7 @@ def build_cleanup_suggestions(
     return {"disable": disable, "downweight": downweight, "prefer": prefer, "observe": observe}
 
 
-def _format_rows(rows: List[Dict[str, Any]]) -> List[List[Any]]:
+def _format_rows(rows: list[dict[str, Any]]) -> list[list[Any]]:
     return [[
         r.get("name", "-"),
         r.get("score", "-"),
@@ -109,7 +110,7 @@ def build_cleanup_payload(
     output_dir: str = "output",
     min_tested: int = 5,
     disable_dead_threshold: int = 2,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     out = Path(output_dir)
     stats = _load_json(out / "stats.json", {})
     audit = _load_json(out / "source_audit.json", {})
@@ -131,7 +132,7 @@ def build_cleanup_report(
     payload = build_cleanup_payload(output_dir, min_tested, disable_dead_threshold)
     suggestions = payload["suggestions"]
 
-    lines: List[str] = [
+    lines: list[str] = [
         "# 订阅源清理建议",
         "",
         f"生成时间：{payload['generated_at']}",
@@ -159,7 +160,7 @@ def build_cleanup_report(
     return "\n".join(lines) + "\n"
 
 
-def filter_names(names: Set[str], only: Set[str] | None = None, exclude: Set[str] | None = None) -> Set[str]:
+def filter_names(names: set[str], only: set[str] | None = None, exclude: set[str] | None = None) -> set[str]:
     """根据白名单/黑名单过滤待处理订阅源名称。"""
     filtered = set(names)
     if only:
@@ -169,11 +170,11 @@ def filter_names(names: Set[str], only: Set[str] | None = None, exclude: Set[str
     return filtered
 
 
-def _parse_name_set(value: str) -> Set[str]:
+def _parse_name_set(value: str) -> set[str]:
     return {item.strip() for item in value.split(",") if item.strip()}
 
 
-def _disable_sources_data(data: Dict[str, Any], disable_names: Set[str]) -> int:
+def _disable_sources_data(data: dict[str, Any], disable_names: set[str]) -> int:
     changed = 0
     for entry in data.get("sources", []):
         if isinstance(entry, dict) and entry.get("name") in disable_names and entry.get("enabled", True):
@@ -182,7 +183,7 @@ def _disable_sources_data(data: Dict[str, Any], disable_names: Set[str]) -> int:
     return changed
 
 
-def build_disable_patch_preview(sources_path: str, disable_names: Set[str]) -> str:
+def build_disable_patch_preview(sources_path: str, disable_names: set[str]) -> str:
     path = Path(sources_path)
     with path.open(encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
@@ -190,7 +191,7 @@ def build_disable_patch_preview(sources_path: str, disable_names: Set[str]) -> s
     return yaml.dump({"changed": changed, "preview": data}, allow_unicode=True, sort_keys=False)
 
 
-def apply_disable_suggestions(sources_path: str, disable_names: Set[str]) -> int:
+def apply_disable_suggestions(sources_path: str, disable_names: set[str]) -> int:
     """Apply disable suggestions with atomic write. Caller must perform confirmation checks."""
     if not disable_names:
         return 0
