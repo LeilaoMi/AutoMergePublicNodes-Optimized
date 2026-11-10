@@ -18,9 +18,8 @@ import os
 import socket
 import sys
 import time
-from pathlib import Path
 from dataclasses import replace
-from typing import Dict, List, Tuple, Any
+from pathlib import Path
 
 # 让脚本能直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -28,17 +27,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 __version__ = "2.4.0"  # chunked output + protocol split + node stability + unlock detection + degraded mode
 
 from core.fetcher import fetch_all, load_sources
-from core.geo import geo_flag_map, flag_for_server
+from core.filtering import filter_ssrf, is_ssrf_target, load_filter_rules, quality_prefilter
+from core.geo import flag_for_server, geo_flag_map
 from core.parser import Node
-from core.filtering import load_filter_rules, quality_prefilter, filter_ssrf, is_ssrf_target
-from core.sampling import protocol_priority, sample_for_real_test, sample_for_real_test_weighted
-from core.stats import build_source_scores, load_historical_pass_rates, update_trend_history, update_node_stability, load_node_stability, get_stable_nodes
-from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
-from core.report import write_health_report
 from core.readme_updater import update_readme_stats
+from core.report import write_health_report
+from core.sampling import protocol_priority, sample_for_real_test_weighted
+from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
+from core.stats import (
+    build_source_scores,
+    get_stable_nodes,
+    load_historical_pass_rates,
+    load_node_stability,
+    update_node_stability,
+    update_trend_history,
+)
 
 
-def dedupe(nodes: List[Node]) -> List[Node]:
+def dedupe(nodes: list[Node]) -> list[Node]:
     seen = set()
     out = []
     for n in nodes:
@@ -51,9 +57,9 @@ def dedupe(nodes: List[Node]) -> List[Node]:
 
 
 
-def build_output_nodes(valid: List[tuple], flag_map: Dict[str, str], top_n: int) -> List[Node]:
-    output_nodes: List[Node] = []
-    for i, (n, lat, jit) in enumerate(valid[:top_n], 1):
+def build_output_nodes(valid: list[tuple], flag_map: dict[str, str], top_n: int) -> list[Node]:
+    output_nodes: list[Node] = []
+    for i, (n, lat, jit) in enumerate(valid[:top_n], 1):  # noqa: B007
         flag = flag_for_server(n.server, flag_map)
         prefix = f"{flag} " if flag else ""
         new_tag = n.tag
@@ -80,7 +86,7 @@ MAX_PRESERVED_STREAK = 3
 
 def previous_preserved_streak(output_dir: str, prefix: str) -> int:
     try:
-        with open(Path(output_dir) / "stats.json", "r", encoding="utf-8") as f:
+        with open(Path(output_dir) / "stats.json", encoding="utf-8") as f:
             guard = (json.load(f).get("output_guard") or {}).get(prefix) or {}
         return int(guard.get("preserved_streak", 0) or 0) if guard.get("preserved") else 0
     except (OSError, ValueError, TypeError, AttributeError):
@@ -116,11 +122,11 @@ async def _resolve_and_check_ssrf(server: str, port: int, timeout: float) -> boo
 
 
 async def tcp_check_batch(
-    nodes: List[Node],
+    nodes: list[Node],
     concurrency: int = 200,
     timeout: float = 3.0,
-    error_counts: Dict[str, int] | None = None,
-) -> List[Tuple[Node, float]]:
+    error_counts: dict[str, int] | None = None,
+) -> list[tuple[Node, float]]:
     """快速 TCP 预筛选：返回 [(node, tcp_latency_ms)]，按延迟升序。
 
     可选 error_counts 用于记录失败异常类型，便于 stats/health report 定位网络问题。
@@ -129,7 +135,7 @@ async def tcp_check_batch(
     for n in nodes:
         queue.put_nowait(n)
 
-    ok: List[Tuple[Node, float]] = []
+    ok: list[tuple[Node, float]] = []
     errors = error_counts if error_counts is not None else {}
 
     async def _worker():
@@ -171,11 +177,11 @@ async def tcp_check_batch(
 
 async def run(args):
     t0 = time.time()
-    stage_durations: Dict[str, float] = {}
+    stage_durations: dict[str, float] = {}
     stage_start = t0
-    print(f"╔══════════════════════════════════════════════╗")
-    print(f"║  autonodes - 自动节点聚合 + 真实测试        ║")
-    print(f"╚══════════════════════════════════════════════╝\n")
+    print("╔══════════════════════════════════════════════╗")
+    print("║  autonodes - 自动节点聚合 + 真实测试        ║")
+    print("╚══════════════════════════════════════════════╝\n")
 
     # 1) 加载订阅源
     sources = load_sources(args.sources)
@@ -202,12 +208,12 @@ async def run(args):
     print(f"      抓取完成: {healthy}/{len(sources)} 源有节点, 共 {total_raw} 个原始节点")
     print(f"[funnel] stage=fetch in=0 out={total_raw}")
 
-    all_nodes: List[Node] = []
-    proto_count: Dict[str, int] = {}
-    source_nodes: Dict[str, int] = {}
-    source_dead_counts: Dict[str, int] = {}
+    all_nodes: list[Node] = []
+    proto_count: dict[str, int] = {}
+    source_nodes: dict[str, int] = {}
+    source_dead_counts: dict[str, int] = {}
     # 跟踪每个节点来自哪个 source（用于 per-source 通过率统计）
-    node_source_map: Dict[str, str] = {}  # fingerprint -> source_name
+    node_source_map: dict[str, str] = {}  # fingerprint -> source_name
     for r in fr_list:
         src_name = r.source.name or r.source.url[:80]
         source_nodes[src_name] = source_nodes.get(src_name, 0) + len(r.nodes)
@@ -223,7 +229,7 @@ async def run(args):
     dedup_pool = list(nodes)  # 保存完整 deduped 池(8K+),供 all.* 输出
 
     # GeoIP 国旗映射
-    print(f"      GeoIP 查询（batch ip-api.com）...")
+    print("      GeoIP 查询（batch ip-api.com）...")
     flag_map = await geo_flag_map(all_nodes)
     stage_durations["geo"] = round(time.time() - stage_start, 1)
     stage_start = time.time()
@@ -239,7 +245,7 @@ async def run(args):
     if ssrf_dropped > 0:
         print(f"[3.4] SSRF 拦截: 剔除 {ssrf_dropped} 个指向私有/元数据地址的节点")
 
-    filter_rule_hits: Dict[str, int] = {}
+    filter_rule_hits: dict[str, int] = {}
     # 3.5) 质量预过滤 (可选)
     if args.quality_filter:
         before = len(nodes)
@@ -253,10 +259,10 @@ async def run(args):
         else:
             print(f"[3.5] 质量过滤（配置规则 mode={mode}, 同 server 不限）: {before} -> {len(nodes)}{suffix}")
     else:
-        print(f"[3.5] 跳过质量过滤（输出全部去重节点）")
+        print("[3.5] 跳过质量过滤（输出全部去重节点）")
 
     # 4) TCP 预筛选
-    tcp_errors: Dict[str, int] = {}
+    tcp_errors: dict[str, int] = {}
     if args.tcp_check:
         print(f"[4/6] TCP 预筛选（并发 {args.tcp_concurrency}, 超时 {args.tcp_timeout}s）...")
         tcp_results = await tcp_check_batch(nodes, args.tcp_concurrency, args.tcp_timeout, tcp_errors)
@@ -271,7 +277,7 @@ async def run(args):
         nodes = [n for n, _ in tcp_results]
         tcp_latency = {n.fingerprint(): lat for n, lat in tcp_results}
     else:
-        print(f"[4/6] 跳过 TCP 预筛选")
+        print("[4/6] 跳过 TCP 预筛选")
         tcp_latency = {}
         stage_durations["tcp"] = 0.0
         stage_start = time.time()
@@ -305,7 +311,7 @@ async def run(args):
         print(f"      探活通过: {len(nodes)}/{before_probe}")
         print(f"[funnel] stage=probe in={before_probe} out={len(nodes)}")
         # 记录 probe 失败原因分布, 填补可观测性空白
-        probe_error_counts: Dict[str, int] = {}
+        probe_error_counts: dict[str, int] = {}
         for r in probe_results:
             if not r.success and r.error:
                 key = r.error.split(":")[0] if ":" in r.error else r.error
@@ -316,11 +322,11 @@ async def run(args):
     nodes_after_probe = len(nodes)  # probe 后的节点数
 
     # 5) 真实代理测试（sing-box）
-    valid: List[tuple] = []  # [(node, latency_ms, jitter_ms)]
-    scored_valid: List[tuple] = []  # [(node, latency_ms, jitter_ms, score, source, breakdown)]
+    valid: list[tuple] = []  # [(node, latency_ms, jitter_ms)]
+    scored_valid: list[tuple] = []  # [(node, latency_ms, jitter_ms, score, source, breakdown)]
     results = []  # 保存全部测试结果（含失败），供统计使用
     cn_block_retry_results = []
-    cn_block_retry_valid: List[tuple] = []
+    cn_block_retry_valid: list[tuple] = []
     real_test_passed = False
     if args.real_test and nodes:
         from core.tester import SingBoxTester
@@ -421,7 +427,7 @@ async def run(args):
         stage_durations["real_test"] = round(time.time() - stage_start, 1)
         stage_start = time.time()
     else:
-        print(f"[5/6] 跳过真实测试")
+        print("[5/6] 跳过真实测试")
         stage_durations["real_test"] = 0.0
         stage_start = time.time()
 
@@ -442,13 +448,13 @@ async def run(args):
         print(f"[5/6] TCP 模式: {len(valid)} 节点")
     else:
         # 真测 0 成功: 降级到 TCP 模式, 避免用户订阅完全变空
-        err_counter: Dict[str, int] = {}
+        err_counter: dict[str, int] = {}
         for r in results:
             if not r.success and r.error:
                 key = r.error[:60]
                 err_counter[key] = err_counter.get(key, 0) + 1
         top_errs = sorted(err_counter.items(), key=lambda x: -x[1])[:5]
-        print(f"      ⚠️ 真测 0 通过 — 降级到 TCP 模式")
+        print("      ⚠️ 真测 0 通过 — 降级到 TCP 模式")
         for err, cnt in top_errs:
             print(f"        [{cnt}×] {err}")
         global _REAL_TEST_FAIL_REASONS
@@ -463,9 +469,9 @@ async def run(args):
 
     # 真实测试失败原因统计 — 让 stats.json 自带诊断
     from core.tester import build_error_detail
-    real_test_errors: Dict[str, int] = {}
-    real_test_error_details_counter: Dict[str, int] = {}
-    real_test_error_structured_counter: Dict[tuple, Dict[str, object]] = {}
+    real_test_errors: dict[str, int] = {}
+    real_test_error_details_counter: dict[str, int] = {}
+    real_test_error_structured_counter: dict[tuple, dict[str, object]] = {}
     for r in results if args.real_test else []:
         if r.success:
             continue
@@ -546,10 +552,10 @@ async def run(args):
     global_nodes = build_output_nodes(global_valid, flag_map, args.top_n)
 
     # 6) 生成输出
-    print(f"[6/6] 生成订阅文件...")
-    from core.generator import write_outputs, write_chunked_outputs, write_protocol_outputs, write_region_outputs
+    print("[6/6] 生成订阅文件...")
+    from core.generator import write_chunked_outputs, write_outputs, write_protocol_outputs, write_region_outputs
 
-    output_guard: Dict[str, Dict[str, object]] = {}
+    output_guard: dict[str, dict[str, object]] = {}
 
     previous_verified = count_existing_urls(args.output_dir, "verified")
     proposed_verified = len([n for n in final_nodes if n])
@@ -625,7 +631,7 @@ async def run(args):
     stage_durations["generate"] = round(time.time() - stage_start, 1)
 
     elapsed = time.time() - t0
-    print(f"\n┌─────────────────────────────────────────────┐")
+    print("\n┌─────────────────────────────────────────────┐")
     print(f"│  ✅ 完成 [{elapsed:.1f}s]                       ")
     print(f"│  • 原始节点:  {total_raw:>6}")
     print(f"│  • 去重后:    {len(set(nd.fingerprint() for nd in all_nodes)):>6}")
@@ -636,10 +642,10 @@ async def run(args):
     print(f"│  • Verified:  {n_top:>6}")
     if args.global_output:
         print(f"│  • Global:    {n_global:>6}")
-    print(f"└─────────────────────────────────────────────┘")
+    print("└─────────────────────────────────────────────┘")
 
     # 统计 JSON
-    proto_pass: Dict[str, Dict[str, int]] = {}
+    proto_pass: dict[str, dict[str, int]] = {}
     for r in results if args.real_test else []:
         t = r.node.type
         if t not in proto_pass:
@@ -647,7 +653,7 @@ async def run(args):
         proto_pass[t]["pass" if r.success else "fail"] += 1
 
     # per-source 通过率统计
-    src_pass: Dict[str, Dict[str, int]] = {}
+    src_pass: dict[str, dict[str, int]] = {}
     for r in results if args.real_test else []:
         src_name = node_source_map.get(r.node.fingerprint(), "unknown")
         if src_name not in src_pass:
@@ -719,7 +725,6 @@ async def run(args):
                 "fingerprint_resistance": getattr(r, "fingerprint_resistance", "") if r else "",
                 "netflix": getattr(r, "netflix_ok", False) if r else False,
                 "chatgpt": getattr(r, "chatgpt_ok", False) if r else False,
-                "stability_bonus": stability_bonus,
             }
             for n, lat, jit, score, source, breakdown, r, stability_bonus in scored_valid[:20]
         ],

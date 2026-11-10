@@ -30,7 +30,7 @@ import os
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 API_BASE = "https://api.globalping.io/v1"
 # 每次测量用的国内探针数（1 个探针 = 1 次测试额度）
@@ -55,18 +55,18 @@ def _cache_key(server: str, port: int) -> str:
     return f"{server}:{int(port)}"
 
 
-def load_cache(path: Optional[str], now: Optional[float] = None) -> Dict[str, Dict[str, Any]]:
+def load_cache(path: str | None, now: float | None = None) -> dict[str, dict[str, Any]]:
     """读取缓存并丢弃过期条目。文件缺失或损坏时返回空缓存。"""
     if not path:
         return {}
     now = time.time() if now is None else now
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
     except (OSError, ValueError):
         return {}
     entries = data.get("entries", {}) if isinstance(data, dict) else {}
-    fresh: Dict[str, Dict[str, Any]] = {}
+    fresh: dict[str, dict[str, Any]] = {}
     for key, row in entries.items():
         if not isinstance(row, dict) or not isinstance(row.get("ok"), bool):
             continue
@@ -80,7 +80,7 @@ def load_cache(path: Optional[str], now: Optional[float] = None) -> Dict[str, Di
     return fresh
 
 
-def save_cache(path: Optional[str], entries: Dict[str, Dict[str, Any]]) -> None:
+def save_cache(path: str | None, entries: dict[str, dict[str, Any]]) -> None:
     if not path:
         return
     try:
@@ -96,7 +96,7 @@ class RateLimited(Exception):
     """GlobalPing 返回 429：本小时额度已用完。"""
 
 
-def _headers(token: str = "") -> Dict[str, str]:
+def _headers(token: str = "") -> dict[str, str]:
     headers = {
         "Content-Type": "application/json",
         "User-Agent": "AutoMergePublicNodes-Optimized/2.4 (+https://github.com/LeilaoMi/AutoMergePublicNodes-Optimized)",
@@ -119,7 +119,7 @@ def _api(method: str, path: str, data: dict | None = None, token: str = "") -> d
         raise
 
 
-def read_remaining_tests(token: str = "") -> Optional[int]:
+def read_remaining_tests(token: str = "") -> int | None:
     """返回本小时剩余可创建的测试次数；查询失败返回 None。"""
     try:
         data = _api("GET", "/limits", token=token)
@@ -131,7 +131,7 @@ def read_remaining_tests(token: str = "") -> Optional[int]:
         return None
 
 
-def plan_budget(candidates: int, remaining: Optional[int], max_checks: int = DEFAULT_MAX_CHECKS,
+def plan_budget(candidates: int, remaining: int | None, max_checks: int = DEFAULT_MAX_CHECKS,
                 reserve: int = DEFAULT_RESERVE, per_target: int = CN_PROBE_LIMIT) -> int:
     """本轮最多检查多少个节点。remaining 未知时按 max_checks 尝试（429 时会提前停）。"""
     budget = min(candidates, max(0, max_checks))
@@ -163,7 +163,7 @@ def _same_ip(a: str, b: str) -> bool:
         return False
 
 
-def is_reachable(measurement: dict, target_ip: str = "") -> Optional[bool]:
+def is_reachable(measurement: dict, target_ip: str = "") -> bool | None:
     """解析 TCP ping 结果。
 
     True：至少一次握手成功。
@@ -188,13 +188,13 @@ def is_reachable(measurement: dict, target_ip: str = "") -> Optional[bool]:
 
 
 async def check_china_reachability(
-    nodes: List[Tuple[Any, float, float]],
+    nodes: list[tuple[Any, float, float]],
     timeout: float = 300.0,
     max_checks: int = DEFAULT_MAX_CHECKS,
     reserve: int = DEFAULT_RESERVE,
-    token: Optional[str] = None,
-    cache_path: Optional[str] = None,
-) -> Dict[str, Optional[bool]]:
+    token: str | None = None,
+    cache_path: str | None = None,
+) -> dict[str, bool | None]:
     """对通过海外真测的节点做国内 TCP 可达性检查。
 
     Args:
@@ -207,7 +207,7 @@ async def check_china_reachability(
     Returns:
         {fingerprint: True/False/None}。None 表示未知（未测、额度用完、探针故障）。
     """
-    results: Dict[str, Optional[bool]] = {}
+    results: dict[str, bool | None] = {}
     check_china_reachability.last_cache_hits = 0
     if not nodes:
         return results
@@ -216,10 +216,10 @@ async def check_china_reachability(
 
     loop = asyncio.get_event_loop()
     cache = load_cache(cache_path)
-    by_target: Dict[Tuple[str, int], Optional[bool]] = {}
+    by_target: dict[tuple[str, int], bool | None] = {}
 
     # 同一 server:port 只算一次；缓存命中的直接复用，不占额度
-    pending: List[Tuple[str, int]] = []
+    pending: list[tuple[str, int]] = []
     seen = set()
     for n, _, _ in nodes:
         key = (n.server, int(n.server_port))
@@ -275,7 +275,7 @@ async def check_china_reachability(
             asyncio.gather(*[_check_one(s, p) for s, p in targets]),
             timeout=timeout,
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         pass
     if rate_limited.is_set():
         print("      GlobalPing 额度用完，剩余节点记为未知")

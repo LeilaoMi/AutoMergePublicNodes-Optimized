@@ -8,11 +8,9 @@ import asyncio
 import ipaddress
 import json
 import logging
-import re
 import socket
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import aiohttp
 
@@ -32,7 +30,7 @@ _CF_PREFIXES = (
 )
 
 
-def _load_geo_cache(path: str) -> Dict[str, Dict[str, object]]:
+def _load_geo_cache(path: str) -> dict[str, dict[str, object]]:
     try:
         with Path(path).open(encoding="utf-8") as f:
             data = json.load(f)
@@ -41,7 +39,7 @@ def _load_geo_cache(path: str) -> Dict[str, Dict[str, object]]:
     return data if isinstance(data, dict) else {}
 
 
-def _save_geo_cache(path: str, cache: Dict[str, Dict[str, object]]) -> None:
+def _save_geo_cache(path: str, cache: dict[str, dict[str, object]]) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     tmp = output.with_suffix(output.suffix + ".tmp")
@@ -49,7 +47,7 @@ def _save_geo_cache(path: str, cache: Dict[str, Dict[str, object]]) -> None:
     tmp.replace(output)
 
 
-def _cache_lookup(cache: Dict[str, Dict[str, object]], server: str, now: float) -> str:
+def _cache_lookup(cache: dict[str, dict[str, object]], server: str, now: float) -> str:
     entry = cache.get(server)
     if not isinstance(entry, dict):
         return ""
@@ -101,14 +99,14 @@ async def _resolve_server(server: str, timeout: float = 1.0) -> str:
     return ""
 
 
-async def _lookup_batch(ips: List[str], timeout: float = 5.0, max_retries: int = 3) -> Dict[str, str]:
+async def _lookup_batch(ips: list[str], timeout: float = 5.0, max_retries: int = 3) -> dict[str, str]:
     """批量查询 ip-api.com（免费版 15 requests/min，batch 每次最多 100 个）。
 
     §2.8 — 指数退避 + 尊重 X-Ttl 响应头, 不再固定 sleep 4.2s
     """
     if not ips:
         return {}
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     async with aiohttp.ClientSession() as session:
         # 每批最多 100 个；失败时指数退避 (1s, 2s, 4s, 8s)
         for i in range(0, len(ips), 100):
@@ -154,7 +152,7 @@ async def geo_flag_map(
     max_queries: int = 100,
     max_domain_resolves: int = 50,
     cache_path: str = "output/geo_cache.json",
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     返回 {server: "🇸🇬"} 的映射。
     优先使用缓存；IP 直接查询；域名在预算内解析到 IPv4 再查询。
@@ -162,9 +160,9 @@ async def geo_flag_map(
     """
     now = time.time()
     cache = _load_geo_cache(cache_path)
-    result: Dict[str, str] = {}
-    direct_ips: List[str] = []
-    domains: List[str] = []
+    result: dict[str, str] = {}
+    direct_ips: list[str] = []
+    domains: list[str] = []
     seen_servers = set()
     for n in nodes:
         server = n.server
@@ -181,14 +179,14 @@ async def geo_flag_map(
         except ValueError:
             domains.append(server)
 
-    resolved_pairs: List[Tuple[str, str]] = [(ip, ip) for ip in direct_ips]
+    resolved_pairs: list[tuple[str, str]] = [(ip, ip) for ip in direct_ips]
     for i in range(0, min(len(domains), max_domain_resolves), 100):
         chunk = domains[i:i + 100]
         resolved_pairs.extend(zip(chunk, await asyncio.gather(*[_resolve_server(server) for server in chunk])))
 
-    unique_ips: List[str] = []
+    unique_ips: list[str] = []
     seen_ips = set()
-    server_to_ip: Dict[str, str] = {}
+    server_to_ip: dict[str, str] = {}
     for server, ip in resolved_pairs:
         if not ip or not _is_public_ip(ip) or _is_anycast(ip):
             continue
@@ -215,6 +213,6 @@ async def geo_flag_map(
     return result
 
 
-def flag_for_server(server: str, flag_map: Dict[str, str]) -> str:
+def flag_for_server(server: str, flag_map: dict[str, str]) -> str:
     """查询单个 server 的国旗 emoji"""
     return flag_map.get(server, "")

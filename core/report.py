@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
-def _table(headers: List[str], rows: List[List[object]]) -> str:
+def _table(headers: list[str], rows: list[list[object]]) -> str:
     if not rows:
         return "_暂无数据_"
 
@@ -18,7 +18,7 @@ def _table(headers: List[str], rows: List[List[object]]) -> str:
     return "\n".join(lines)
 
 
-def write_health_report(output_dir: str, stats: Dict[str, Any]) -> str:
+def write_health_report(output_dir: str, stats: dict[str, Any]) -> str:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     report_path = output_path / "health_report.md"
@@ -88,7 +88,7 @@ def write_health_report(output_dir: str, stats: Dict[str, Any]) -> str:
         breakdown = item.get("score_breakdown") or {}
 
         def _points(name: str) -> object:
-            value = breakdown.get(name) if isinstance(breakdown, dict) else None
+            value = breakdown.get(name) if isinstance(breakdown, dict) else None  # noqa: B023
             return value.get("points", "-") if isinstance(value, dict) else "-"
 
         score_rows.append([

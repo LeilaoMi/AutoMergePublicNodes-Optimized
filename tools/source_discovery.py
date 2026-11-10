@@ -8,11 +8,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from pathlib import Path
-from typing import List, Set
-from urllib.request import urlopen, Request
 from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 # Projects to scan for source discovery
 # These are curated high-star projects that aggregate public node sources
@@ -50,7 +48,7 @@ DISCOVERY_TARGETS = [
 ]
 
 
-def load_existing_sources(sources_yaml_path: str) -> Set[str]:
+def load_existing_sources(sources_yaml_path: str) -> set[str]:
     """Extract existing source URLs from config/sources.yaml."""
     path = Path(sources_yaml_path)
     if not path.exists():
@@ -67,7 +65,7 @@ def fetch_url(url: str, timeout: int = 15) -> str:
         return resp.read().decode("utf-8", errors="replace")
 
 
-def discover_from_target(target: dict, timeout: int = 15) -> List[str]:
+def discover_from_target(target: dict, timeout: int = 15) -> list[str]:
     """Try to fetch a target and return raw subscription content."""
     try:
         content = fetch_url(target["url"], timeout)
@@ -86,7 +84,7 @@ def run_discovery(
     existing = load_existing_sources(sources_yaml)
     print(f"Existing sources: {len(existing)} URLs")
 
-    all_new_nodes: List[str] = []
+    all_new_nodes: list[str] = []
     scanned = 0
     failed = 0
 

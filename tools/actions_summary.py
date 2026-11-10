@@ -6,10 +6,10 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
-def table(headers: List[str], rows: List[List[object]]) -> str:
+def table(headers: list[str], rows: list[list[object]]) -> str:
     if not rows:
         return "_暂无数据_"
     lines = [
@@ -32,11 +32,11 @@ def pct(num: object, den: object) -> str:
     return f"{n / d * 100:.1f}%"
 
 
-def top_sources(stats: Dict[str, Any], limit: int = 8) -> List[List[object]]:
+def top_sources(stats: dict[str, Any], limit: int = 8) -> list[list[object]]:
     source_scores = stats.get("source_scores") or {}
     if not isinstance(source_scores, dict):
         return []
-    rows: List[List[object]] = []
+    rows: list[list[object]] = []
     for name, data in sorted(
         source_scores.items(),
         key=lambda x: -float(x[1].get("score", 0)) if isinstance(x[1], dict) else 0,
@@ -53,7 +53,7 @@ def top_sources(stats: Dict[str, Any], limit: int = 8) -> List[List[object]]:
     return rows
 
 
-def build_summary(stats: Dict[str, Any], repo: str = "", branch: str = "main") -> str:
+def build_summary(stats: dict[str, Any], repo: str = "", branch: str = "main") -> str:
     overview = [
         ["版本", stats.get("version", "-")],
         ["更新时间", stats.get("timestamp", "-")],
@@ -84,7 +84,7 @@ def build_summary(stats: Dict[str, Any], repo: str = "", branch: str = "main") -
         breakdown = item.get("score_breakdown") or {}
 
         def _points(name: str) -> object:
-            value = breakdown.get(name) if isinstance(breakdown, dict) else None
+            value = breakdown.get(name) if isinstance(breakdown, dict) else None  # noqa: B023
             return value.get("points", "-") if isinstance(value, dict) else "-"
 
         score_rows.append([

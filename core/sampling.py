@@ -1,10 +1,7 @@
 """Sampling helpers for real proxy tests."""
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
 from core.parser import Node
-
 
 # 协议优先级（数字越小越好；reality > hy2 > tuic > trojan > vmess > ss）
 PROTO_PRIORITY = {
@@ -19,17 +16,17 @@ def protocol_priority(t: str) -> int:
     return PROTO_PRIORITY.get(t, 9)
 
 
-def sample_for_real_test(nodes: List[Node], tcp_latency: Dict[str, float], limit: int) -> List[Node]:
+def sample_for_real_test(nodes: list[Node], tcp_latency: dict[str, float], limit: int) -> list[Node]:
     if limit <= 0 or len(nodes) <= limit:
         return nodes
 
-    by_type: Dict[str, List[Node]] = {}
+    by_type: dict[str, list[Node]] = {}
     for n in nodes:
         by_type.setdefault(n.type, []).append(n)
     for lst in by_type.values():
         lst.sort(key=lambda n: tcp_latency.get(n.fingerprint(), float("inf")))
 
-    sampled: List[Node] = []
+    sampled: list[Node] = []
     used = set()
     per = max(limit // max(len(by_type), 1), 1)
     for t in sorted(by_type, key=protocol_priority):
@@ -51,14 +48,14 @@ def sample_for_real_test(nodes: List[Node], tcp_latency: Dict[str, float], limit
 
 
 def sample_for_real_test_weighted(
-    nodes: List[Node],
-    tcp_latency: Dict[str, float],
+    nodes: list[Node],
+    tcp_latency: dict[str, float],
     limit: int,
-    node_source_map: Dict[str, str],
-    protocol_rates: Dict[str, float],
-    source_rates: Dict[str, float],
+    node_source_map: dict[str, str],
+    protocol_rates: dict[str, float],
+    source_rates: dict[str, float],
     explore_ratio: float = 0.15,
-) -> List[Node]:
+) -> list[Node]:
     if limit <= 0 or len(nodes) <= limit:
         return nodes
     base_quota = max(limit // 5, 1)
@@ -68,7 +65,7 @@ def sample_for_real_test_weighted(
     # 探索配额：每个来源轮流取 TCP 最快的节点，避免"历史分低 → 不被测 → 分数永远低"的反馈环
     explore_quota = max(int(limit * explore_ratio), 0)
     if explore_quota > 0:
-        by_source: Dict[str, List[Node]] = {}
+        by_source: dict[str, list[Node]] = {}
         for n in nodes:
             fp = n.fingerprint()
             if fp in used:
@@ -91,7 +88,7 @@ def sample_for_real_test_weighted(
                     added += 1
             idx += 1
 
-    def score(n: Node) -> Tuple[float, float, int]:
+    def score(n: Node) -> tuple[float, float, int]:
         fp = n.fingerprint()
         src = node_source_map.get(fp, "")
         source_rate = source_rates.get(src, 0.5)

@@ -13,29 +13,29 @@ import sys
 import time
 from collections import Counter
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import yaml
 
 
-def _load_json(path: Path) -> Dict[str, Any]:
+def _load_json(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as f:
         return json.load(f)
 
 
-def _load_yaml(path: Path) -> Dict[str, Any]:
+def _load_yaml(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return data if isinstance(data, dict) else {}
 
 
-def _read_urls(path: Path) -> List[str]:
+def _read_urls(path: Path) -> list[str]:
     return [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def _read_txt_urls(path: Path) -> List[str]:
+def _read_txt_urls(path: Path) -> list[str]:
     raw = path.read_text(encoding="utf-8").strip()
     if not raw:
         return []
@@ -43,19 +43,19 @@ def _read_txt_urls(path: Path) -> List[str]:
     return [line.strip() for line in decoded.splitlines() if line.strip()]
 
 
-def _duplicate_items(items: List[str]) -> List[str]:
+def _duplicate_items(items: list[str]) -> list[str]:
     counts = Counter(items)
     return sorted(k for k, v in counts.items() if v > 1)
 
 
-def _audit_prefix(output_dir: Path, prefix: str) -> Dict[str, Any]:
+def _audit_prefix(output_dir: Path, prefix: str) -> dict[str, Any]:
     paths = {ext: output_dir / f"{prefix}.{ext}" for ext in ("json", "yaml", "urls", "txt", "converter.md")}
     full_required = ("json", "yaml", "urls", "txt", "converter.md")
     light_required = ("urls", "txt", "converter.md")
     full_missing = [str(paths[ext].name) for ext in full_required if not paths[ext].exists()]
     light_missing = [str(paths[ext].name) for ext in light_required if not paths[ext].exists()]
     mode = "full" if not full_missing else "light" if not light_missing else "missing"
-    report: Dict[str, Any] = {
+    report: dict[str, Any] = {
         "prefix": prefix,
         "mode": mode,
         "missing_files": full_missing if mode == "full" else light_missing,
@@ -110,8 +110,8 @@ def _audit_prefix(output_dir: Path, prefix: str) -> Dict[str, Any]:
     return report
 
 
-def _source_score_rows(mapping: Dict[str, Any], limit: int = 10, reverse: bool = True) -> List[Dict[str, Any]]:
-    rows: List[Dict[str, Any]] = []
+def _source_score_rows(mapping: dict[str, Any], limit: int = 10, reverse: bool = True) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     if not isinstance(mapping, dict):
         return rows
     for name, data in mapping.items():
@@ -124,8 +124,8 @@ def _source_score_rows(mapping: Dict[str, Any], limit: int = 10, reverse: bool =
     return rows[:limit]
 
 
-def _pass_rate_rows(mapping: Dict[str, Any], limit: int = 10, reverse: bool = True) -> List[Dict[str, Any]]:
-    rows: List[Dict[str, Any]] = []
+def _pass_rate_rows(mapping: dict[str, Any], limit: int = 10, reverse: bool = True) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     if not isinstance(mapping, dict):
         return rows
     for name, counts in mapping.items():
@@ -147,7 +147,7 @@ def _pass_rate_rows(mapping: Dict[str, Any], limit: int = 10, reverse: bool = Tr
     return rows[:limit]
 
 
-def build_health_report(output_dir: str = "output", verified_prefix: str = "verified") -> Dict[str, Any]:
+def build_health_report(output_dir: str = "output", verified_prefix: str = "verified") -> dict[str, Any]:
     out = Path(output_dir)
     prefixes = [verified_prefix, "all"]
     prefix_reports = {prefix: _audit_prefix(out, prefix) for prefix in prefixes}

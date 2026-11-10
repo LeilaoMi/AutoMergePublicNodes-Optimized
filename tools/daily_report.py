@@ -8,8 +8,9 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any
 
 
 def _load_json(path: Path, default: Any) -> Any:
@@ -27,7 +28,7 @@ def _count_urls(path: Path) -> int:
         return 0
 
 
-def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> List[str]:
+def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> list[str]:
     headers = [str(h) for h in headers]
     lines = ["| " + " | ".join(headers) + " |", "| " + " | ".join("---" for _ in headers) + " |"]
     for row in rows:
@@ -35,14 +36,14 @@ def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> List[str
     return lines
 
 
-def _top_counter_rows(mapping: Dict[str, Any], limit: int = 10) -> List[List[Any]]:
+def _top_counter_rows(mapping: dict[str, Any], limit: int = 10) -> list[list[Any]]:
     rows = []
     for key, value in sorted(mapping.items(), key=lambda kv: kv[1] if isinstance(kv[1], (int, float)) else 0, reverse=True)[:limit]:
         rows.append([key, value])
     return rows
 
 
-def _protocol_rows(stats: Dict[str, Any]) -> List[List[Any]]:
+def _protocol_rows(stats: dict[str, Any]) -> list[list[Any]]:
     rows = []
     pass_rate = stats.get("protocol_pass_rate", {})
     if isinstance(pass_rate, dict) and pass_rate:
@@ -62,7 +63,7 @@ def _protocol_rows(stats: Dict[str, Any]) -> List[List[Any]]:
     return []
 
 
-def _source_rows(source_audit: Dict[str, Any], limit: int = 10) -> List[List[Any]]:
+def _source_rows(source_audit: dict[str, Any], limit: int = 10) -> list[list[Any]]:
     sources = source_audit.get("sources", []) if isinstance(source_audit, dict) else []
     if not isinstance(sources, list):
         return []
@@ -89,7 +90,7 @@ def build_daily_report(output_dir: str = "output") -> str:
     global_count = stats.get("nodes_global_output") or _count_urls(out / "global.urls")
     all_count = stats.get("nodes_all_output") or _count_urls(out / "all.urls")
 
-    lines: List[str] = [
+    lines: list[str] = [
         "# AutoNodes 每日报告",
         "",
         f"生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')}",

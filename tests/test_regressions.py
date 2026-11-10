@@ -1,37 +1,58 @@
 import asyncio
 import base64
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-import os
-import subprocess
-import yaml
 from unittest.mock import patch
+
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import main as m
 from core.fetcher import Source, fetch_all
-from core.generator import node_to_clash, node_to_url, write_outputs, write_chunked_outputs, write_protocol_outputs
+from core.filtering import quality_prefilter
+from core.generator import node_to_clash, node_to_url, write_chunked_outputs, write_outputs, write_protocol_outputs
 from core.geo import _is_public_ip, geo_flag_map
 from core.parser import Node, parse_content
-from core.filtering import filter_rule_reasons, load_filter_rules, quality_prefilter
-from core.sampling import sample_for_real_test, sample_for_real_test_weighted
-from tools.audit_sources import load_previous_audit
-from tools.health_report import build_health_report
-from tools.daily_report import build_daily_report
-from tools.source_scores_report import build_source_scores_report
-from tools.scoring_profiles_report import build_scoring_profiles_report
-from tools.actions_summary import build_summary
-from tools.suggest_source_cleanup import apply_disable_suggestions, build_cleanup_payload, build_cleanup_report, build_cleanup_suggestions, build_disable_patch_preview, filter_names
-from tools.validate_config import validate_filter_rules, validate_scoring_rules, validate_scoring_warnings, validate_sources
-from tools.doctor import build_doctor_report
-from core.stats import build_source_scores, build_trend_alerts, load_historical_pass_rates, update_trend_history, update_node_stability, load_node_stability, get_stable_nodes
 from core.report import write_health_report
+from core.sampling import sample_for_real_test, sample_for_real_test_weighted
 from core.scoring import ScoreInput, calculate_score, calculate_score_breakdown, load_scoring_config
+from core.stats import (
+    build_source_scores,
+    build_trend_alerts,
+    get_stable_nodes,
+    load_historical_pass_rates,
+    load_node_stability,
+    update_node_stability,
+    update_trend_history,
+)
 from core.tester import SingBoxTester, build_error_detail
-import main as m
+from tools.actions_summary import build_summary
+from tools.audit_sources import load_previous_audit
+from tools.daily_report import build_daily_report
+from tools.doctor import build_doctor_report
+from tools.health_report import build_health_report
+from tools.scoring_profiles_report import build_scoring_profiles_report
+from tools.source_scores_report import build_source_scores_report
+from tools.suggest_source_cleanup import (
+    apply_disable_suggestions,
+    build_cleanup_payload,
+    build_cleanup_report,
+    build_cleanup_suggestions,
+    build_disable_patch_preview,
+    filter_names,
+)
+from tools.validate_config import (
+    validate_filter_rules,
+    validate_scoring_rules,
+    validate_scoring_warnings,
+    validate_sources,
+)
 
 
 class RegressionTests(unittest.TestCase):
@@ -150,8 +171,8 @@ class RegressionTests(unittest.TestCase):
         """§1.6 紧急修复 — sing-box 1.11+ 移除了 inbound 上的 sniff 字段
         build_singbox_config 输出必须不含 inbound.sniff, 否则 sing-box 1.13+ 启动失败
         """
-        from core.tester import build_singbox_config
         from core.parser import Node
+        from core.tester import build_singbox_config
         n = Node("vless", "t", "1.2.3.4", 443, {"uuid": "u"})
         cfg = build_singbox_config(n, 11080)
         inb = cfg["inbounds"][0]
@@ -160,8 +181,11 @@ class RegressionTests(unittest.TestCase):
 
     def test_health_report_exits_2_when_verified_empty(self):
         """§1.5 — verified 0 节点时 health_report.main exit 2, 触发 CI ::error"""
-        import subprocess, sys, tempfile, json
+        import json
+        import sys
+        import tempfile
         from pathlib import Path
+
         from core.generator import write_outputs
         from core.parser import Node
         with tempfile.TemporaryDirectory() as d:
@@ -576,7 +600,6 @@ class RegressionTests(unittest.TestCase):
         self.assertAlmostEqual(source_rates["good"], 10 / 12)
 
     def test_weighted_sample_prefers_historical_success_after_exploration_quota(self):
-        import main as m
         good = Node("trojan", "good", "1.1.1.1", 443, {"password": "p"})
         bad_fast = Node("vmess", "bad-fast", "1.1.1.2", 443, {"uuid": "u"})
         bad_slow = Node("vmess", "bad-slow", "1.1.1.3", 443, {"uuid": "u2"})
@@ -1149,6 +1172,7 @@ weights:
         if not os.path.exists(sb_path):
             self.skipTest("sing-box 二进制不存在，跳过集成测试")
         import asyncio
+
         from core.parser import Node
 
         # 必失败的节点：连向不存在的地址
@@ -1166,6 +1190,7 @@ weights:
 class ChinaCheckAndSamplingTests(unittest.TestCase):
     def test_globalping_cache_reuses_fresh_results_and_skips_quota(self):
         import time as _time
+
         from core import globalping as g
         node_a = Node("vless", "a", "1.1.1.1", 443, {})
         node_b = Node("vless", "b", "2.2.2.2", 443, {})

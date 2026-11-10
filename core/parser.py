@@ -9,11 +9,11 @@ import base64
 import json
 import logging
 import re
-import yaml
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
+import yaml
 
 # ============================================================
 # 工具函数
@@ -54,7 +54,7 @@ class Node:
     tag: str                   # 节点名称
     server: str                # 服务器地址
     server_port: int           # 端口
-    raw: Dict[str, Any] = field(default_factory=dict)  # sing-box 完整 outbound
+    raw: dict[str, Any] = field(default_factory=dict)  # sing-box 完整 outbound
 
     def fingerprint(self) -> str:
         """节点指纹（用于去重）"""
@@ -77,7 +77,7 @@ class Node:
             return f"{u}:{p}" if (u or p) else ""
         return ""
 
-    def to_singbox(self) -> Dict[str, Any]:
+    def to_singbox(self) -> dict[str, Any]:
         out = dict(self.raw)
         out["type"] = self.type
         out["tag"] = self.tag
@@ -100,7 +100,7 @@ def _name(parsed) -> str:
     return ""
 
 
-def parse_vmess(url: str) -> Optional[Node]:
+def parse_vmess(url: str) -> Node | None:
     """vmess://base64({...})"""
     body = url[len("vmess://"):]
     decoded = b64decode(body)
@@ -142,13 +142,13 @@ def parse_vmess(url: str) -> Optional[Node]:
     return Node("vmess", v.get("ps") or f"vmess-{server}", server, port, raw)
 
 
-def parse_vless(url: str) -> Optional[Node]:
+def parse_vless(url: str) -> Node | None:
     """vless://uuid@host:port?params#name"""
     p = urlparse(url)
     if not p.hostname or not p.port:
         return None
     q = parse_qs(p.query)
-    raw: Dict[str, Any] = {"uuid": unquote(p.username or "")}
+    raw: dict[str, Any] = {"uuid": unquote(p.username or "")}
 
     sec = (q.get("security", [""])[0]).lower()
     sni = q.get("sni", [""])[0] or q.get("peer", [""])[0] or p.hostname
@@ -157,7 +157,7 @@ def parse_vless(url: str) -> Optional[Node]:
         raw["flow"] = flow
 
     if sec in ("tls", "reality", "xtls"):
-        tls: Dict[str, Any] = {"enabled": True, "server_name": sni, "insecure": True}
+        tls: dict[str, Any] = {"enabled": True, "server_name": sni, "insecure": True}
         if sec == "reality":
             tls["reality"] = {
                 "enabled": True,
@@ -184,14 +184,14 @@ def parse_vless(url: str) -> Optional[Node]:
     return Node("vless", _name(p) or f"vless-{p.hostname}", p.hostname, p.port, raw)
 
 
-def parse_trojan(url: str) -> Optional[Node]:
+def parse_trojan(url: str) -> Node | None:
     """trojan://password@host:port?params#name"""
     p = urlparse(url)
     if not p.hostname or not p.port:
         return None
     q = parse_qs(p.query)
     sni = q.get("sni", [""])[0] or q.get("peer", [""])[0] or p.hostname
-    raw: Dict[str, Any] = {
+    raw: dict[str, Any] = {
         "password": unquote(p.username or ""),
         "tls": {"enabled": True, "server_name": sni, "insecure": True},
     }
@@ -207,7 +207,7 @@ def parse_trojan(url: str) -> Optional[Node]:
     return Node("trojan", _name(p) or f"trojan-{p.hostname}", p.hostname, p.port, raw)
 
 
-def parse_ss(url: str) -> Optional[Node]:
+def parse_ss(url: str) -> Node | None:
     """ss://base64(method:password)@host:port#name 或 ss://base64(method:password@host:port)#name"""
     body = url[len("ss://"):]
     name = ""
@@ -250,7 +250,7 @@ def parse_ss(url: str) -> Optional[Node]:
         host, port = hostport.rsplit(":", 1)
         port = int(port)
 
-    raw: Dict[str, Any] = {"method": method, "password": password}
+    raw: dict[str, Any] = {"method": method, "password": password}
     if plugin:
         raw["plugin"] = plugin.split(";", 1)[0]
         if ";" in plugin:
@@ -258,7 +258,7 @@ def parse_ss(url: str) -> Optional[Node]:
     return Node("shadowsocks", name or f"ss-{host}", host, port, raw)
 
 
-def parse_ssr(url: str) -> Optional[Node]:
+def parse_ssr(url: str) -> Node | None:
     """ssr://base64(host:port:protocol:method:obfs:base64(password)/?params)"""
     body = url[len("ssr://"):]
     decoded = b64decode(body)
@@ -286,13 +286,13 @@ def parse_ssr(url: str) -> Optional[Node]:
     return Node("shadowsocksr", name or f"ssr-{host}", host, int(port), raw)
 
 
-def parse_hysteria2(url: str) -> Optional[Node]:
+def parse_hysteria2(url: str) -> Node | None:
     """hysteria2://auth@host:port?params#name"""
     p = urlparse(url)
     if not p.hostname or not p.port:
         return None
     q = parse_qs(p.query)
-    raw: Dict[str, Any] = {
+    raw: dict[str, Any] = {
         "password": unquote(p.username or "") or q.get("auth", [""])[0],
         "tls": {
             "enabled": True,
@@ -305,13 +305,13 @@ def parse_hysteria2(url: str) -> Optional[Node]:
     return Node("hysteria2", _name(p) or f"hy2-{p.hostname}", p.hostname, p.port, raw)
 
 
-def parse_hysteria(url: str) -> Optional[Node]:
+def parse_hysteria(url: str) -> Node | None:
     """hysteria://host:port?params#name"""
     p = urlparse(url)
     if not p.hostname or not p.port:
         return None
     q = parse_qs(p.query)
-    raw: Dict[str, Any] = {
+    raw: dict[str, Any] = {
         "auth_str": q.get("auth", [""])[0] or unquote(p.username or ""),
         "up_mbps": int(q.get("upmbps", ["10"])[0]),
         "down_mbps": int(q.get("downmbps", ["50"])[0]),
@@ -322,7 +322,7 @@ def parse_hysteria(url: str) -> Optional[Node]:
     return Node("hysteria", _name(p) or f"hy-{p.hostname}", p.hostname, p.port, raw)
 
 
-def parse_tuic(url: str) -> Optional[Node]:
+def parse_tuic(url: str) -> Node | None:
     """tuic://uuid:password@host:port?params#name"""
     p = urlparse(url)
     if not p.hostname or not p.port:
@@ -332,7 +332,7 @@ def parse_tuic(url: str) -> Optional[Node]:
     if not password and ":" in userinfo:
         userinfo, password = userinfo.split(":", 1)
     q = parse_qs(p.query)
-    raw: Dict[str, Any] = {
+    raw: dict[str, Any] = {
         "uuid": userinfo,
         "password": password,
         "congestion_control": q.get("congestion_control", ["bbr"])[0],
@@ -346,13 +346,13 @@ def parse_tuic(url: str) -> Optional[Node]:
     return Node("tuic", _name(p) or f"tuic-{p.hostname}", p.hostname, p.port, raw)
 
 
-def parse_anytls(url: str) -> Optional[Node]:
+def parse_anytls(url: str) -> Node | None:
     """anytls://password@host:port?sni=...#name"""
     p = urlparse(url)
     if not p.hostname or not p.port:
         return None
     q = parse_qs(p.query)
-    raw: Dict[str, Any] = {
+    raw: dict[str, Any] = {
         "password": unquote(p.username or ""),
         "tls": {
             "enabled": True,
@@ -363,24 +363,24 @@ def parse_anytls(url: str) -> Optional[Node]:
     return Node("anytls", _name(p) or f"anytls-{p.hostname}", p.hostname, p.port, raw)
 
 
-def parse_socks(url: str) -> Optional[Node]:
+def parse_socks(url: str) -> Node | None:
     """socks5://[user:pass@]host:port#name 或 socks://"""
     p = urlparse(url)
     if not p.hostname or not p.port:
         return None
-    raw: Dict[str, Any] = {"version": "5"}
+    raw: dict[str, Any] = {"version": "5"}
     if p.username:
         raw["username"] = unquote(p.username)
         raw["password"] = unquote(p.password or "")
     return Node("socks", _name(p) or f"socks-{p.hostname}", p.hostname, p.port, raw)
 
 
-def parse_http(url: str) -> Optional[Node]:
+def parse_http(url: str) -> Node | None:
     """http://user:pass@host:port#name 或 https://"""
     p = urlparse(url)
     if not p.hostname or not p.port:
         return None
-    raw: Dict[str, Any] = {}
+    raw: dict[str, Any] = {}
     if p.username:
         raw["username"] = unquote(p.username)
         raw["password"] = unquote(p.password or "")
@@ -393,7 +393,7 @@ def parse_http(url: str) -> Optional[Node]:
 # Clash YAML 节点 → Node
 # ============================================================
 
-def parse_clash_proxy(p: Dict[str, Any]) -> Optional[Node]:
+def parse_clash_proxy(p: dict[str, Any]) -> Node | None:
     """从 Clash YAML proxy dict 创建 Node"""
     ptype = p.get("type", "").lower()
     server = p.get("server", "")
@@ -536,7 +536,7 @@ def parse_clash_proxy(p: Dict[str, Any]) -> Optional[Node]:
         return Node("socks", name, server, port, raw)
 
     if ptype in ("http", "https"):
-        raw: Dict[str, Any] = {}
+        raw: dict[str, Any] = {}
         if p.get("username"):
             raw["username"] = p["username"]
             raw["password"] = p.get("password", "")
@@ -570,7 +570,7 @@ URL_PARSERS = {
 }
 
 
-def parse_url(url: str, errors: List[str] | None = None) -> Optional[Node]:
+def parse_url(url: str, errors: list[str] | None = None) -> Node | None:
     """解析单个节点 URL"""
     url = url.strip()
     if "://" not in url:
@@ -592,7 +592,7 @@ def parse_url(url: str, errors: List[str] | None = None) -> Optional[Node]:
 MAX_PARSE_BYTES = 10 * 1024 * 1024
 
 
-def parse_content(text: str) -> List[Node]:
+def parse_content(text: str) -> list[Node]:
     """从订阅内容中提取所有节点（自动识别格式）"""
     text = text.strip()
     if not text:
@@ -603,7 +603,7 @@ def parse_content(text: str) -> List[Node]:
         logger.warning("parse_content: input too large (%d bytes), truncate to %d", len(text), MAX_PARSE_BYTES)
         text = text[:MAX_PARSE_BYTES]
 
-    nodes: List[Node] = []
+    nodes: list[Node] = []
 
     # 1) YAML (Clash)
     if "proxies:" in text[:2000] or text.startswith("proxies:"):
@@ -630,7 +630,7 @@ def parse_content(text: str) -> List[Node]:
 
     # 3) 纯文本：逐行匹配 URL
     url_re = re.compile(r"(?<![A-Za-z0-9+.-])(vmess|vless|trojan|ssr|ss|hysteria2|hy2|hysteria|hy|tuic|anytls|socks5|socks|https?)://[^\s<>'\"]+")
-    parse_errors: List[str] = []
+    parse_errors: list[str] = []
     for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):

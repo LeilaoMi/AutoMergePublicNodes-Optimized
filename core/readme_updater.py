@@ -6,13 +6,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 START_MARKER = "<!-- AUTONODES_STATS_START -->"
 END_MARKER = "<!-- AUTONODES_STATS_END -->"
 
 
-def _table(headers: List[str], rows: List[List[object]]) -> str:
+def _table(headers: list[str], rows: list[list[object]]) -> str:
     lines = [
         "| " + " | ".join(headers) + " |",
         "| " + " | ".join(["---"] * len(headers)) + " |",
@@ -42,12 +42,12 @@ def _beijing_time(ts: object) -> str:
     return dt.strftime("%Y-%m-%d %H:%M") + "（北京时间）"
 
 
-def _top_sources(stats: Dict[str, Any], limit: int = 5) -> List[List[object]]:
+def _top_sources(stats: dict[str, Any], limit: int = 5) -> list[list[object]]:
     source_scores = stats.get("source_scores") or {}
     if not isinstance(source_scores, dict):
         return []
 
-    rows: List[List[object]] = []
+    rows: list[list[object]] = []
     for name, data in sorted(
         source_scores.items(),
         key=lambda x: -float(x[1].get("score", 0)) if isinstance(x[1], dict) else 0,
@@ -63,7 +63,7 @@ def _top_sources(stats: Dict[str, Any], limit: int = 5) -> List[List[object]]:
     return rows
 
 
-def build_readme_stats_block(stats: Dict[str, Any]) -> str:
+def build_readme_stats_block(stats: dict[str, Any]) -> str:
     overview_rows = [
         ["更新时间", _beijing_time(stats.get("timestamp"))],
         ["订阅源（可用/总数）", f"{stats.get('sources_healthy', 0)}/{stats.get('sources_total', 0)}"],
@@ -117,7 +117,7 @@ def build_readme_stats_block(stats: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def update_readme_stats(readme_path: str, stats: Dict[str, Any]) -> bool:
+def update_readme_stats(readme_path: str, stats: dict[str, Any]) -> bool:
     path = Path(readme_path)
     if not path.exists():
         return False

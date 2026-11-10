@@ -5,11 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any
 
 
-def _load_json(path: Path) -> Dict[str, Any]:
+def _load_json(path: Path) -> dict[str, Any]:
     try:
         with path.open(encoding="utf-8") as f:
             data = json.load(f)
@@ -18,7 +19,7 @@ def _load_json(path: Path) -> Dict[str, Any]:
         return {}
 
 
-def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> List[str]:
+def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> list[str]:
     headers = [str(h) for h in headers]
     lines = ["| " + " | ".join(headers) + " |", "| " + " | ".join("---" for _ in headers) + " |"]
     for row in rows:
@@ -26,8 +27,8 @@ def _md_table(headers: Iterable[str], rows: Iterable[Iterable[Any]]) -> List[str
     return lines
 
 
-def _score_rows(source_scores: Dict[str, Any], recommendation: str | None = None, reverse: bool = True, limit: int = 50) -> List[Dict[str, Any]]:
-    rows: List[Dict[str, Any]] = []
+def _score_rows(source_scores: dict[str, Any], recommendation: str | None = None, reverse: bool = True, limit: int = 50) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     for name, data in source_scores.items():
         if not isinstance(data, dict):
             continue
@@ -40,7 +41,7 @@ def _score_rows(source_scores: Dict[str, Any], recommendation: str | None = None
     return rows[:limit]
 
 
-def _format_rows(rows: List[Dict[str, Any]]) -> List[List[Any]]:
+def _format_rows(rows: list[dict[str, Any]]) -> list[list[Any]]:
     return [[
         r.get("name", "-"),
         r.get("score", "-"),
@@ -62,13 +63,13 @@ def build_source_scores_report(output_dir: str = "output") -> str:
         source_scores = {}
 
     total = len(source_scores)
-    rec_counts: Dict[str, int] = {}
+    rec_counts: dict[str, int] = {}
     for data in source_scores.values():
         if isinstance(data, dict):
             rec = str(data.get("recommendation", "unknown"))
             rec_counts[rec] = rec_counts.get(rec, 0) + 1
 
-    lines: List[str] = [
+    lines: list[str] = [
         "# 订阅源质量评分",
         "",
         f"生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')}",

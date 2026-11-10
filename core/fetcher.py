@@ -13,7 +13,6 @@ import datetime
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import List, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ class Source:
     name: str = ""                # 来源名称
     kind: str = "url"             # url | dynamic | list
     enabled: bool = True
-    ignore_protocols: Set[str] = field(default_factory=set)
+    ignore_protocols: set[str] = field(default_factory=set)
     max_nodes: int = 0            # 0 表示不限
 
     @property
@@ -45,7 +44,7 @@ class Source:
 class FetchResult:
     source: Source
     success: bool = False
-    nodes: List[Node] = field(default_factory=list)
+    nodes: list[Node] = field(default_factory=list)
     error: str = ""
     duration: float = 0.0
     bytes_received: int = 0
@@ -66,7 +65,7 @@ def to_jsdelivr(url: str) -> str:
     return f"https://cdn.jsdelivr.net/gh/{user}/{repo}@{branch}/{path}"
 
 
-async def _fetch_one(session: aiohttp.ClientSession, url: str, timeout: int = 15, retries: int = 2) -> Tuple[bool, str, int]:
+async def _fetch_one(session: aiohttp.ClientSession, url: str, timeout: int = 15, retries: int = 2) -> tuple[bool, str, int]:
     """抓取单个 URL，返回 (成功, 内容/错误, 字节数)，带重试"""
     last_err = ""
     for attempt in range(retries + 1):
@@ -88,7 +87,7 @@ async def _fetch_one(session: aiohttp.ClientSession, url: str, timeout: int = 15
                 except Exception:
                     text = ""
                 return True, text, len(data)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             last_err = "timeout"
             if attempt < retries:
                 await asyncio.sleep(0.5 * (attempt + 1))
@@ -141,7 +140,7 @@ async def fetch_source(session: aiohttp.ClientSession, src: Source, timeout: int
         # 递归抓取（限制深度为 1），并发限制避免 list 源被慢 URL 串行拖垮。
         list_sem = asyncio.Semaphore(10)
 
-        async def _fetch_sub(sub_url: str) -> List[Node]:
+        async def _fetch_sub(sub_url: str) -> list[Node]:
             async with list_sem:
                 ok, content, _ = await _fetch_one(session, sub_url, timeout)
                 return parse_content(content) if ok else []
@@ -165,8 +164,8 @@ async def fetch_source(session: aiohttp.ClientSession, src: Source, timeout: int
     return result
 
 
-async def fetch_all(sources: List[Source], concurrency: int = 30, timeout: int = 15,
-                  overall_timeout: int = 120) -> List[FetchResult]:
+async def fetch_all(sources: list[Source], concurrency: int = 30, timeout: int = 15,
+                  overall_timeout: int = 120) -> list[FetchResult]:
     """并发抓取所有订阅源
 
     §3.3 — 加 overall_timeout 防止单源 hang 住整批, 默认 120s 总上限
@@ -186,7 +185,7 @@ async def fetch_all(sources: List[Source], concurrency: int = 30, timeout: int =
         tasks = [asyncio.create_task(_wrapped(session, s)) for s in sources if s.enabled]
         try:
             return await asyncio.wait_for(asyncio.gather(*tasks), timeout=overall_timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning("fetch_all overall timeout (%ss), returning partial results", overall_timeout)
             done_results = []
             for t in tasks:
@@ -199,12 +198,12 @@ async def fetch_all(sources: List[Source], concurrency: int = 30, timeout: int =
             return done_results
 
 
-def load_sources(path: str) -> List[Source]:
+def load_sources(path: str) -> list[Source]:
     """从 YAML 配置加载订阅源"""
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
-    sources: List[Source] = []
+    sources: list[Source] = []
     for entry in data.get("sources", []):
         if isinstance(entry, str):
             sources.append(Source(url=entry))

@@ -7,14 +7,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 
 
 @dataclass(frozen=True)
 class ScoringConfig:
-    weights: Dict[str, float] = field(default_factory=lambda: {
+    weights: dict[str, float] = field(default_factory=lambda: {
         "latency": 25.0,
         "jitter": 15.0,
         "tcp": 10.0,
@@ -42,8 +42,8 @@ class ScoreInput:
     tcp_latency_ms: float
     protocol: str
     source: str
-    protocol_rates: Dict[str, float]
-    source_rates: Dict[str, float]
+    protocol_rates: dict[str, float]
+    source_rates: dict[str, float]
     speed_kbps: float = 0.0
     fingerprint_resistance: float = 0.0
 
@@ -147,7 +147,7 @@ def speed_score(speed_kbps: float, cfg: ScoringConfig | None = None) -> float:
     return clamp((speed_kbps - cfg.bad_speed_kbps) / span)
 
 
-def historical_rate_score(name: str, rates: Dict[str, float], default: float = 0.5) -> float:
+def historical_rate_score(name: str, rates: dict[str, float], default: float = 0.5) -> float:
     if not name:
         return default
     try:
@@ -156,7 +156,7 @@ def historical_rate_score(name: str, rates: Dict[str, float], default: float = 0
         return default
 
 
-def calculate_score_breakdown(data: ScoreInput, config: ScoringConfig | None = None) -> Dict[str, Dict[str, float]]:
+def calculate_score_breakdown(data: ScoreInput, config: ScoringConfig | None = None) -> dict[str, dict[str, float]]:
     """Return normalized factor scores and weighted contributions.
 
     Each item contains:
@@ -174,7 +174,7 @@ def calculate_score_breakdown(data: ScoreInput, config: ScoringConfig | None = N
         "protocol_history": historical_rate_score(data.protocol, data.protocol_rates, cfg.missing_history_score),
         "source_history": historical_rate_score(data.source, data.source_rates, cfg.missing_history_score),
     }
-    breakdown: Dict[str, Dict[str, float]] = {}
+    breakdown: dict[str, dict[str, float]] = {}
     for key, factor_score in factors.items():
         weight = cfg.weights.get(key, 0.0)
         breakdown[key] = {

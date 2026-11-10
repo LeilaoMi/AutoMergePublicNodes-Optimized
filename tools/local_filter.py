@@ -16,13 +16,12 @@ import asyncio
 import base64
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core.generator import write_outputs
 from core.parser import Node, parse_content
-from main import dedupe, quality_prefilter, load_filter_rules, tcp_check_batch
+from main import dedupe, load_filter_rules, quality_prefilter, tcp_check_batch
 
 
 def read_subscription(path: str) -> str:
@@ -59,7 +58,7 @@ async def run(args: argparse.Namespace) -> int:
 
     if args.tcp_check:
         print(f"[4/4] 本地 TCP 预筛选（并发 {args.concurrency}, 超时 {args.tcp_timeout}s）...")
-        tcp_results: List[Tuple[Node, float]] = await tcp_check_batch(nodes, args.concurrency, args.tcp_timeout)
+        tcp_results: list[tuple[Node, float]] = await tcp_check_batch(nodes, args.concurrency, args.tcp_timeout)
         tcp_results.sort(key=lambda item: item[1])
         selected = [n for n, _ in tcp_results[: args.top_n if args.top_n > 0 else None]]
         print(f"      TCP 可达: {len(tcp_results)}；输出: {len(selected)}")

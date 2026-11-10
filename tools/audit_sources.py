@@ -13,7 +13,6 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Dict
 
 # 让脚本能从仓库根运行
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -27,10 +26,10 @@ def is_dynamic(url: str) -> bool:
     return "%" in url
 
 
-def load_previous_audit(path: str) -> Dict[str, int]:
+def load_previous_audit(path: str) -> dict[str, int]:
     """加载上次审计结果，返回 {name: consecutive_dead}。兼容旧 list 格式和新 payload 格式。"""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             prev = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
@@ -75,7 +74,7 @@ async def audit(sources_path: str, output: str, concurrency: int = 30, disable_d
     # 加载上次审计历史
     prev_dead = load_previous_audit(output)
 
-    print(f"\n开始抓取...")
+    print("\n开始抓取...")
     start = time.time()
     results = await fetch_all(sources, concurrency=concurrency, timeout=15)
     elapsed = time.time() - start
