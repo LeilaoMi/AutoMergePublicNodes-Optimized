@@ -14,30 +14,31 @@ jobs:
       contents: read
       pull-requests: read
       security-events: write
-    uses: LeilaoMi/security-workflows/.github/workflows/gitleaks.yml@18b9729a36d131573f71b3737ae20db8e1c4f097 # v3
+    uses: LeilaoMi/security-workflows/.github/workflows/gitleaks.yml@6e73d69a8a3aa4ff715388f5f8c53add8f1c57b8 # v4
   semgrep:
     permissions:
       contents: read
       security-events: write
-    uses: LeilaoMi/security-workflows/.github/workflows/semgrep.yml@18b9729a36d131573f71b3737ae20db8e1c4f097 # v3
+    uses: LeilaoMi/security-workflows/.github/workflows/semgrep.yml@6e73d69a8a3aa4ff715388f5f8c53add8f1c57b8 # v4
   trivy:
     permissions:
       contents: read
       security-events: write
-    uses: LeilaoMi/security-workflows/.github/workflows/trivy.yml@18b9729a36d131573f71b3737ae20db8e1c4f097 # v3
+    uses: LeilaoMi/security-workflows/.github/workflows/trivy.yml@6e73d69a8a3aa4ff715388f5f8c53add8f1c57b8 # v4
   zizmor:
     permissions:
       contents: read
       security-events: write
       actions: read
-    uses: LeilaoMi/security-workflows/.github/workflows/zizmor.yml@18b9729a36d131573f71b3737ae20db8e1c4f097 # v3
+    uses: LeilaoMi/security-workflows/.github/workflows/zizmor.yml@6e73d69a8a3aa4ff715388f5f8c53add8f1c57b8 # v4
   dependency-review:
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
       pull-requests: write
-    uses: LeilaoMi/security-workflows/.github/workflows/dependency-review.yml@18b9729a36d131573f71b3737ae20db8e1c4f097 # v3
+    uses: LeilaoMi/security-workflows/.github/workflows/dependency-review.yml@6e73d69a8a3aa4ff715388f5f8c53add8f1c57b8 # v4
   lint:
-    uses: LeilaoMi/security-workflows/.github/workflows/lint.yml@18b9729a36d131573f71b3737ae20db8e1c4f097 # v3
+    uses: LeilaoMi/security-workflows/.github/workflows/lint.yml@6e73d69a8a3aa4ff715388f5f8c53add8f1c57b8 # v4
     with:
       ruff: true
+      basedpyright: true
