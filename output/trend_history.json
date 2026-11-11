@@ -1,37 +1,7 @@
 {
-  "updated_at": "2026-11-10 19:56:36",
+  "updated_at": "2026-11-11 06:49:33",
   "keep": 30,
   "runs": [
-    {
-      "timestamp": "2026-10-31 21:48:49",
-      "duration_sec": 304.5,
-      "nodes_raw": 80795,
-      "nodes_dedup": 26337,
-      "nodes_tcp_ok": 3000,
-      "nodes_real_ok": 509,
-      "nodes_verified_output": 99,
-      "nodes_global_output": 300,
-      "nodes_global_extra_from_cn_block": 6,
-      "real_test_errors": {
-        "204": 16,
-        "cn-block": 12,
-        "test_one_timeout": 41,
-        "geo": 40,
-        "speed": 4
-      },
-      "output_guard": {
-        "verified": {
-          "preserved": false,
-          "previous_count": 146,
-          "proposed_count": 99
-        },
-        "global": {
-          "preserved": false,
-          "previous_count": 300,
-          "proposed_count": 300
-        }
-      }
-    },
     {
       "timestamp": "2026-11-01 06:29:05",
       "duration_sec": 305.1,
@@ -905,7 +875,48 @@
           "proposed_count": 300
         }
       }
+    },
+    {
+      "timestamp": "2026-11-11 06:49:33",
+      "duration_sec": 293.8,
+      "nodes_raw": 82378,
+      "nodes_dedup": 26936,
+      "nodes_tcp_ok": 3000,
+      "nodes_real_ok": 464,
+      "nodes_verified_output": 92,
+      "nodes_global_output": 300,
+      "nodes_global_extra_from_cn_block": 5,
+      "real_test_errors": {
+        "204": 15,
+        "cn-block": 12,
+        "test_one_timeout": 69,
+        "speed": 14,
+        "geo": 2
+      },
+      "output_guard": {
+        "verified": {
+          "preserved": false,
+          "previous_count": 93,
+          "proposed_count": 92
+        },
+        "global": {
+          "preserved": false,
+          "previous_count": 300,
+          "proposed_count": 300
+        }
+      }
     }
   ],
-  "alerts": []
+  "alerts": [
+    {
+      "type": "verified_downtrend_4_runs",
+      "message": "verified output decreased for 4 consecutive runs",
+      "values": [
+        134,
+        108,
+        93,
+        92
+      ]
+    }
+  ]
 }
