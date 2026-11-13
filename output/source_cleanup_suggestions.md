@@ -1,6 +1,6 @@
 # 订阅源清理建议
 
-生成时间：2026-11-13 18:20:12
+生成时间：2026-11-13 18:26:23
 
 本报告默认只读。修改 `config/sources.yaml` 前请人工复核。
 
@@ -45,10 +45,10 @@
 
 | 订阅源 | 评分 | 已测 | 通过率 | 解析数 | 连续死亡 | 原因 | URL |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.989 | 56 | 0.982 | 590 | 0 | 源评分较高 | https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt |
-| Surfboard-tg-mixed | 0.88 | 128 | 0.805 | 8804 | 0 | 源评分较高 | https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/mixed |
-| Au1rxx-base64 | 0.814 | 170 | 0.747 | 1751 | 0 | 源评分较高 | https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt |
-| mheidari-all | 0.71 | 98 | 0.633 | 14267 | 0 | 源评分较高 | https://raw.githubusercontent.com/mheidari98/.proxy/main/all |
+| ermaozi | 0.971 | 55 | 0.964 | 590 | 0 | 源评分较高 | https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt |
+| Surfboard-tg-mixed | 0.845 | 147 | 0.769 | 8804 | 0 | 源评分较高 | https://raw.githubusercontent.com/Surfboardv2ray/TGParse/main/splitted/mixed |
+| Au1rxx-base64 | 0.807 | 173 | 0.74 | 1751 | 0 | 源评分较高 | https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt |
+| mheidari-all | 0.722 | 104 | 0.644 | 14267 | 0 | 源评分较高 | https://raw.githubusercontent.com/mheidari98/.proxy/main/all |
 
 ## 继续观察
 
@@ -91,7 +91,7 @@
 | tg-GrizzlyVPN | 0.175 | 0 | None | 1 | 0 | 证据不足或评分中性 | https://t.me/s/GrizzlyVPN |
 | tg-Hope_Net | 0.179 | 0 | None | 93 | 0 | 证据不足或评分中性 | https://t.me/s/Hope_Net |
 | tg-ISVvpn | 0.176 | 0 | None | 34 | 0 | 证据不足或评分中性 | https://t.me/s/ISVvpn |
-| tg-LonUp_M | 0.134 | 1 | 0.0 | 168 | 0 | 证据不足或评分中性 | https://t.me/s/LonUp_M |
+| tg-LonUp_M | 0.111 | 2 | 0.0 | 169 | 0 | 证据不足或评分中性 | https://t.me/s/LonUp_M |
 | tg-OutlineReleasedKey | 0.177 | 0 | None | 50 | 0 | 证据不足或评分中性 | https://t.me/s/OutlineReleasedKey |
 | tg-Outline_Vpn | 0.182 | 0 | None | 183 | 0 | 证据不足或评分中性 | https://t.me/s/Outline_Vpn |
 | tg-PrivateVPNs | 0.176 | 0 | None | 16 | 0 | 证据不足或评分中性 | https://t.me/s/PrivateVPNs |
@@ -136,5 +136,5 @@
 | ts-sf | 0.183 | 0 | None | 200 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/ts-sf/fly/main/clash |
 | ts-sf-Fly | 0.183 | 0 | None | 201 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/ts-sf/Fly/main/v2 |
 | vxiaov | 0.176 | 0 | None | 28 | 0 | 证据不足或评分中性 | https://cdn.jsdelivr.net/gh/vxiaov/free_proxies@main/clash/clash.provider.yaml |
-| xiaoji235-airport-v2ray-all | 0.287 | 2 | 0.5 | 6752 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/xiaoji235/airport-free/main/v2ray.txt |
+| xiaoji235-airport-v2ray-all | 0.335 | 1 | 1.0 | 6752 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/xiaoji235/airport-free/main/v2ray.txt |
 | zhangkai | 0.177 | 0 | None | 43 | 0 | 证据不足或评分中性 | https://raw.githubusercontent.com/zhangkaiitugithub/passcro/main/speednodes.yaml |

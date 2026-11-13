@@ -1,6 +1,6 @@
 # 订阅源质量评分
 
-生成时间：2026-11-13 18:20:12
+生成时间：2026-11-13 18:26:23
 
 ## 摘要
 
@@ -16,10 +16,10 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.989 | prefer | 56 | 55 | 1 | 0.982 | 590 | 0 |
-| Surfboard-tg-mixed | 0.88 | prefer | 128 | 103 | 25 | 0.805 | 8804 | 0 |
-| Au1rxx-base64 | 0.814 | prefer | 170 | 127 | 43 | 0.747 | 1751 | 0 |
-| mheidari-all | 0.71 | prefer | 98 | 62 | 36 | 0.633 | 14267 | 0 |
+| ermaozi | 0.971 | prefer | 55 | 53 | 2 | 0.964 | 590 | 0 |
+| Surfboard-tg-mixed | 0.845 | prefer | 147 | 113 | 34 | 0.769 | 8804 | 0 |
+| Au1rxx-base64 | 0.807 | prefer | 173 | 128 | 45 | 0.74 | 1751 | 0 |
+| mheidari-all | 0.722 | prefer | 104 | 67 | 37 | 0.644 | 14267 | 0 |
 
 ## 建议降权
 
@@ -33,11 +33,11 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.989 | prefer | 56 | 55 | 1 | 0.982 | 590 | 0 |
-| Surfboard-tg-mixed | 0.88 | prefer | 128 | 103 | 25 | 0.805 | 8804 | 0 |
-| Au1rxx-base64 | 0.814 | prefer | 170 | 127 | 43 | 0.747 | 1751 | 0 |
-| mheidari-all | 0.71 | prefer | 98 | 62 | 36 | 0.633 | 14267 | 0 |
-| xiaoji235-airport-v2ray-all | 0.287 | observe | 2 | 1 | 1 | 0.5 | 6752 | 0 |
+| ermaozi | 0.971 | prefer | 55 | 53 | 2 | 0.964 | 590 | 0 |
+| Surfboard-tg-mixed | 0.845 | prefer | 147 | 113 | 34 | 0.769 | 8804 | 0 |
+| Au1rxx-base64 | 0.807 | prefer | 173 | 128 | 45 | 0.74 | 1751 | 0 |
+| mheidari-all | 0.722 | prefer | 104 | 67 | 37 | 0.644 | 14267 | 0 |
+| xiaoji235-airport-v2ray-all | 0.335 | observe | 1 | 1 | 0 | 1.0 | 6752 | 0 |
 | SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 11395 | 0 |
 | barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 6409 | 0 |
 | Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 6228 | 0 |
@@ -69,7 +69,7 @@
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | tg-VmessProtocol | 0.025 | observe | 0 | 0 | 0 | None | 0 | 1 |
-| tg-LonUp_M | 0.134 | observe | 1 | 0 | 1 | 0.0 | 168 | 0 |
+| tg-LonUp_M | 0.111 | observe | 2 | 0 | 2 | 0.0 | 169 | 0 |
 | ermaozi-get_subscribe | 0.145 | observe | 1 | 0 | 1 | 0.0 | 442 | 0 |
 | Mr8AHAL | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | ninja-tuic | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
