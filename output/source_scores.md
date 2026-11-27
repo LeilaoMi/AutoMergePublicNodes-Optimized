@@ -1,14 +1,14 @@
 # 订阅源质量评分
 
-生成时间：2026-11-27 08:51:41
+生成时间：2026-11-27 21:31:53
 
 ## 摘要
 
 | 指标 | 值 |
 | --- | --- |
 | 已评分订阅源总数 | 88 |
-| 建议优先 | 2 |
-| 继续观察 | 86 |
+| 建议优先 | 4 |
+| 继续观察 | 84 |
 | 建议降权 | 0 |
 | 建议禁用 | 0 |
 
@@ -16,8 +16,10 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.999 | prefer | 53 | 53 | 0 | 1.0 | 422 | 0 |
-| Surfboard-tg-mixed | 0.801 | prefer | 238 | 172 | 66 | 0.723 | 8568 | 0 |
+| ermaozi | 0.979 | prefer | 48 | 47 | 1 | 0.979 | 466 | 0 |
+| Au1rxx-base64 | 0.864 | prefer | 134 | 107 | 27 | 0.799 | 1751 | 0 |
+| Surfboard-tg-mixed | 0.843 | prefer | 222 | 170 | 52 | 0.766 | 8496 | 0 |
+| mheidari-all | 0.733 | prefer | 93 | 61 | 32 | 0.656 | 14418 | 0 |
 
 ## 建议降权
 
@@ -31,21 +33,18 @@
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ermaozi | 0.999 | prefer | 53 | 53 | 0 | 1.0 | 422 | 0 |
-| Surfboard-tg-mixed | 0.801 | prefer | 238 | 172 | 66 | 0.723 | 8568 | 0 |
-| Au1rxx-base64 | 0.689 | observe | 187 | 116 | 71 | 0.62 | 1751 | 0 |
-| mheidari-all | 0.658 | observe | 100 | 58 | 42 | 0.58 | 14315 | 0 |
-| xiaoji235-airport-v2ray-all | 0.391 | observe | 2 | 2 | 0 | 1.0 | 6752 | 0 |
-| tg-LonUp_M | 0.365 | observe | 3 | 3 | 0 | 1.0 | 173 | 0 |
-| tg-oneclickvpnkeys | 0.363 | observe | 3 | 3 | 0 | 1.0 | 116 | 0 |
-| ermaozi-get_subscribe | 0.284 | observe | 3 | 2 | 1 | 0.667 | 391 | 0 |
-| roosterkid-openproxylist-v2ray | 0.261 | observe | 1 | 1 | 0 | 1.0 | 147 | 0 |
-| tg-proxy_mtm | 0.258 | observe | 1 | 1 | 0 | 1.0 | 67 | 0 |
-| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 11572 | 0 |
-| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 5609 | 0 |
-| Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 5426 | 0 |
-| 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | 0 | 0 | None | 4936 | 0 |
-| mahdibland-V2RayAggregator | 0.255 | observe | 0 | 0 | 0 | None | 4459 | 0 |
+| ermaozi | 0.979 | prefer | 48 | 47 | 1 | 0.979 | 466 | 0 |
+| Au1rxx-base64 | 0.864 | prefer | 134 | 107 | 27 | 0.799 | 1751 | 0 |
+| Surfboard-tg-mixed | 0.843 | prefer | 222 | 170 | 52 | 0.766 | 8496 | 0 |
+| mheidari-all | 0.733 | prefer | 93 | 61 | 32 | 0.656 | 14418 | 0 |
+| tg-LonUp_M | 0.52 | observe | 7 | 7 | 0 | 1.0 | 174 | 0 |
+| xiaoji235-airport-v2ray-all | 0.335 | observe | 1 | 1 | 0 | 1.0 | 6752 | 0 |
+| mahdibland-V2RayAggregator | 0.335 | observe | 1 | 1 | 0 | 1.0 | 4459 | 0 |
+| ermaozi-get_subscribe | 0.272 | observe | 1 | 1 | 0 | 1.0 | 417 | 0 |
+| SoliSpirit-all | 0.255 | observe | 0 | 0 | 0 | None | 11762 | 0 |
+| barry-far-vless | 0.255 | observe | 0 | 0 | 0 | None | 5607 | 0 |
+| Surfboard-tg-vless | 0.255 | observe | 0 | 0 | 0 | None | 5391 | 0 |
+| 10ium-ScrapeCategorize-Vless | 0.255 | observe | 0 | 0 | 0 | None | 4895 | 0 |
 | MatinGhanbari-all-sub | 0.255 | observe | 0 | 0 | 0 | None | 3998 | 0 |
 | ninja-vless | 0.247 | observe | 0 | 0 | 0 | None | 1791 | 0 |
 | Au1rxx-clash | 0.245 | observe | 0 | 0 | 0 | None | 1751 | 0 |
@@ -53,24 +52,27 @@
 | 10ium-HighSpeed | 0.209 | observe | 0 | 0 | 0 | None | 839 | 0 |
 | barry-far-Sub2 | 0.195 | observe | 0 | 0 | 0 | None | 500 | 0 |
 | barry-far-Sub1 | 0.195 | observe | 0 | 0 | 0 | None | 495 | 0 |
-| chromego_merge | 0.186 | observe | 0 | 0 | 0 | None | 267 | 0 |
+| chromego_merge | 0.185 | observe | 0 | 0 | 0 | None | 242 | 0 |
 | tg-V2RAYProxy | 0.184 | observe | 0 | 0 | 0 | None | 217 | 0 |
 | ts-sf-Fly | 0.183 | observe | 0 | 0 | 0 | None | 201 | 0 |
 | MatinGhanbari-super-sub | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-ConfigV2rayNG | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | tg-Farah_VPN | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
 | ts-sf | 0.183 | observe | 0 | 0 | 0 | None | 200 | 0 |
-| tg-Outline_Vpn | 0.181 | observe | 0 | 0 | 0 | None | 158 | 0 |
+| tg-Outline_Vpn | 0.182 | observe | 0 | 0 | 0 | None | 163 | 0 |
+| tg-prrofile_purple | 0.181 | observe | 0 | 0 | 0 | None | 156 | 0 |
+| tg-tv2rayrr | 0.18 | observe | 0 | 0 | 0 | None | 113 | 0 |
+| peasoft-NoMoreWalls | 0.179 | observe | 0 | 0 | 0 | None | 112 | 0 |
 
 ## 综合后 30
 
 | 订阅源 | 评分 | 建议 | 已测 | 通过 | 失败 | 通过率 | 解析数 | 连续死亡 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | DeltaKronecker-all | 0.025 | observe | 0 | 0 | 0 | None | 0 | 1 |
+| tg-VmessProtocol | 0.025 | observe | 0 | 0 | 0 | None | 0 | 1 |
 | Mr8AHAL | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | ninja-tuic | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | tg-GrizzlyVPN | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
-| tg-VmessProtocol | 0.175 | observe | 0 | 0 | 0 | None | 1 | 0 |
 | tg-Ahmedhamoomi_Servers | 0.175 | observe | 0 | 0 | 0 | None | 2 | 0 |
 | tg-freevpnconfigso | 0.175 | observe | 0 | 0 | 0 | None | 2 | 0 |
 | ninja-hy2 | 0.175 | observe | 0 | 0 | 0 | None | 3 | 0 |
@@ -84,18 +86,18 @@
 | tonykong-base64 | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
 | tonykong-clash | 0.175 | observe | 0 | 0 | 0 | None | 5 | 0 |
 | tg-BESTFORBEST66 | 0.175 | observe | 0 | 0 | 0 | None | 8 | 0 |
+| Pawdroid | 0.175 | observe | 0 | 0 | 0 | None | 9 | 0 |
 | tg-DarkVPNpro | 0.175 | observe | 0 | 0 | 0 | None | 11 | 0 |
 | tg-freeiranianv2rey | 0.175 | observe | 0 | 0 | 0 | None | 11 | 0 |
-| tg-DirectVPN | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
-| tg-PrivateVPNs | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
-| tg-VlessConfig | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
 | tg-vpnfail_vless | 0.175 | observe | 0 | 0 | 0 | None | 12 | 0 |
-| Pawdroid | 0.176 | observe | 0 | 0 | 0 | None | 13 | 0 |
 | tg-V2RayRootFree | 0.176 | observe | 0 | 0 | 0 | None | 13 | 0 |
 | freefq | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
+| tg-DirectVPN | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
+| tg-PrivateVPNs | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
+| tg-VlessConfig | 0.176 | observe | 0 | 0 | 0 | None | 14 | 0 |
 | tg-CryptoGuardVPN | 0.176 | observe | 0 | 0 | 0 | None | 16 | 0 |
+| tg-ISVvpn | 0.176 | observe | 0 | 0 | 0 | None | 17 | 0 |
 | tg-V2SayFree | 0.176 | observe | 0 | 0 | 0 | None | 17 | 0 |
-| tg-freedomofinfor | 0.176 | observe | 0 | 0 | 0 | None | 17 | 0 |
 
 ## 说明
 
